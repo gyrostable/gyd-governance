@@ -19,7 +19,7 @@ compile:
 	yarn run hardhat compile
 
 fmt:
-	yarn run prettier --write '{contracts,libraries,interfaces}/**/*.sol'
+	yarn run prettier --write '{contracts,libraries,interfaces}/**/*.sol' && black tests
 
 lint:
 	yarn run prettier --list-different '{contracts,libraries,interfaces}/**/*.sol'
