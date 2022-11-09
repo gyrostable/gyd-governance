@@ -1,0 +1,12 @@
+name: "Setup environment"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Python 3.10.8
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10.8'
+    - name: Install dependencies
+      run: make install_deps
+      shell: bash
