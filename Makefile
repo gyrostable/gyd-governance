@@ -15,4 +15,14 @@ setup: install_deps
 test:
 	brownie test
 
-.PHONY: init update_deps install_deps setup test
+compile:
+	yarn run hardhat compile
+
+fmt:
+	yarn run prettier --write '{contracts,libraries,interfaces}/**/*.sol'
+
+lint:
+	yarn run prettier --list-different '{contracts,libraries,interfaces}/**/*.sol'
+	black --check tests
+
+.PHONY: init update_deps install_deps setup test compile

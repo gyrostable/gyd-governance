@@ -4,5 +4,10 @@
   "main": "index.js",
   "repository": "git@github.com:gyrostable/governance.git",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.8.0",
+    "hardhat": "^2.12.2",
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-rc.1"
+  }
 }

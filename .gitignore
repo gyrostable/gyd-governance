@@ -7,3 +7,5 @@ reports/
 .venv/
 *.sw?
 node_modules/
+cache/
+artifacts/
