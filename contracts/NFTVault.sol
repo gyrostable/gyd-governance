@@ -6,7 +6,7 @@ import "../interfaces/IDelegator.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 contract NFTVault is IVotingVault, IDelegator {
-    IERC721Enumerable nftContract;
+    IERC721Enumerable internal nftContract;
 
     struct Delegation {
         uint256 amount;
@@ -16,12 +16,12 @@ contract NFTVault is IVotingVault, IDelegator {
     // Stores whether or not a user's NFT has been delegated.
     // We can assume the NFT is non-transferrable and that a user will
     // have at most one NFT, and consequently at most one delegation of votes.
-    mapping(address => Delegation) voteDelegation;
+    mapping(address => Delegation) internal voteDelegation;
 
     // All of the delegated votes a user has received.
-    mapping(address => uint256) votes;
+    mapping(address => uint256) internal delegations;
 
-    uint totalSupply;
+    uint internal totalSupply;
 
     constructor(address tokenAddress) {
         nftContract = IERC721Enumerable(tokenAddress);
@@ -29,18 +29,18 @@ contract NFTVault is IVotingVault, IDelegator {
     }
 
     function delegateVote(address _delegate, uint256 _amount) external {
-        uint256 remaining = _remainingBalance();
+        uint256 remaining = _remainingBalance(msg.sender);
         require(remaining >= _amount, "insufficient balance to delegate");
 
-        votes[_delegate] += _amount;
+        delegations[_delegate] += _amount;
         voteDelegation[msg.sender] = Delegation(_amount, _delegate);
 
         emit VotesDelegated(msg.sender, _delegate, _amount);
     }
 
-    function _remainingBalance() internal view returns (uint256) {
-        uint256 balance = nftContract.balanceOf(msg.sender);
-        uint256 delegatedBalance = voteDelegation[msg.sender].amount;
+    function _remainingBalance(address user) internal view returns (uint256) {
+        uint256 balance = nftContract.balanceOf(user);
+        uint256 delegatedBalance = voteDelegation[user].amount;
         return balance - delegatedBalance;
     }
 
@@ -60,13 +60,13 @@ contract NFTVault is IVotingVault, IDelegator {
         );
 
         delete voteDelegation[msg.sender];
-        votes[_delegate] -= _amount;
+        delegations[_delegate] -= _amount;
 
         emit VotesUndelegated(msg.sender, _delegate, _amount);
     }
 
     function rawVotingPower(address user) external view returns (uint256) {
-        return votes[user];
+        return _remainingBalance(user) + delegations[user];
     }
 
     function totalRawVotingPower() external view returns (uint256) {

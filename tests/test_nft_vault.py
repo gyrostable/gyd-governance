@@ -27,20 +27,22 @@ def test_total_raw_voting_power(nft_vault):
 
 
 def test_raw_voting_power(nft_vault, accounts):
-    assert nft_vault.rawVotingPower(accounts[0]) == 0
+    # no delegation means we just use the base voting power of the user
+    assert nft_vault.rawVotingPower(accounts[0]) == 1
 
+    # delegating to yourself doesn't result in double-counting
     nft_vault.delegateVote(accounts[0], 1, {"from": accounts[0]})
     assert nft_vault.rawVotingPower(accounts[0]) == 1
 
     nft_vault.undelegateVote(accounts[0], 1, {"from": accounts[0]})
-    assert nft_vault.rawVotingPower(accounts[0]) == 0
+    assert nft_vault.rawVotingPower(accounts[0]) == 1
 
 
 def test_delegation(nft_vault, accounts):
     # first, delegate account[0]'s vote to account[1]
     nft_vault.delegateVote(accounts[1], 1, {"from": accounts[0]})
 
-    assert nft_vault.rawVotingPower(accounts[1]) == 1
+    assert nft_vault.rawVotingPower(accounts[1]) == 2
 
     # next, try to delegate the same vote again. This should fail since
     # account[0] doesn't have that many to delegate.
