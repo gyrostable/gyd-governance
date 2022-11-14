@@ -78,6 +78,7 @@ def test_undelegation(nft_vault, accounts):
 
     nft_vault.undelegateVote(accounts[1], 1, {"from": accounts[0]})
 
+
 def test_update_raw_voting_power(nft_vault, accounts):
     total = nft_vault.totalRawVotingPower()
 
@@ -85,10 +86,10 @@ def test_update_raw_voting_power(nft_vault, accounts):
     assert nft_vault.rawVotingPower(accounts[0]) == 2
 
     new_total = nft_vault.totalRawVotingPower()
-    assert new_total == total+1
+    assert new_total == total + 1
 
     nft_vault.updateRawVotingPower([accounts[0]], 4)
-    assert nft_vault.totalRawVotingPower() == new_total+2
+    assert nft_vault.totalRawVotingPower() == new_total + 2
 
     nft_vault.delegateVote(accounts[1], 1, {"from": accounts[0]})
     assert nft_vault.rawVotingPower(accounts[0]) == 3
@@ -106,5 +107,7 @@ def test_update_raw_voting_power(nft_vault, accounts):
     assert ("voting power cannot be less than 1") in str(exc.value)
 
     with pytest.raises(VirtualMachineError) as exc:
-        nft_vault.updateRawVotingPower([accounts[0], accounts[9]], 5, {"from": accounts[0]})
+        nft_vault.updateRawVotingPower(
+            [accounts[0], accounts[9]], 5, {"from": accounts[0]}
+        )
     assert ("all users must have at least 1 NFT") in str(exc.value)

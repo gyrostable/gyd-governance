@@ -36,25 +36,28 @@ contract NFTVault is IVotingVault, IDelegator {
     // votes delegated from the user to others, and vice versa.
     // If the user has the NFT, cache this into the contract.
     function _ownVotingPower(address user) internal returns (uint256) {
-	    (uint256 balance, bool cached) = _readOwnVotingPower(user);
-	    if (!cached && balance > 0) {
-		    ownVotingPowers[user] = balance;
-	    }
-	    return balance;
+        (uint256 balance, bool cached) = _readOwnVotingPower(user);
+        if (!cached && balance > 0) {
+            ownVotingPowers[user] = balance;
+        }
+        return balance;
     }
 
-    function _readOwnVotingPower(address user) internal view returns (uint256, bool) {
-	    uint256 balance = ownVotingPowers[user];
-	    if (balance > 0) {
-		    return (balance, true);
-	    }
+    function _readOwnVotingPower(
+        address user
+    ) internal view returns (uint256, bool) {
+        uint256 balance = ownVotingPowers[user];
+        if (balance > 0) {
+            return (balance, true);
+        }
 
-	    return (nftContract.balanceOf(user), false);
+        return (nftContract.balanceOf(user), false);
     }
 
     function delegateVote(address _delegate, uint256 _amount) external {
-	// TODO: Delegate fractional amounts
-	uint256 remaining = _ownVotingPower(msg.sender) - delegations[msg.sender].amount;
+        // TODO: Delegate fractional amounts
+        uint256 remaining = _ownVotingPower(msg.sender) -
+            delegations[msg.sender].amount;
         require(remaining >= _amount, "insufficient balance to delegate");
 
         userToDelegatedVotes[_delegate] += _amount;
@@ -64,10 +67,7 @@ contract NFTVault is IVotingVault, IDelegator {
     }
 
     function undelegateVote(address _delegate, uint256 _amount) external {
-        require(
-            delegations[msg.sender].amount > 0,
-            "user has not delegated"
-        );
+        require(delegations[msg.sender].amount > 0, "user has not delegated");
         require(
             delegations[msg.sender].delegate == _delegate,
             "user has not delegated to _delegate"
@@ -85,30 +85,36 @@ contract NFTVault is IVotingVault, IDelegator {
     }
 
     function rawVotingPower(address user) external view returns (uint256) {
-	(uint256 ownVotingPower,) = _readOwnVotingPower(user);
-        return ownVotingPower - delegations[user].amount + userToDelegatedVotes[user];
+        (uint256 ownVotingPower, ) = _readOwnVotingPower(user);
+        return
+            ownVotingPower -
+            delegations[user].amount +
+            userToDelegatedVotes[user];
     }
 
     function totalRawVotingPower() external view returns (uint256) {
         return totalSupply;
     }
 
-    function updateRawVotingPower(address[] calldata users, uint256 _amount) external {
-	uint256[] memory oldVotingPowers = new uint256[](users.length);
+    function updateRawVotingPower(
+        address[] calldata users,
+        uint256 _amount
+    ) external {
+        uint256[] memory oldVotingPowers = new uint256[](users.length);
 
-	require(_amount >= 1, "voting power cannot be less than 1");
-	require(_amount <= 20, "voting power cannot be more than 20");
-	for (uint i = 0; i < users.length; i++) {
-		uint256 ownVotingPower = _ownVotingPower(users[i]);
-		oldVotingPowers[i] = ownVotingPower;
-		require(ownVotingPower >= 1, "all users must have at least 1 NFT");
-		require(ownVotingPower < _amount, "cannot decrease voting power");
-	}
+        require(_amount >= 1, "voting power cannot be less than 1");
+        require(_amount <= 20, "voting power cannot be more than 20");
+        for (uint i = 0; i < users.length; i++) {
+            uint256 ownVotingPower = _ownVotingPower(users[i]);
+            oldVotingPowers[i] = ownVotingPower;
+            require(ownVotingPower >= 1, "all users must have at least 1 NFT");
+            require(ownVotingPower < _amount, "cannot decrease voting power");
+        }
 
-	for (uint i = 0; i < users.length; i++) {
-		uint256 oldVotingPower = oldVotingPowers[i];
-		ownVotingPowers[users[i]] = _amount;
-		totalSupply += (_amount - oldVotingPower);
-	}
+        for (uint i = 0; i < users.length; i++) {
+            uint256 oldVotingPower = oldVotingPowers[i];
+            ownVotingPowers[users[i]] = _amount;
+            totalSupply += (_amount - oldVotingPower);
+        }
     }
 }
