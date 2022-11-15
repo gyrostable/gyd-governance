@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../interfaces/IVotingVault.sol";
+import "../interfaces/IVault.sol";
 import "../interfaces/IDelegator.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
-contract NFTVault is IVotingVault, IDelegator {
+contract NFTVault is IVault, IDelegator {
     IERC721Enumerable internal nftContract;
 
     struct Delegation {
@@ -84,7 +84,7 @@ contract NFTVault is IVotingVault, IDelegator {
         emit VotesUndelegated(msg.sender, _delegate, _amount);
     }
 
-    function rawVotingPower(address user) external view returns (uint256) {
+    function getRawVotingPower(address user) external view returns (uint256) {
         (uint256 ownVotingPower, ) = _readOwnVotingPower(user);
         return
             ownVotingPower -
@@ -92,7 +92,7 @@ contract NFTVault is IVotingVault, IDelegator {
             userToDelegatedVotes[user];
     }
 
-    function totalRawVotingPower() external view returns (uint256) {
+    function getTotalRawVotingPower() external view returns (uint256) {
         return totalSupply;
     }
 

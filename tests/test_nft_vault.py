@@ -23,26 +23,26 @@ def isolation(fn_isolation):
 
 
 def test_total_raw_voting_power(nft_vault):
-    assert nft_vault.totalRawVotingPower() == 5
+    assert nft_vault.getTotalRawVotingPower() == 5
 
 
 def test_raw_voting_power(nft_vault, accounts):
     # no delegation means we just use the base voting power of the user
-    assert nft_vault.rawVotingPower(accounts[0]) == 1
+    assert nft_vault.getRawVotingPower(accounts[0]) == 1
 
     # delegating to yourself doesn't result in double-counting
     nft_vault.delegateVote(accounts[0], 1, {"from": accounts[0]})
-    assert nft_vault.rawVotingPower(accounts[0]) == 1
+    assert nft_vault.getRawVotingPower(accounts[0]) == 1
 
     nft_vault.undelegateVote(accounts[0], 1, {"from": accounts[0]})
-    assert nft_vault.rawVotingPower(accounts[0]) == 1
+    assert nft_vault.getRawVotingPower(accounts[0]) == 1
 
 
 def test_delegation(nft_vault, accounts):
     # first, delegate account[0]'s vote to account[1]
     nft_vault.delegateVote(accounts[1], 1, {"from": accounts[0]})
 
-    assert nft_vault.rawVotingPower(accounts[1]) == 2
+    assert nft_vault.getRawVotingPower(accounts[1]) == 2
 
     # next, try to delegate the same vote again. This should fail since
     # account[0] doesn't have that many to delegate.
@@ -80,19 +80,19 @@ def test_undelegation(nft_vault, accounts):
 
 
 def test_update_raw_voting_power(nft_vault, accounts):
-    total = nft_vault.totalRawVotingPower()
+    total = nft_vault.getTotalRawVotingPower()
 
     nft_vault.updateRawVotingPower([accounts[0]], 2)
-    assert nft_vault.rawVotingPower(accounts[0]) == 2
+    assert nft_vault.getRawVotingPower(accounts[0]) == 2
 
-    new_total = nft_vault.totalRawVotingPower()
+    new_total = nft_vault.getTotalRawVotingPower()
     assert new_total == total + 1
 
     nft_vault.updateRawVotingPower([accounts[0]], 4)
-    assert nft_vault.totalRawVotingPower() == new_total + 2
+    assert nft_vault.getTotalRawVotingPower() == new_total + 2
 
     nft_vault.delegateVote(accounts[1], 1, {"from": accounts[0]})
-    assert nft_vault.rawVotingPower(accounts[0]) == 3
+    assert nft_vault.getRawVotingPower(accounts[0]) == 3
 
     with pytest.raises(VirtualMachineError) as exc:
         nft_vault.updateRawVotingPower([accounts[0]], 1, {"from": accounts[0]})
