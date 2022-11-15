@@ -26,4 +26,9 @@ library DataTypes {
         address vaultAddress;
         uint64 weight;
     }
+
+    struct PendingWithdrawal {
+        uint256 withdrawableAt;
+        uint256 amount;
+    }
 }
