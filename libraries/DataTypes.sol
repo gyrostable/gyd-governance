@@ -34,4 +34,9 @@ library DataTypes {
         address to;
         address delegate;
     }
+
+    struct VaultPrice {
+        address vaultAddress;
+        uint256 sharePrice;
+    }
 }
