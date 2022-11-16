@@ -28,7 +28,10 @@ library DataTypes {
     }
 
     struct PendingWithdrawal {
+        uint256 id;
         uint256 withdrawableAt;
         uint256 amount;
+        address to;
+        address delegate;
     }
 }

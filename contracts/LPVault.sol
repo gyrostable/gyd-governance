@@ -12,10 +12,21 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
     IERC20 internal lpToken;
     uint256 internal withdrawalWaitDuration;
 
+    // Balances tracks the number of shares locked up that can be used for voting.
+    // i.e. shares queued for withdrawal are not accounted here.
     mapping(address => uint256) internal balances;
 
-    mapping(address => DataTypes.PendingWithdrawal) internal pendingWithdrawals;
+    // Delegations tracks all of the delegations a user has made. As above,
+    // this excludes shares queued for withdrawal.
+    mapping(address => mapping(address => uint256)) internal delegations;
 
+    mapping(address => mapping(uint256 => DataTypes.PendingWithdrawal))
+        internal pendingWithdrawals;
+
+    uint256 internal nextWithdrawalId;
+
+    // Total supply of shares locked in the vault, regardless of whether they
+    // are queued for withdrawal or not.
     uint256 internal totalSupply;
 
     constructor(
@@ -27,53 +38,63 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
         withdrawalWaitDuration = _withdrawalWaitDuration;
     }
 
-    function _totalBalance(address _user) internal view returns (uint256) {
-        return balances[_user] + pendingWithdrawals[_user].amount;
+    function setWithdrawalWaitDuration(uint256 _duration) external onlyOwner {
+        withdrawalWaitDuration = _duration;
     }
 
-    function deposit(uint256 _amount) external payable {
+    function deposit(uint256 _amount, address _delegate) external payable {
+        require(_delegate != address(0), "no delegation to 0");
         require(_amount > 0, "cannot deposit zero _amount");
 
         lpToken.transferFrom(msg.sender, address(this), _amount);
-        balances[msg.sender] += _amount;
+        balances[_delegate] += _amount;
+        delegations[msg.sender][_delegate] += _amount;
         totalSupply += _amount;
 
-        emit Deposit(msg.sender, _amount);
+        emit Deposit(msg.sender, _delegate, _amount);
     }
 
-    function initiateWithdrawal(uint256 _amount) external {
+    function initiateWithdrawal(
+        uint256 _amount,
+        address _delegate
+    ) external returns (uint256) {
+        require(_amount >= 0, "invalid withdrawal amount");
         require(
-            _totalBalance(msg.sender) >= _amount,
-            "cannot unlock more than balance"
+            delegations[msg.sender][_delegate] >= _amount,
+            "not enough delegated to unlock from _delegate"
         );
 
-        // Handle the case where a user initiates a withdrawal, and then initiates another one, but without
-        // completing the first one.
-        // This allows users to "undo" a withdrawal initiation, but complicates the logic somewhat since we must:
-        // - determine by how much to change the balances[msg.sender]
-        // - overwrite the pending withdrawal amount and reset the withdrawal wait duration.
-        uint256 existingAmount = pendingWithdrawals[msg.sender].amount;
-        if (existingAmount > _amount) {
-            // We're trying to withdraw less than initially, so increase the user's balance by the difference;
-            balances[msg.sender] += existingAmount - _amount;
-        } else {
-            // We're trying to withdraw more than initially, so decrease the user's balance by the difference;
-            balances[msg.sender] -= _amount - existingAmount;
-        }
+        balances[_delegate] -= _amount;
+        delegations[msg.sender][_delegate] -= _amount;
 
-        uint256 withdrawableAt = block.timestamp + withdrawalWaitDuration;
-        pendingWithdrawals[msg.sender] = DataTypes.PendingWithdrawal({
-            withdrawableAt: withdrawableAt,
-            amount: _amount
-        });
+        DataTypes.PendingWithdrawal memory withdrawal = DataTypes
+            .PendingWithdrawal({
+                id: nextWithdrawalId,
+                withdrawableAt: block.timestamp + withdrawalWaitDuration,
+                amount: _amount,
+                to: msg.sender,
+                delegate: _delegate
+            });
+        pendingWithdrawals[msg.sender][withdrawal.id] = withdrawal;
+        nextWithdrawalId++;
 
-        emit WithdrawalQueued(msg.sender, withdrawableAt, _amount);
+        emit WithdrawalQueued(
+            withdrawal.id,
+            withdrawal.to,
+            withdrawal.delegate,
+            withdrawal.withdrawableAt,
+            withdrawal.amount
+        );
     }
 
-    function withdraw() external payable {
+    function withdraw(uint256 withdrawalId) external payable {
         DataTypes.PendingWithdrawal memory pending = pendingWithdrawals[
             msg.sender
-        ];
+        ][withdrawalId];
+        require(
+            pending.withdrawableAt > 0 && pending.amount > 0,
+            "matching withdrawal does not exist"
+        );
         require(
             pending.withdrawableAt <= block.timestamp,
             "no valid pending withdrawal"
@@ -81,9 +102,8 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
 
         lpToken.transfer(msg.sender, pending.amount);
 
-        uint256 amount = pending.amount;
-        totalSupply -= amount;
-        delete pendingWithdrawals[msg.sender];
+        totalSupply -= pending.amount;
+        delete pendingWithdrawals[msg.sender][withdrawalId];
 
         emit WithdrawalCompleted(msg.sender, pending.amount);
     }

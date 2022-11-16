@@ -2,14 +2,23 @@
 pragma solidity ^0.8.17;
 
 interface ILockingVault {
-    function deposit(uint256 _amount) external payable;
+    function deposit(uint256 _amount, address _delegate) external payable;
 
-    event Deposit(address from, uint256 amount);
+    event Deposit(address from, address delegate, uint256 amount);
 
-    function initiateWithdrawal(uint256 _amount) external;
+    function initiateWithdrawal(
+        uint256 _amount,
+        address _delegate
+    ) external returns (uint256);
 
-    function withdraw() external payable;
+    function withdraw(uint256 withdrawalId) external payable;
 
-    event WithdrawalQueued(address to, uint256 withdrawalAt, uint256 amount);
+    event WithdrawalQueued(
+        uint256 id,
+        address to,
+        address delegate,
+        uint256 withdrawalAt,
+        uint256 amount
+    );
     event WithdrawalCompleted(address to, uint256 amount);
 }

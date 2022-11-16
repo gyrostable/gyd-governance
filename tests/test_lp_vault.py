@@ -1,6 +1,6 @@
 import pytest
 
-from brownie import chain, LPVault, ERC20Mintable
+from brownie import chain, reverts, LPVault, ERC20Mintable
 from brownie.exceptions import VirtualMachineError
 
 DURATION_SECONDS = 60 * 60
@@ -22,54 +22,80 @@ def lp_vault(token, admin):
 def test_deposit(admin, token, lp_vault):
     assert lp_vault.getTotalRawVotingPower() == 0
 
-    with pytest.raises(VirtualMachineError) as exc:
-        lp_vault.deposit(0)
-    assert "cannot deposit zero _amount" in str(exc.value)
+    with reverts(revert_msg="cannot deposit zero _amount"):
+        lp_vault.deposit(0, admin)
+
+    with reverts(revert_msg="no delegation to 0"):
+        lp_vault.deposit(0, "0x0000000000000000000000000000000000000000")
 
     token.approve(lp_vault, 10)
-    lp_vault.deposit(10)
+    lp_vault.deposit(10, admin)
     assert lp_vault.getRawVotingPower(admin) == lp_vault.getTotalRawVotingPower() == 10
 
     assert token.balanceOf(admin) == INITIAL_BALANCE - 10
     assert token.balanceOf(lp_vault) == 10
 
 
-def test_initiate_withdrawal(admin, token, lp_vault):
-    with pytest.raises(VirtualMachineError) as exc:
-        lp_vault.initiateWithdrawal(10)
-    assert "cannot unlock more than balance" in str(exc.value)
-
+def test_delegation(admin, accounts, token, lp_vault):
     token.approve(lp_vault, 10)
-    lp_vault.deposit(10)
-    assert lp_vault.getRawVotingPower(admin) == 10
-
-    lp_vault.initiateWithdrawal(10)
+    lp_vault.deposit(10, accounts[1])
+    assert lp_vault.getTotalRawVotingPower() == 10
+    assert lp_vault.getRawVotingPower(accounts[1]) == 10
     assert lp_vault.getRawVotingPower(admin) == 0
 
-    lp_vault.initiateWithdrawal(8)
-    assert lp_vault.getRawVotingPower(admin) == 2
-    assert (
-        lp_vault.getTotalRawVotingPower() == 10
-    )  # Is this correct? Do fund queued for withdrawal count toward the total raw voting power?
+    tx = lp_vault.initiateWithdrawal(10, accounts[1])
 
-    lp_vault.initiateWithdrawal(0)
+    chain.sleep(DURATION_SECONDS)
+    chain.mine()
+
+    lp_vault.withdraw(tx.value)
+    assert lp_vault.getTotalRawVotingPower() == 0
+    assert lp_vault.getRawVotingPower(accounts[1]) == 0
+    assert lp_vault.getRawVotingPower(admin) == 0
+
+
+def test_initiate_withdrawal(admin, token, lp_vault):
+    token.approve(lp_vault, 10)
+    lp_vault.deposit(10, admin)
     assert lp_vault.getRawVotingPower(admin) == 10
+
+    lp_vault.initiateWithdrawal(10, admin)
+    assert lp_vault.getRawVotingPower(admin) == 0
+
+    with reverts(revert_msg="not enough delegated to unlock from _delegate"):
+        lp_vault.initiateWithdrawal(10, admin)
 
 
 def test_withdrawal(admin, token, lp_vault):
     token.approve(lp_vault, 10)
-    lp_vault.deposit(10)
-    lp_vault.initiateWithdrawal(10)
+    lp_vault.deposit(10, admin)
+    tx = lp_vault.initiateWithdrawal(10, admin)
 
-    with pytest.raises(VirtualMachineError) as exc:
-        lp_vault.withdraw()
-    assert "no valid pending withdrawal" in str(exc.value)
+    with reverts(revert_msg="matching withdrawal does not exist"):
+        lp_vault.withdraw(10)
+
+    with reverts(revert_msg="no valid pending withdrawal"):
+        lp_vault.withdraw(tx.value)
 
     chain.sleep(DURATION_SECONDS)
     chain.mine()
 
     assert token.balanceOf(admin) == 90
     assert token.balanceOf(lp_vault) == 10
-    lp_vault.withdraw()
+    lp_vault.withdraw(tx.value)
     assert token.balanceOf(admin) == INITIAL_BALANCE
     assert token.balanceOf(lp_vault) == 0
+
+
+def test_set_withdrawal_wait_duration(admin, accounts, token, lp_vault):
+    lp_vault.setWithdrawalWaitDuration(0)
+
+    token.approve(lp_vault, 10)
+    lp_vault.deposit(10, admin)
+    tx = lp_vault.initiateWithdrawal(10, admin)
+
+    # no wait required
+    lp_vault.withdraw(tx.value)
+
+    with reverts():
+        tx = lp_vault.setWithdrawalWaitDuration(100, {"from": accounts[2]})
