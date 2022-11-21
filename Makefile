@@ -25,4 +25,7 @@ lint:
 	yarn run prettier --list-different '{contracts,libraries,interfaces}/**/*.sol'
 	black --check tests
 
+generate_proofs:
+	yarn run ts-node ./scripts/proof.ts
+
 .PHONY: init update_deps install_deps setup test compile
