@@ -3,11 +3,9 @@ pragma solidity ^0.8.17;
 
 import "../interfaces/IVault.sol";
 import "../interfaces/IDelegator.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "./access/ImmutableOwner.sol";
 
-contract NFTVault is IVault, IDelegator {
-    IERC721Enumerable internal nftContract;
-
+abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     struct Delegation {
         uint256 amount;
         address delegate;
@@ -27,32 +25,16 @@ contract NFTVault is IVault, IDelegator {
 
     uint internal totalSupply;
 
-    constructor(address tokenAddress) {
-        nftContract = IERC721Enumerable(tokenAddress);
-        totalSupply = nftContract.totalSupply();
-    }
+    constructor(address _owner) ImmutableOwner(_owner) {}
 
     // The user's base voting power, without taking into account
     // votes delegated from the user to others, and vice versa.
     // If the user has the NFT, cache this into the contract.
-    function _ownVotingPower(address user) internal returns (uint256) {
-        (uint256 balance, bool cached) = _readOwnVotingPower(user);
-        if (!cached && balance > 0) {
-            ownVotingPowers[user] = balance;
-        }
-        return balance;
-    }
+    function _ownVotingPower(address user) internal virtual returns (uint256);
 
     function _readOwnVotingPower(
         address user
-    ) internal view returns (uint256, bool) {
-        uint256 balance = ownVotingPowers[user];
-        if (balance > 0) {
-            return (balance, true);
-        }
-
-        return (nftContract.balanceOf(user), false);
-    }
+    ) internal view virtual returns (uint256, bool);
 
     function delegateVote(address _delegate, uint256 _amount) external {
         // TODO: Delegate fractional amounts
@@ -96,10 +78,11 @@ contract NFTVault is IVault, IDelegator {
         return totalSupply;
     }
 
+    // TODO: set to owner only
     function updateRawVotingPower(
         address[] calldata users,
         uint256 _amount
-    ) external {
+    ) external onlyOwner {
         uint256[] memory oldVotingPowers = new uint256[](users.length);
 
         require(_amount >= 1, "voting power cannot be less than 1");
