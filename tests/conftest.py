@@ -23,7 +23,7 @@ DOMAIN_TYPE_HASH = keccak(
 )
 
 
-def signature(verifying_contract):
+def signature(verifying_contract, proof):
     # (cedric): DRAGON AHEAD!
     # I tried multiple different libraries to encode a struct in an EIP712-compliant way,
     # but all had issues which meant I couldn't generate a valid signature:
@@ -34,7 +34,7 @@ def signature(verifying_contract):
 
     # This coercion from hex string to bytes is required. Without it the subsequent call
     # to `encode` raises.
-    proofToBytes = [bytearray.fromhex(p[2:]) for p in PROOF]  # strip 0x prefix
+    proofToBytes = [bytearray.fromhex(p[2:]) for p in proof]  # strip 0x prefix
     structHash = keccak(
         encode(
             ["bytes32", "address", "bytes32[]"],
@@ -102,7 +102,8 @@ def frog_vault(admin):
 
 @pytest.fixture
 def frog_vault_with_claimed_nfts(frog_vault):
-    frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address))
+    sig = signature(frog_vault.address, PROOF)
+    frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, sig)
     return frog_vault
 
 

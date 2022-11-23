@@ -1,5 +1,5 @@
 import pytest
-from .conftest import ACCOUNT_ADDRESS, PROOF, signature
+from .conftest import ACCOUNT_ADDRESS, PROOF, ROOT, signature
 from brownie.exceptions import VirtualMachineError
 
 
@@ -11,7 +11,16 @@ def test_founding_frog_claim_nft(admin, accounts, frog_vault):
         frog_vault.updateRawVotingPower([admin], 2)
     assert "all users must have at least 1 NFT" in str(exc.value)
 
-    frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address))
+    # Attempt to claim with an invalid proof, namely the root.
+    # This will get hashed with the ACCOUNT_ADDRESS to produce
+    # a new, different root.
+    with pytest.raises(VirtualMachineError) as exc:
+        frog_vault.claimNFT(
+            ACCOUNT_ADDRESS, [ROOT], signature(frog_vault.address, [ROOT])
+        )
+    assert "invalid proof" in str(exc.value)
+
+    frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address, PROOF))
     assert frog_vault.getRawVotingPower(admin) == 1
     frog_vault.updateRawVotingPower([admin], 2)
     assert frog_vault.getRawVotingPower(admin) == 2
@@ -19,6 +28,9 @@ def test_founding_frog_claim_nft(admin, accounts, frog_vault):
 
     with pytest.raises(VirtualMachineError) as exc:
         frog_vault.claimNFT(
-            ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address), {"from": accounts[6]}
+            ACCOUNT_ADDRESS,
+            PROOF,
+            signature(frog_vault.address, PROOF),
+            {"from": accounts[6]},
         )
     assert "NFT already claimed" in str(exc.value)
