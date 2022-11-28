@@ -14,10 +14,10 @@ contract FoundingFrogVault is NFTVault, EIP712 {
 
     constructor(
         address _owner,
-        uint256 _totalSupply,
+        uint256 _sumVotingPowers,
         bytes32 _merkleRoot
     ) EIP712("FoundingFrogVault", "1") NFTVault(_owner) {
-        totalSupply = _totalSupply;
+        sumVotingPowers = _sumVotingPowers;
         merkleRoot = _merkleRoot;
     }
 

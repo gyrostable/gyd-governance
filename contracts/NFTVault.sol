@@ -11,11 +11,10 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
         address delegate;
     }
 
-    // Stores whether or not a user's NFT has been delegated.
-    // We can assume the NFT is non-transferrable and that a user will
-    // have at most one NFT, and consequently at most one delegation of votes.
+    // Stores the number of votes delegated by a user and to whom.
     mapping(address => mapping(address => uint256)) internal delegations;
 
+    // Stores the sum of votes delegated by a user to others.
     mapping(address => uint256) internal delegatedAmounts;
 
     // All of the delegated votes a user has received.
@@ -25,7 +24,7 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     // This caches voting power and stores voting power mutations.
     mapping(address => uint256) internal ownVotingPowers;
 
-    uint internal totalSupply;
+    uint internal sumVotingPowers;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
@@ -81,7 +80,7 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     }
 
     function getTotalRawVotingPower() external view returns (uint256) {
-        return totalSupply;
+        return sumVotingPowers;
     }
 
     function updateRawVotingPower(
@@ -102,7 +101,7 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
         for (uint i = 0; i < users.length; i++) {
             uint256 oldVotingPower = oldVotingPowers[i];
             ownVotingPowers[users[i]] = _amount;
-            totalSupply += (_amount - oldVotingPower);
+            sumVotingPowers += (_amount - oldVotingPower);
         }
     }
 }

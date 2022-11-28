@@ -9,7 +9,7 @@ contract RecruitNFTVault is NFTVault {
 
     constructor(address _owner, address tokenAddress) NFTVault(_owner) {
         nftContract = IERC721Enumerable(tokenAddress);
-        totalSupply = nftContract.totalSupply();
+        sumVotingPowers = nftContract.totalSupply();
     }
 
     // The user's base voting power, without taking into account
