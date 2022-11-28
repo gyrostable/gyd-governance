@@ -63,8 +63,6 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
         emit VotesUndelegated(msg.sender, _delegate, _amount);
     }
 
-    event Debug(uint256 ovp, uint256 da, uint256 utdv);
-
     function getRawVotingPower(address user) external view returns (uint256) {
         (uint256 ownVotingPower, ) = _readOwnVotingPower(user);
 

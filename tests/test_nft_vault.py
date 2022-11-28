@@ -23,7 +23,6 @@ def test_raw_voting_power(vault, admin):
 
 @pytest.mark.parametrize("vault,", ["nft_vault", "frog_vault"], indirect=["vault"])
 def test_delegation(vault, admin, accounts):
-    rp = vault.getRawVotingPower(admin)
     # first, delegate account[0]'s vote to account[5]
     vault.delegateVote(accounts[5], 1, {"from": admin})
 
@@ -38,6 +37,19 @@ def test_delegation(vault, admin, accounts):
     # try to delegate too many votes from accounts[1]
     with pytest.raises(VirtualMachineError) as exc:
         vault.delegateVote(accounts[1], 2, {"from": accounts[1]})
+    assert "insufficient balance to delegate" in str(exc.value)
+
+
+@pytest.mark.parametrize("vault,", ["nft_vault", "frog_vault"], indirect=["vault"])
+def test_no_onward_delegation(vault, admin, accounts):
+    assert vault.getRawVotingPower(accounts[5]) == 0
+
+    # first, delegate account[0]'s vote to account[5]
+    vault.delegateVote(accounts[5], 1, {"from": admin})
+    assert vault.getRawVotingPower(accounts[5]) == 1
+
+    with pytest.raises(VirtualMachineError) as exc:
+        vault.delegateVote(accounts[6], 1, {"from": accounts[5]})
     assert "insufficient balance to delegate" in str(exc.value)
 
 
