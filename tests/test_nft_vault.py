@@ -23,6 +23,7 @@ def test_raw_voting_power(vault, admin):
 
 @pytest.mark.parametrize("vault,", ["nft_vault", "frog_vault"], indirect=["vault"])
 def test_delegation(vault, admin, accounts):
+    rp = vault.getRawVotingPower(admin)
     # first, delegate account[0]'s vote to account[5]
     vault.delegateVote(accounts[5], 1, {"from": admin})
 
@@ -41,6 +42,25 @@ def test_delegation(vault, admin, accounts):
 
 
 @pytest.mark.parametrize("vault,", ["nft_vault", "frog_vault"], indirect=["vault"])
+def test_delegation_with_mutable_voting_power(vault, admin, accounts):
+    vault.delegateVote(accounts[5], 1, {"from": admin})
+    assert vault.getRawVotingPower(admin) == 0
+    assert vault.getRawVotingPower(accounts[5]) == 1
+
+    vault.updateRawVotingPower([admin], 2)
+    assert vault.getRawVotingPower(admin) == 1
+
+    vault.delegateVote(accounts[6], 1, {"from": admin})
+    assert vault.getRawVotingPower(accounts[6]) == 1
+
+    vault.undelegateVote(accounts[6], 1, {"from": admin})
+    vault.delegateVote(accounts[5], 1, {"from": admin})
+    assert vault.getRawVotingPower(accounts[5]) == 2
+    assert vault.getRawVotingPower(accounts[6]) == 0
+    assert vault.getRawVotingPower(admin) == 0
+
+
+@pytest.mark.parametrize("vault,", ["nft_vault", "frog_vault"], indirect=["vault"])
 def test_undelegation(vault, admin, accounts):
     # first, undelegate account[0]'s vote to account[1];
     # This should fail since account[0] won't have delegated yet.
@@ -54,12 +74,12 @@ def test_undelegation(vault, admin, accounts):
     # try to undelegate the wrong amount
     with pytest.raises(VirtualMachineError) as exc:
         vault.undelegateVote(accounts[1], 2, {"from": admin})
-    assert ("partial undelegations not allowed") in str(exc.value)
+    assert ("user has not delegated enough to _delegate") in str(exc.value)
 
     # try to undelegate from the wrong person
     with pytest.raises(VirtualMachineError) as exc:
         vault.undelegateVote(admin, 1, {"from": admin})
-    assert ("user has not delegated to _delegate") in str(exc.value)
+    assert ("user has not delegated enough to _delegate") in str(exc.value)
 
     vault.undelegateVote(accounts[1], 1, {"from": admin})
 

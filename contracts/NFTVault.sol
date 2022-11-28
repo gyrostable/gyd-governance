@@ -14,7 +14,9 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     // Stores whether or not a user's NFT has been delegated.
     // We can assume the NFT is non-transferrable and that a user will
     // have at most one NFT, and consequently at most one delegation of votes.
-    mapping(address => Delegation) internal delegations;
+    mapping(address => mapping(address => uint256)) internal delegations;
+
+    mapping(address => uint256) internal delegatedAmounts;
 
     // All of the delegated votes a user has received.
     mapping(address => uint256) internal userToDelegatedVotes;
@@ -39,38 +41,42 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     function delegateVote(address _delegate, uint256 _amount) external {
         // TODO: Delegate fractional amounts
         uint256 remaining = _ownVotingPower(msg.sender) -
-            delegations[msg.sender].amount;
+            delegatedAmounts[msg.sender];
         require(remaining >= _amount, "insufficient balance to delegate");
 
         userToDelegatedVotes[_delegate] += _amount;
-        delegations[msg.sender] = Delegation(_amount, _delegate);
+        delegatedAmounts[msg.sender] += _amount;
+        delegations[msg.sender][_delegate] += _amount;
 
         emit VotesDelegated(msg.sender, _delegate, _amount);
     }
 
     function undelegateVote(address _delegate, uint256 _amount) external {
-        require(delegations[msg.sender].amount > 0, "user has not delegated");
         require(
-            delegations[msg.sender].delegate == _delegate,
-            "user has not delegated to _delegate"
+            delegations[msg.sender][_delegate] >= _amount,
+            "user has not delegated enough to _delegate"
         );
 
-        require(
-            delegations[msg.sender].amount == _amount,
-            "partial undelegations not allowed"
-        );
+        if (delegations[msg.sender][_delegate] == _amount) {
+            delete delegations[msg.sender][_delegate];
+        } else {
+            delegations[msg.sender][_delegate] -= _amount;
+        }
 
-        delete delegations[msg.sender];
+        delegatedAmounts[msg.sender] -= _amount;
         userToDelegatedVotes[_delegate] -= _amount;
 
         emit VotesUndelegated(msg.sender, _delegate, _amount);
     }
 
+    event Debug(uint256 ovp, uint256 da, uint256 utdv);
+
     function getRawVotingPower(address user) external view returns (uint256) {
         (uint256 ownVotingPower, ) = _readOwnVotingPower(user);
+
         return
             ownVotingPower -
-            delegations[user].amount +
+            delegatedAmounts[user] +
             userToDelegatedVotes[user];
     }
 
@@ -78,7 +84,6 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
         return totalSupply;
     }
 
-    // TODO: set to owner only
     function updateRawVotingPower(
         address[] calldata users,
         uint256 _amount
