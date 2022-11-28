@@ -6,11 +6,6 @@ import "../interfaces/IDelegator.sol";
 import "./access/ImmutableOwner.sol";
 
 abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
-    struct Delegation {
-        uint256 amount;
-        address delegate;
-    }
-
     // Stores the number of votes delegated by a user and to whom.
     mapping(address => mapping(address => uint256)) internal delegations;
 
