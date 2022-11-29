@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../interfaces/IVault.sol";
 import "../interfaces/ILockingVault.sol";
@@ -9,6 +10,8 @@ import "../libraries/DataTypes.sol";
 import "./access/ImmutableOwner.sol";
 
 contract LPVault is IVault, ILockingVault, ImmutableOwner {
+    using EnumerableSet for EnumerableSet.UintSet;
+
     IERC20 internal lpToken;
     uint256 internal withdrawalWaitDuration;
 
@@ -20,14 +23,16 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
     // this excludes shares queued for withdrawal.
     mapping(address => mapping(address => uint256)) internal delegations;
 
-    mapping(address => mapping(uint256 => DataTypes.PendingWithdrawal))
-        internal pendingWithdrawals;
+    // Mapping of a user's address to their pending withdrawal ids.
+    mapping(address => EnumerableSet.UintSet) internal userPendingWithdrawalIds;
+
+    mapping(uint256 => DataTypes.PendingWithdrawal) internal pendingWithdrawals;
 
     uint256 internal nextWithdrawalId;
 
     // Total supply of shares locked in the vault, regardless of whether they
     // are queued for withdrawal or not.
-    uint256 internal totalSupply;
+    uint256 public totalSupply;
 
     constructor(
         address _owner,
@@ -42,7 +47,7 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
         withdrawalWaitDuration = _duration;
     }
 
-    function deposit(uint256 _amount, address _delegate) external payable {
+    function deposit(uint256 _amount, address _delegate) external {
         require(_delegate != address(0), "no delegation to 0");
         require(_amount > 0, "cannot deposit zero _amount");
 
@@ -75,7 +80,8 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
                 to: msg.sender,
                 delegate: _delegate
             });
-        pendingWithdrawals[msg.sender][withdrawal.id] = withdrawal;
+        pendingWithdrawals[withdrawal.id] = withdrawal;
+        userPendingWithdrawalIds[msg.sender].add(withdrawal.id);
         nextWithdrawalId++;
 
         emit WithdrawalQueued(
@@ -85,12 +91,15 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
             withdrawal.withdrawableAt,
             withdrawal.amount
         );
+
+        return withdrawal.id;
     }
 
-    function withdraw(uint256 withdrawalId) external payable {
+    function withdraw(uint256 withdrawalId) external {
         DataTypes.PendingWithdrawal memory pending = pendingWithdrawals[
-            msg.sender
-        ][withdrawalId];
+            withdrawalId
+        ];
+        require(pending.to == msg.sender, "matching withdrawal does not exist");
         require(
             pending.withdrawableAt > 0 && pending.amount > 0,
             "matching withdrawal does not exist"
@@ -100,12 +109,13 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
             "no valid pending withdrawal"
         );
 
-        lpToken.transfer(msg.sender, pending.amount);
+        lpToken.transfer(pending.to, pending.amount);
 
         totalSupply -= pending.amount;
-        delete pendingWithdrawals[msg.sender][withdrawalId];
+        delete pendingWithdrawals[withdrawalId];
+        userPendingWithdrawalIds[pending.to].remove(withdrawalId);
 
-        emit WithdrawalCompleted(msg.sender, pending.amount);
+        emit WithdrawalCompleted(pending.to, pending.amount);
     }
 
     function getRawVotingPower(address _user) external view returns (uint256) {

@@ -5,12 +5,14 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 import "../interfaces/IVault.sol";
 import "../libraries/DataTypes.sol";
+import "../libraries/ScaledMath.sol";
 import "./access/ImmutableOwner.sol";
 
 contract AggregateLPVault is IVault, ImmutableOwner {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
+    using ScaledMath for uint256;
 
-    EnumerableMap.AddressToUintMap internal vaultsToPrices;
+    EnumerableMap.AddressToUintMap internal vaultsToWeights;
 
     uint256 internal threshold;
 
@@ -18,26 +20,26 @@ contract AggregateLPVault is IVault, ImmutableOwner {
         threshold = _threshold;
     }
 
-    function setVaultPrices(
-        DataTypes.VaultPrice[] calldata vaultPrices
+    function setVaultWeights(
+        DataTypes.VaultWeight[] calldata vaultWeights
     ) external onlyOwner {
-        _removeAllVaultPrices();
+        _removeAllVaultWeights();
 
-        for (uint256 i = 0; i < vaultPrices.length; i++) {
-            DataTypes.VaultPrice memory v = vaultPrices[i];
-            require(v.sharePrice > 0, "cannot have a 0 sharePrice");
+        for (uint256 i = 0; i < vaultWeights.length; i++) {
+            DataTypes.VaultWeight memory v = vaultWeights[i];
+            require(v.weight > 0, "cannot have a 0 weight");
         }
 
-        for (uint256 i = 0; i < vaultPrices.length; i++) {
-            DataTypes.VaultPrice memory v = vaultPrices[i];
-            vaultsToPrices.set(v.vaultAddress, v.sharePrice);
+        for (uint256 i = 0; i < vaultWeights.length; i++) {
+            DataTypes.VaultWeight memory v = vaultWeights[i];
+            vaultsToWeights.set(v.vaultAddress, v.weight);
         }
     }
 
-    function _removeAllVaultPrices() internal {
-        for (uint256 i = 0; i < vaultsToPrices.length(); i++) {
-            (address key, ) = vaultsToPrices.at(i);
-            vaultsToPrices.remove(key);
+    function _removeAllVaultWeights() internal {
+        for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
+            (address key, ) = vaultsToWeights.at(i);
+            vaultsToWeights.remove(key);
         }
     }
 
@@ -47,9 +49,11 @@ contract AggregateLPVault is IVault, ImmutableOwner {
 
     function getRawVotingPower(address _user) external view returns (uint256) {
         uint256 rawVotingPower = 0;
-        for (uint256 i = 0; i < vaultsToPrices.length(); i++) {
-            (address vault, uint256 price) = vaultsToPrices.at(i);
-            rawVotingPower += IVault(vault).getRawVotingPower(_user) * price;
+        for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
+            (address vault, uint256 price) = vaultsToWeights.at(i);
+            rawVotingPower += IVault(vault).getRawVotingPower(_user).mulDown(
+                price
+            );
         }
 
         return rawVotingPower;
@@ -57,11 +61,11 @@ contract AggregateLPVault is IVault, ImmutableOwner {
 
     function getTotalRawVotingPower() external view returns (uint256) {
         uint256 totalRawVotingPower = 0;
-        for (uint256 i = 0; i < vaultsToPrices.length(); i++) {
-            (address vault, uint256 price) = vaultsToPrices.at(i);
-            totalRawVotingPower +=
-                IVault(vault).getTotalRawVotingPower() *
-                price;
+        for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
+            (address vault, uint256 price) = vaultsToWeights.at(i);
+            totalRawVotingPower += IVault(vault)
+                .getTotalRawVotingPower()
+                .mulDown(price);
         }
 
         if (totalRawVotingPower <= threshold) {

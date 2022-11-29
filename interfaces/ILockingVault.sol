@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 interface ILockingVault {
-    function deposit(uint256 _amount, address _delegate) external payable;
+    function deposit(uint256 _amount, address _delegate) external;
 
     event Deposit(address from, address delegate, uint256 amount);
 
@@ -11,7 +11,7 @@ interface ILockingVault {
         address _delegate
     ) external returns (uint256);
 
-    function withdraw(uint256 withdrawalId) external payable;
+    function withdraw(uint256 withdrawalId) external;
 
     event WithdrawalQueued(
         uint256 id,

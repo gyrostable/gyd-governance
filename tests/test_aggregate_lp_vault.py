@@ -24,10 +24,10 @@ def test_aggregate_lp_vault_scaled_threshold(admin, mock_vault, aggregate_lp_vau
     mv = admin.deploy(MockVault, 10, 100)
     mv2 = admin.deploy(MockVault, 0, 100)
 
-    aggregate_lp_vault.setVaultPrices(
+    aggregate_lp_vault.setVaultWeights(
         [
-            (mv, 1),
-            (mv2, 2),
+            (mv, 1 * 1e18),
+            (mv2, 2 * 1e18),
         ]
     )
     assert aggregate_lp_vault.getRawVotingPower(admin) == 10
@@ -37,10 +37,10 @@ def test_aggregate_lp_vault_scaled_threshold(admin, mock_vault, aggregate_lp_vau
     assert aggregate_lp_vault.getRawVotingPower(admin) == 10
     assert aggregate_lp_vault.getTotalRawVotingPower() == 300
 
-    aggregate_lp_vault.setVaultPrices(
+    aggregate_lp_vault.setVaultWeights(
         [
-            (mv, 2),
-            (mv2, 1),
+            (mv, 2 * 1e18),
+            (mv2, 1 * 1e18),
         ]
     )
     assert aggregate_lp_vault.getRawVotingPower(admin) == 20

@@ -35,8 +35,8 @@ library DataTypes {
         address delegate;
     }
 
-    struct VaultPrice {
+    struct VaultWeight {
         address vaultAddress;
-        uint256 sharePrice;
+        uint256 weight;
     }
 }
