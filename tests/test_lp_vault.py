@@ -1,7 +1,6 @@
 import pytest
 
 from brownie import chain, reverts, LPVault, ERC20Mintable
-from brownie.exceptions import VirtualMachineError
 
 DURATION_SECONDS = 60 * 60
 INITIAL_BALANCE = 100

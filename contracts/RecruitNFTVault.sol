@@ -2,35 +2,31 @@
 pragma solidity ^0.8.17;
 
 import "../contracts/NFTVault.sol";
+import "../interfaces/IVotingPowersUpdater.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
-contract RecruitNFTVault is NFTVault {
-    IERC721Enumerable internal nftContract;
+contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
+    address internal immutable underlyingAddress;
 
-    constructor(address _owner, address tokenAddress) NFTVault(_owner) {
-        nftContract = IERC721Enumerable(tokenAddress);
-        sumVotingPowers = nftContract.totalSupply();
+    constructor(
+        address _owner,
+        address _underlyingAddress,
+        uint256 _underlyingSupply
+    ) NFTVault(_owner) {
+        underlyingAddress = _underlyingAddress;
+        sumVotingPowers = _underlyingSupply;
     }
 
-    // The user's base voting power, without taking into account
-    // votes delegated from the user to others, and vice versa.
-    // If the user has the NFT, cache this into the contract.
-    function _ownVotingPower(address user) internal override returns (uint256) {
-        (uint256 balance, bool cached) = _readOwnVotingPower(user);
-        if (!cached && balance > 0) {
-            ownVotingPowers[user] = balance;
-        }
-        return balance;
+    modifier onlyUnderlying() {
+        require(msg.sender == address(underlyingAddress));
+        _;
     }
 
-    function _readOwnVotingPower(
-        address user
-    ) internal view override returns (uint256, bool) {
-        uint256 balance = ownVotingPowers[user];
-        if (balance > 0) {
-            return (balance, true);
-        }
-
-        return (nftContract.balanceOf(user), false);
+    function updateVotingPower(
+        address _user,
+        uint256 _addedVotingPower
+    ) external onlyUnderlying {
+        ownVotingPowers[_user] += _addedVotingPower;
+        sumVotingPowers += _addedVotingPower;
     }
 }

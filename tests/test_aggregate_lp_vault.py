@@ -1,7 +1,6 @@
 import pytest
 
 from brownie import chain, reverts, AggregateLPVault, MockVault
-from brownie.exceptions import VirtualMachineError
 
 INITIAL_RAW_VOTING_POWER = 10
 INITIAL_TOTAL_RAW_VOTING_POWER = 100

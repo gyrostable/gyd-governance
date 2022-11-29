@@ -1,5 +1,12 @@
 import pytest
-from brownie import ERC721Mintable, RecruitNFTVault, FoundingFrogVault, accounts
+from brownie import (
+    ERC721Mintable,
+    RecruitNFTVault,
+    RecruitNFT,
+    FoundingFrogVault,
+    accounts,
+    chain,
+)
 from eth_account._utils.signing import sign_message_hash
 import eth_keys
 from hexbytes import HexBytes
@@ -44,20 +51,15 @@ def signature(verifying_contract, proof):
     domainTypeHash = keccak(DOMAIN_TYPE_HASH)
     domainStructHash = keccak(
         encode(
-            [
-                "bytes32",
-                "bytes32",  # ----v
-                "bytes32",  # Strings are encoded as keccak hashes in the standard.
-                "uint256",
-                "address",
-            ],
-            [
-                DOMAIN_TYPE_HASH,
-                keccak(text="FoundingFrogVault"),
-                keccak(text="1"),
-                1,
-                verifying_contract,
-            ],
+            *zip(
+                ("bytes32", DOMAIN_TYPE_HASH),
+                # Strings are encoded as keccak hashes in the standard.
+                ("bytes32", keccak(text="FoundingFrogVault")),
+                # Strings are encoded as keccak hashes in the standard.
+                ("bytes32", keccak(text="1")),
+                ("uint256", chain.id),
+                ("address", verifying_contract),
+            )
         )
     )
     pk = eth_keys.keys.PrivateKey(HexBytes(ACCOUNT_KEY))
@@ -81,17 +83,24 @@ def isolation_setup(fn_isolation):
 
 
 @pytest.fixture
-def nft(ERC721Mintable, admin):
-    contract = admin.deploy(ERC721Mintable)
-    for i in range(5):
-        contract.mint(accounts[i], i)
-
-    return contract
+def recruit_nft(admin):
+    return admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin)
 
 
 @pytest.fixture
-def nft_vault(nft, admin):
-    return admin.deploy(RecruitNFTVault, admin, nft)
+def nft_vault(recruit_nft, admin):
+    nft_vault = admin.deploy(
+        RecruitNFTVault,
+        admin,
+        recruit_nft,
+        recruit_nft.totalSupply(),
+    )
+    recruit_nft.setGovernanceVault(nft_vault)
+
+    for i in range(5):
+        recruit_nft.mint(accounts[i], i)
+
+    return nft_vault
 
 
 @pytest.fixture
@@ -114,3 +123,8 @@ def vault(request, nft_vault, frog_vault_with_claimed_nfts):
     if request.param == "frog_vault":
         return frog_vault_with_claimed_nfts
     raise ValueError("invalid vault")
+
+
+def pytest_generate_tests(metafunc):
+    if "vault" in metafunc.fixturenames:
+        metafunc.parametrize("vault", ["nft_vault", "frog_vault"], indirect=["vault"])

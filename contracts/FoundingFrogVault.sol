@@ -37,13 +37,13 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         require(_isProofValid(owner, proof), "invalid proof");
 
         _claimed[owner] = msg.sender;
-        ownVotingPowers[msg.sender] = 1;
+        ownVotingPowers[msg.sender] += 1;
     }
 
     function _isProofValid(
         address owner,
         bytes32[] memory proof
-    ) internal returns (bool) {
+    ) internal view returns (bool) {
         bytes32 node = keccak256(abi.encodePacked(owner));
         for (uint256 i = 0; i < proof.length; i++) {
             (bytes32 left, bytes32 right) = (node, proof[i]);
@@ -52,16 +52,5 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         }
 
         return node == merkleRoot;
-    }
-
-    function _ownVotingPower(address user) internal override returns (uint256) {
-        (uint256 power, ) = _readOwnVotingPower(user);
-        return power;
-    }
-
-    function _readOwnVotingPower(
-        address user
-    ) internal view override returns (uint256, bool) {
-        return (ownVotingPowers[user], true);
     }
 }

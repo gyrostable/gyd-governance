@@ -25,16 +25,9 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
 
     // The user's base voting power, without taking into account
     // votes delegated from the user to others, and vice versa.
-    // If the user has the NFT, cache this into the contract.
-    function _ownVotingPower(address user) internal virtual returns (uint256);
-
-    function _readOwnVotingPower(
-        address user
-    ) internal view virtual returns (uint256, bool);
-
     function delegateVote(address _delegate, uint256 _amount) external {
         // TODO: Delegate fractional amounts
-        uint256 remaining = _ownVotingPower(msg.sender) -
+        uint256 remaining = ownVotingPowers[msg.sender] -
             delegatedAmounts[msg.sender];
         require(remaining >= _amount, "insufficient balance to delegate");
 
@@ -51,12 +44,7 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
             "user has not delegated enough to _delegate"
         );
 
-        if (delegations[msg.sender][_delegate] == _amount) {
-            delete delegations[msg.sender][_delegate];
-        } else {
-            delegations[msg.sender][_delegate] -= _amount;
-        }
-
+        delegations[msg.sender][_delegate] -= _amount;
         delegatedAmounts[msg.sender] -= _amount;
         userToDelegatedVotes[_delegate] -= _amount;
 
@@ -64,10 +52,8 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     }
 
     function getRawVotingPower(address user) external view returns (uint256) {
-        (uint256 ownVotingPower, ) = _readOwnVotingPower(user);
-
         return
-            ownVotingPower -
+            ownVotingPowers[user] -
             delegatedAmounts[user] +
             userToDelegatedVotes[user];
     }
@@ -80,19 +66,12 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
         address[] calldata users,
         uint256 _amount
     ) external onlyOwner {
-        uint256[] memory oldVotingPowers = new uint256[](users.length);
-
         require(_amount >= 1, "voting power cannot be less than 1");
         require(_amount <= 20, "voting power cannot be more than 20");
         for (uint i = 0; i < users.length; i++) {
-            uint256 ownVotingPower = _ownVotingPower(users[i]);
-            oldVotingPowers[i] = ownVotingPower;
-            require(ownVotingPower >= 1, "all users must have at least 1 NFT");
-            require(ownVotingPower < _amount, "cannot decrease voting power");
-        }
-
-        for (uint i = 0; i < users.length; i++) {
-            uint256 oldVotingPower = oldVotingPowers[i];
+            uint256 oldVotingPower = ownVotingPowers[users[i]];
+            require(oldVotingPower >= 1, "all users must have at least 1 NFT");
+            require(oldVotingPower < _amount, "cannot decrease voting power");
             ownVotingPowers[users[i]] = _amount;
             sumVotingPowers += (_amount - oldVotingPower);
         }

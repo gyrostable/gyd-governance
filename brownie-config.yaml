@@ -2,3 +2,8 @@ compiler:
   solc:
     remappings:
       - "@openzeppelin=node_modules/@openzeppelin"
+
+networks:
+  development:
+    cmd_settings:
+      chain_id: 1337

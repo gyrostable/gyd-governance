@@ -1,36 +1,55 @@
 import pytest
 from .conftest import ACCOUNT_ADDRESS, PROOF, ROOT, signature
-from brownie.exceptions import VirtualMachineError
+from brownie import reverts
 
 
-def test_founding_frog_claim_nft(admin, accounts, frog_vault):
+def test_user_owns_no_nft(admin, accounts, frog_vault):
     # Vault has no claimed NFTS
     assert frog_vault.getRawVotingPower(admin) == 0
     # No NFTs means the user's voting power can't be updated
-    with pytest.raises(VirtualMachineError) as exc:
+    with reverts("all users must have at least 1 NFT"):
         frog_vault.updateRawVotingPower([admin], 2)
-    assert "all users must have at least 1 NFT" in str(exc.value)
 
+
+def test_invalid_proof_claim(admin, accounts, frog_vault):
     # Attempt to claim with an invalid proof, namely the root.
     # This will get hashed with the ACCOUNT_ADDRESS to produce
     # a new, different root.
-    with pytest.raises(VirtualMachineError) as exc:
+    with reverts("invalid proof"):
         frog_vault.claimNFT(
             ACCOUNT_ADDRESS, [ROOT], signature(frog_vault.address, [ROOT])
         )
-    assert "invalid proof" in str(exc.value)
 
+
+def test_valid_proof(admin, accounts, frog_vault):
     frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address, PROOF))
     assert frog_vault.getRawVotingPower(admin) == 1
     frog_vault.updateRawVotingPower([admin], 2)
     assert frog_vault.getRawVotingPower(admin) == 2
     assert frog_vault.getTotalRawVotingPower() == 6
 
-    with pytest.raises(VirtualMachineError) as exc:
+
+def test_updates_raw_power(admin, accounts, frog_vault):
+    frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address, PROOF))
+    assert frog_vault.getRawVotingPower(admin) == 1
+    assert frog_vault.getTotalRawVotingPower() == 5
+
+    frog_vault.updateRawVotingPower([admin], 2)
+    assert frog_vault.getRawVotingPower(admin) == 2
+    assert frog_vault.getTotalRawVotingPower() == 6
+
+
+def test_nft_already_claimed(admin, accounts, frog_vault):
+    frog_vault.claimNFT(
+        ACCOUNT_ADDRESS,
+        PROOF,
+        signature(frog_vault.address, PROOF),
+        {"from": accounts[6]},
+    )
+    with reverts("NFT already claimed"):
         frog_vault.claimNFT(
             ACCOUNT_ADDRESS,
             PROOF,
             signature(frog_vault.address, PROOF),
             {"from": accounts[6]},
         )
-    assert "NFT already claimed" in str(exc.value)
