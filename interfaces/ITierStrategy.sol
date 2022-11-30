@@ -3,9 +3,8 @@ pragma solidity ^0.8.17;
 
 import "../libraries/DataTypes.sol";
 
-interface ITierer {
+interface ITierStrategy {
     function getTier(
-        address _contract,
         bytes calldata payload
     ) external view returns (DataTypes.Tier memory);
 }
