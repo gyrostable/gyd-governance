@@ -5,7 +5,7 @@ update_deps:
 	pip3 freeze > requirements.txt
 
 install_deps:
-	yarn global add ganache-cli
+	yarn global add ganache
 	yarn install
 	pip3 install -r requirements.txt
 
