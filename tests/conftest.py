@@ -1,4 +1,5 @@
 import pytest
+<<<<<<< HEAD
 from brownie import (
     ERC721Mintable,
     RecruitNFTVault,
@@ -70,6 +71,11 @@ def signature(verifying_contract, proof):
     )
     (v, r, s, signature) = sign_message_hash(pk, signable_message)
     return signature
+=======
+from brownie import ERC20Mintable, StaticTierStrategy
+
+INITIAL_BALANCE = 100
+>>>>>>> 444e342 (Add ActionTierConfig contracts and StaticTierStrategy)
 
 
 @pytest.fixture(scope="session")
@@ -83,6 +89,7 @@ def isolation_setup(fn_isolation):
 
 
 @pytest.fixture
+<<<<<<< HEAD
 def recruit_nft(admin):
     return admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin)
 
@@ -128,3 +135,14 @@ def vault(request, nft_vault, frog_vault_with_claimed_nfts):
 def pytest_generate_tests(metafunc):
     if "vault" in metafunc.fixturenames:
         metafunc.parametrize("vault", ["nft_vault", "frog_vault"], indirect=["vault"])
+=======
+def token(admin):
+    c = admin.deploy(ERC20Mintable)
+    c.mint(admin, INITIAL_BALANCE)
+    return c
+
+
+@pytest.fixture
+def static_tier_strategy(admin):
+    return admin.deploy(StaticTierStrategy, admin)
+>>>>>>> 444e342 (Add ActionTierConfig contracts and StaticTierStrategy)

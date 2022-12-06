@@ -1,16 +1,13 @@
 import pytest
 
 from brownie import chain, reverts, LPVault, ERC20Mintable
+<<<<<<< HEAD
+=======
+from brownie.exceptions import VirtualMachineError
+from tests.conftest import INITIAL_BALANCE
+>>>>>>> 444e342 (Add ActionTierConfig contracts and StaticTierStrategy)
 
 DURATION_SECONDS = 60 * 60
-INITIAL_BALANCE = 100
-
-
-@pytest.fixture
-def token(admin):
-    c = admin.deploy(ERC20Mintable)
-    c.mint(admin, INITIAL_BALANCE)
-    return c
 
 
 @pytest.fixture
