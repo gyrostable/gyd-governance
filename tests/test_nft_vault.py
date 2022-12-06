@@ -60,7 +60,7 @@ def test_delegation_with_mutable_voting_power(vault, admin, accounts):
     assert vault.getRawVotingPower(admin) == 0
     assert vault.getRawVotingPower(accounts[5]) == 1
 
-    vault.updateRawVotingPower([admin], 2)
+    vault.updateMultiplier([admin], 2)
     assert vault.getRawVotingPower(admin) == 1
 
     vault.delegateVote(accounts[6], 1, {"from": admin})
@@ -96,13 +96,13 @@ def test_undelegation(vault, admin, accounts):
 def test_update_raw_voting_power(vault, admin, accounts):
     total = vault.getTotalRawVotingPower()
 
-    vault.updateRawVotingPower([admin], 2)
+    vault.updateMultiplier([admin], 2)
     assert vault.getRawVotingPower(admin) == 2
 
     new_total = vault.getTotalRawVotingPower()
     assert new_total == total + 1
 
-    vault.updateRawVotingPower([admin], 4)
+    vault.updateMultiplier([admin], 4)
     assert vault.getTotalRawVotingPower() == new_total + 2
 
     vault.delegateVote(accounts[1], 1, {"from": admin})
@@ -111,19 +111,19 @@ def test_update_raw_voting_power(vault, admin, accounts):
 
 def test_raw_voting_power_cannot_decrease(vault, admin):
     with reverts("cannot decrease voting power"):
-        vault.updateRawVotingPower([admin], 1, {"from": admin})
+        vault.updateMultiplier([admin], 1, {"from": admin})
 
 
 def test_limit_on_raw_voting_power(vault, admin):
-    with reverts("voting power cannot be more than 20"):
-        vault.updateRawVotingPower([admin], 25, {"from": admin})
+    with reverts("multiplier cannot be more than 20"):
+        vault.updateMultiplier([admin], 25, {"from": admin})
 
 
 def test_raw_voting_power_cannot_be_zeroed(vault, admin):
-    with reverts("voting power cannot be less than 1"):
-        vault.updateRawVotingPower([admin], 0, {"from": admin})
+    with reverts("multiplier cannot be less than 1"):
+        vault.updateMultiplier([admin], 0, {"from": admin})
 
 
 def test_all_users_must_have_voting_power_to_update(vault, admin):
     with reverts("all users must have at least 1 NFT"):
-        vault.updateRawVotingPower([admin, accounts[9]], 5, {"from": admin})
+        vault.updateMultiplier([admin, accounts[9]], 5, {"from": admin})

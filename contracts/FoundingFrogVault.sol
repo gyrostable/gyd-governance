@@ -37,7 +37,13 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         require(_isProofValid(owner, proof), "invalid proof");
 
         _claimed[owner] = msg.sender;
-        ownVotingPowers[msg.sender] += 1;
+
+        DataTypes.BaseVotingPower storage ovp = ownVotingPowers[msg.sender];
+        ovp.base += 1;
+        if (ovp.multiplier == 0) {
+            ovp.multiplier = 1;
+        }
+        sumVotingPowers += ovp.multiplier - 1;
     }
 
     function _isProofValid(
