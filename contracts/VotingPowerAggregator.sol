@@ -21,18 +21,28 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     constructor(address _owner) ImmutableOwner(_owner) {}
 
     function getVotingPower(address account) external view returns (uint256) {
-        uint256 totalVotingPower;
+        uint256 userVotingPower;
 
         uint256 vaultsCount = _vaultAddresses.length();
         for (uint256 i; i < vaultsCount; i++) {
             IVault vault = IVault(_vaultAddresses.at(i));
             uint256 userRawVotingPower = vault.getRawVotingPower(account);
-            uint256 vaultTotalVotingPower = vault.getTotalRawVotingPower();
-            uint256 userVaultVotingPower = userRawVotingPower.divDown(
-                vaultTotalVotingPower
-            );
             uint256 vaultWeight = _vaults[address(vault)].weight;
-            totalVotingPower += userVaultVotingPower.mulDown(vaultWeight);
+            userVotingPower += userRawVotingPower.mulDown(vaultWeight);
+        }
+
+        return userVotingPower;
+    }
+
+    function getTotalVotingPower() external view returns (uint256) {
+        uint256 totalVotingPower;
+
+        uint256 vaultsCount = _vaultAddresses.length();
+        for (uint256 i; i < vaultsCount; i++) {
+            IVault vault = IVault(_vaultAddresses.at(i));
+            uint256 vaultTotalVotingPower = vault.getTotalRawVotingPower();
+            uint256 vaultWeight = _vaults[address(vault)].weight;
+            totalVotingPower += vaultTotalVotingPower.mulDown(vaultWeight);
         }
 
         return totalVotingPower;

@@ -97,8 +97,13 @@ def voting_power_aggregator(admin, VotingPowerAggregator):
 
 
 @pytest.fixture(scope="module")
-def governance_manager(admin, GovernanceManager):
-    return admin.deploy(GovernanceManager, admin)
+def mock_tierer(admin, MockTierer):
+    return admin.deploy(MockTierer, (100, 20, 20))
+
+
+@pytest.fixture(scope="module")
+def governance_manager(admin, GovernanceManager, mock_tierer):
+    return admin.deploy(GovernanceManager, admin, mock_tierer)
 
 
 @pytest.fixture(autouse=True)
