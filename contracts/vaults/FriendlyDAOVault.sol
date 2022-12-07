@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
@@ -20,19 +20,20 @@ contract FriendlyDAOVault is IVault, ImmutableOwner {
         uint256 votingPower,
         uint256 totalVotingPower
     ) external onlyOwner {
+        _daoVotingPower.set(dao, votingPower);
+        _totalRawVotingPower = totalVotingPower;
+
         uint256 actualTotalPower;
         uint256 daosCount = _daoVotingPower.length();
         for (uint256 i; i < daosCount; i++) {
-            (address currentDao, uint256 currentPower) = _daoVotingPower.at(i);
-            actualTotalPower += currentDao == dao ? votingPower : currentPower;
+            (, uint256 currentPower) = _daoVotingPower.at(i);
+            actualTotalPower += currentPower;
         }
         if (actualTotalPower > totalVotingPower)
             revert Errors.InvalidVotingPowerUpdate(
                 actualTotalPower,
                 totalVotingPower
             );
-        _daoVotingPower.set(dao, votingPower);
-        _totalRawVotingPower = totalVotingPower;
     }
 
     function getRawVotingPower(
