@@ -39,4 +39,10 @@ library DataTypes {
         address vaultAddress;
         uint256 weight;
     }
+
+    struct Tier {
+      uint256 quorum;
+      uint256 proposalThreshold;
+      uint256 timeLockDuration;
+    }
 }
