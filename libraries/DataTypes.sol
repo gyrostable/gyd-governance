@@ -53,4 +53,22 @@ library DataTypes {
         Status status;
         bytes payload;
     }
+
+    enum Ballot {
+        FOR,
+        AGAINST,
+        ABSTENTION
+    }
+
+    struct Vote {
+        Ballot position;
+        uint256 votingPower;
+    }
+
+    struct VoteTotals {
+        uint256 _for;
+        uint256 against;
+        uint256 abstention;
+        uint256 combined;
+    }
 }
