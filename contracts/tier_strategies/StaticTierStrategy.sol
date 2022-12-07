@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "./access/ImmutableOwner.sol";
-import "../libraries/DataTypes.sol";
-import "../interfaces/ITierStrategy.sol";
+import "../access/ImmutableOwner.sol";
+import "../../libraries/DataTypes.sol";
+import "../../interfaces/ITierStrategy.sol";
 
 contract StaticTierStrategy is ImmutableOwner, ITierStrategy {
     uint256 public quorum;
