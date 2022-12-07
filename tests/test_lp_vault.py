@@ -113,3 +113,45 @@ def test_withdrawal_id_increments(admin, token, lp_vault):
         tx = lp_vault.initiateWithdrawal(1, admin)
         withdrawal_id = tx.events["WithdrawalQueued"]["id"]
         assert i == withdrawal_id
+
+
+def test_list_pending_withdrawals(admin, accounts, token, lp_vault):
+    assert len(lp_vault.listPendingWithdrawals(accounts[2])) == 0
+
+    token.approve(lp_vault, 20)
+    lp_vault.deposit(20, admin)
+    tx = lp_vault.initiateWithdrawal(10, admin)
+    withdrawal_id = tx.events["WithdrawalQueued"]["id"]
+
+    pws = lp_vault.listPendingWithdrawals(admin)
+    assert len(pws) == 1
+    assert pws[0][0] == withdrawal_id
+
+    tx = lp_vault.initiateWithdrawal(10, admin)
+    withdrawal_id = tx.events["WithdrawalQueued"]["id"]
+    pws = lp_vault.listPendingWithdrawals(admin)
+    assert len(pws) == 2
+    assert pws[1][0] == withdrawal_id
+
+
+def test_list_pending_withdrawals_doesnt_list_completed(
+    admin, accounts, token, lp_vault
+):
+    assert len(lp_vault.listPendingWithdrawals(accounts[2])) == 0
+
+    token.approve(lp_vault, 20)
+    lp_vault.deposit(20, admin)
+    tx = lp_vault.initiateWithdrawal(10, admin)
+    withdrawal_id = tx.events["WithdrawalQueued"]["id"]
+
+    pws = lp_vault.listPendingWithdrawals(admin)
+    assert len(pws) == 1
+    assert pws[0][0] == withdrawal_id
+
+    chain.sleep(DURATION_SECONDS)
+    chain.mine()
+
+    lp_vault.withdraw(withdrawal_id)
+
+    pws = lp_vault.listPendingWithdrawals(admin)
+    assert len(pws) == 0

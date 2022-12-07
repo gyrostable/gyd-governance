@@ -125,4 +125,16 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
     function getTotalRawVotingPower() external view returns (uint256) {
         return totalSupply;
     }
+
+    function listPendingWithdrawals(
+        address _user
+    ) external view returns (DataTypes.PendingWithdrawal[] memory) {
+        EnumerableSet.UintSet storage ids = userPendingWithdrawalIds[_user];
+        DataTypes.PendingWithdrawal[]
+            memory pending = new DataTypes.PendingWithdrawal[](ids.length());
+        for (uint256 i = 0; i < ids.length(); i++) {
+            pending[i] = pendingWithdrawals[ids.at(i)];
+        }
+        return pending;
+    }
 }
