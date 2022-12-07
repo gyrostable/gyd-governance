@@ -18,6 +18,8 @@ library DataTypes {
         uint24 id;
         address proposer;
         uint64 createdAt;
+        uint64 executableAt;
+        uint64 votingEndsAt;
         Status status;
         ProposalAction action;
     }
@@ -61,7 +63,7 @@ library DataTypes {
     }
 
     struct Vote {
-        Ballot position;
+        Ballot ballot;
         uint256 votingPower;
     }
 
@@ -69,5 +71,12 @@ library DataTypes {
         uint256 _for;
         uint256 against;
         uint256 combined;
+    }
+
+    enum ProposalOutcome {
+        UNDEFINED,
+        QUORUM_NOT_MET,
+        THRESHOLD_NOT_MET,
+        SUCCESSFUL
     }
 }

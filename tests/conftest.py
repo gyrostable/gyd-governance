@@ -2,6 +2,7 @@ import pytest
 from brownie import (
     ERC721Mintable,
     ERC20Mintable,
+    RaisingERC20,
     RecruitNFTVault,
     RecruitNFT,
     StaticTierStrategy,
@@ -17,6 +18,17 @@ from eth_utils import keccak
 from eth_abi import encode
 from eth_abi.packed import encode_packed
 from eip712.messages import EIP712Message
+
+UNDEFINED_BALLOT = 0
+FOR_BALLOT = 1
+AGAINST_BALLOT = 2
+
+PROPOSAL_LENGTH_DURATION = 20
+TIMELOCKED_DURATION = 20
+
+QUORUM_NOT_MET_OUTCOME = 1
+THRESHOLD_NOT_MET_OUTCOME = 2
+SUCCESSFUL_OUTCOME = 3
 
 INITIAL_BALANCE = 100
 
@@ -98,12 +110,17 @@ def voting_power_aggregator(admin, VotingPowerAggregator):
 
 @pytest.fixture(scope="module")
 def mock_tierer(admin, MockTierer):
-    return admin.deploy(MockTierer, (100, 20, 20))
+    return admin.deploy(MockTierer, (2e17, 1e17, 20, 20))
 
 
 @pytest.fixture(scope="module")
-def governance_manager(admin, GovernanceManager, mock_tierer):
-    return admin.deploy(GovernanceManager, admin, mock_tierer)
+def governance_manager(admin, GovernanceManager, voting_power_aggregator, mock_tierer):
+    return admin.deploy(GovernanceManager, voting_power_aggregator, mock_tierer)
+
+
+@pytest.fixture(scope="module")
+def raising_token(admin):
+    return admin.deploy(RaisingERC20)
 
 
 @pytest.fixture(autouse=True)

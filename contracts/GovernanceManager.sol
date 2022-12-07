@@ -4,16 +4,19 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../libraries/DataTypes.sol";
+import "../libraries/ScaledMath.sol";
 
 import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
 
 contract GovernanceManager {
+    using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     uint24 public proposalsCount;
 
     EnumerableSet.Bytes32Set internal _activeProposals;
+    EnumerableSet.Bytes32Set internal _timelockedProposals;
     mapping(uint24 => DataTypes.Proposal) internal _proposals;
 
     mapping(address => mapping(uint24 => DataTypes.Vote)) internal _votes;
@@ -40,18 +43,22 @@ contract GovernanceManager {
         DataTypes.Tier memory tier = tierer.getTier(action.target, action.data);
 
         uint256 rawPower = votingPowerAggregator.getVotingPower(msg.sender);
-        uint256 currentTotal = votingPowerAggregator.getTotalVotingPower();
-        uint256 fractionalPower = rawPower.divDown(currentTotal);
-        if (fractionalPower < tier.proposalThreshold) {
-            revert(
-                "proposer doesn't have enough voting power to propose this action"
-            );
-        }
+        uint256 totalPower = votingPowerAggregator.getTotalVotingPower();
+        require(
+            rawPower.divDown(totalPower) > tier.proposalThreshold,
+            "proposer doesn't have enough voting power to propose this action"
+        );
+
+        uint64 createdAt = uint64(block.timestamp);
+        uint64 votingEndsAt = createdAt + tier.proposalLength;
+        uint64 executableAt = votingEndsAt + tier.timeLockDuration;
 
         DataTypes.Proposal memory proposal = DataTypes.Proposal({
             id: proposalsCount,
             proposer: msg.sender,
-            createdAt: uint64(block.timestamp),
+            createdAt: createdAt,
+            votingEndsAt: votingEndsAt,
+            executableAt: executableAt,
             status: DataTypes.Status.Active,
             action: action
         });
@@ -66,7 +73,8 @@ contract GovernanceManager {
         uint24 proposalId,
         address voter,
         DataTypes.Ballot vote,
-        uint256 votingPower
+        uint256 votingPower,
+        DataTypes.VoteTotals voteTotals
     );
 
     function vote(uint24 proposalId, DataTypes.Ballot ballot) external {
@@ -74,6 +82,11 @@ contract GovernanceManager {
         if (proposal.createdAt == uint64(0)) {
             revert("proposal does not exist");
         }
+
+        require(
+            proposal.votingEndsAt > uint64(block.timestamp),
+            "voting is closed on this proposal"
+        );
 
         require(
             ballot != DataTypes.Ballot.UNDEFINED,
@@ -86,11 +99,11 @@ contract GovernanceManager {
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
 
         // First, zero out the effect of any vote already cast by the voter.
-        currentTotal.combined -= vote.votingPower;
-        if (vote.ballot == DataTypes.Ballot.FOR) {
-            currentTotal._for -= vote.votingPower;
-        } else if (vote.ballot == DataTypes.Ballot.AGAINST) {
-            currentTotal.against -= vote.votingPower;
+        currentTotals.combined -= existingVote.votingPower;
+        if (existingVote.ballot == DataTypes.Ballot.FOR) {
+            currentTotals._for -= existingVote.votingPower;
+        } else if (existingVote.ballot == DataTypes.Ballot.AGAINST) {
+            currentTotals.against -= existingVote.votingPower;
         }
 
         // Then update the record of this user's vote to the latest ballot and voting power
@@ -98,14 +111,91 @@ contract GovernanceManager {
         existingVote.votingPower = vp;
 
         // And, finally update running total
-        currentTotal.combined += vote.votingPower;
+        currentTotals.combined += existingVote.votingPower;
         if (ballot == DataTypes.Ballot.FOR) {
-            currentTotal._for += vote.votingPower;
-        } else if (vote.ballot == DataTypes.Ballot.AGAINST) {
-            currentTotal.against += vote.votingPower;
+            currentTotals._for += existingVote.votingPower;
+        } else if (ballot == DataTypes.Ballot.AGAINST) {
+            currentTotals.against += existingVote.votingPower;
         }
 
-        emit VoteCast(proposalId, msg.sender, ballot, vp);
+        emit VoteCast(proposalId, msg.sender, ballot, vp, currentTotals);
+    }
+
+    event ProposalTallied(
+        uint24 proposalId,
+        DataTypes.Status status,
+        DataTypes.ProposalOutcome outcome
+    );
+
+    function tallyVote(uint24 proposalId) external {
+        DataTypes.Proposal storage proposal = _proposals[proposalId];
+        if (proposal.createdAt == uint64(0)) {
+            revert("proposal does not exist");
+        }
+
+        if (!_activeProposals.contains(bytes32(bytes3(proposalId)))) {
+            revert("proposal is not currently active");
+        }
+
+        require(
+            uint64(block.timestamp) > proposal.votingEndsAt,
+            "voting is ongoing for this proposal"
+        );
+
+        DataTypes.Tier memory tier = tierer.getTier(
+            proposal.action.target,
+            proposal.action.data
+        );
+        DataTypes.VoteTotals memory currentTotals = _totals[proposalId];
+
+        uint256 tvp = votingPowerAggregator.getTotalVotingPower();
+
+        if (currentTotals.combined.divDown(tvp) < tier.quorum) {
+            proposal.status = DataTypes.Status.Rejected;
+            _activeProposals.remove(bytes32(bytes3(proposalId)));
+            emit ProposalTallied(
+                proposalId,
+                proposal.status,
+                DataTypes.ProposalOutcome.QUORUM_NOT_MET
+            );
+            return;
+        }
+
+        uint256 result = currentTotals._for.divDown(tvp);
+        DataTypes.ProposalOutcome outcome = DataTypes.ProposalOutcome.UNDEFINED;
+        if (result > tier.proposalThreshold) {
+            proposal.status = DataTypes.Status.Queued;
+            outcome = DataTypes.ProposalOutcome.SUCCESSFUL;
+            _timelockedProposals.add(bytes32(bytes3(proposalId)));
+        } else {
+            proposal.status = DataTypes.Status.Rejected;
+            outcome = DataTypes.ProposalOutcome.THRESHOLD_NOT_MET;
+        }
+        _activeProposals.remove(bytes32(bytes3(proposalId)));
+        emit ProposalTallied(proposalId, proposal.status, outcome);
+    }
+
+    event ProposalExecuted(uint24 proposalId, bool success);
+
+    function executeProposal(uint24 proposalId) external {
+        DataTypes.Proposal storage proposal = _proposals[proposalId];
+        if (proposal.createdAt == uint64(0)) {
+            revert("proposal does not exist");
+        }
+
+        require(
+            _timelockedProposals.contains(bytes32(bytes3(proposalId))) &&
+                uint64(block.timestamp) > proposal.executableAt,
+            "proposal must be queued and ready to execute"
+        );
+
+        DataTypes.ProposalAction memory action = proposal.action;
+        (bool success, ) = action.target.call(action.data);
+        emit ProposalExecuted(proposalId, success);
+        if (success) {
+            proposal.status = DataTypes.Status.Executed;
+            _timelockedProposals.remove(bytes32(bytes3(proposalId)));
+        }
     }
 
     function listActiveProposals()
@@ -119,6 +209,23 @@ contract GovernanceManager {
         );
         for (uint256 i = 0; i < length; i++) {
             proposals[i] = _proposals[uint24(bytes3(_activeProposals.at(i)))];
+        }
+        return proposals;
+    }
+
+    function listTimelockedProposals()
+        external
+        view
+        returns (DataTypes.Proposal[] memory)
+    {
+        uint256 length = _timelockedProposals.length();
+        DataTypes.Proposal[] memory proposals = new DataTypes.Proposal[](
+            length
+        );
+        for (uint256 i = 0; i < length; i++) {
+            proposals[i] = _proposals[
+                uint24(bytes3(_timelockedProposals.at(i)))
+            ];
         }
         return proposals;
     }
