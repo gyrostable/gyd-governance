@@ -5,7 +5,7 @@ update_deps:
 	pip3 freeze > requirements.txt
 
 install_deps:
-	yarn global add ganache-cli
+	yarn global add ganache
 	yarn install
 	pip3 install -r requirements.txt
 
@@ -19,10 +19,13 @@ compile:
 	yarn run hardhat compile
 
 fmt:
-	yarn run prettier --write '{contracts,libraries,interfaces}/**/*.sol'
+	yarn run prettier --write '{contracts,libraries,interfaces}/**/*.sol' && black tests
 
 lint:
 	yarn run prettier --list-different '{contracts,libraries,interfaces}/**/*.sol'
 	black --check tests
+
+generate_proofs:
+	yarn run ts-node ./scripts/proof.ts
 
 .PHONY: init update_deps install_deps setup test compile

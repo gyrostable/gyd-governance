@@ -9,3 +9,4 @@ reports/
 node_modules/
 cache/
 artifacts/
+*.js
