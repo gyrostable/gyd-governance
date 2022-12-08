@@ -27,15 +27,11 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner {
         _;
     }
 
-    function addToAllowlist(
-        address added
-    ) external onlyOwner {
+    function addToAllowlist(address added) external onlyOwner {
         allowlistedAddresses.add(added);
     }
 
-    function removeFromAllowlist(
-        address removed
-    ) external onlyOwner {
+    function removeFromAllowlist(address removed) external onlyOwner {
         allowlistedAddresses.remove(removed);
     }
 

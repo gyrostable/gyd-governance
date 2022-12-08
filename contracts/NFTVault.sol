@@ -5,10 +5,10 @@ import "../interfaces/IVault.sol";
 import "../interfaces/IDelegator.sol";
 import "./access/ImmutableOwner.sol";
 import "../libraries/DataTypes.sol";
-import "../libraries/TotalVotingPower.sol";
+import "../libraries/BaseVotingPower.sol";
 
 abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
-    using TotalVotingPower for DataTypes.BaseVotingPower;
+    using BaseVotingPower for DataTypes.BaseVotingPower;
     // Stores the number of votes delegated by a user and to whom.
     mapping(address => mapping(address => uint256)) internal delegations;
 
