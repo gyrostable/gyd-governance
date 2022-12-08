@@ -8,10 +8,18 @@ import "../../interfaces/ITierStrategy.sol";
 contract SetVaultFeesStrategy is ImmutableOwner, ITierStrategy {
     DataTypes.Tier private underThresholdTier;
     DataTypes.Tier private overThresholdTier;
-    uint256 threshold;
-    bool initialized;
+    uint256 private threshold;
 
-    constructor(address _owner) ImmutableOwner(_owner) {}
+    constructor(
+        address _owner,
+        uint256 _threshold,
+        DataTypes.Tier memory underTier,
+        DataTypes.Tier memory overTier
+    ) ImmutableOwner(_owner) {
+        threshold = _threshold;
+        underThresholdTier = underTier;
+        overThresholdTier = overTier;
+    }
 
     function setParameters(
         uint256 _threshold,
@@ -21,15 +29,13 @@ contract SetVaultFeesStrategy is ImmutableOwner, ITierStrategy {
         threshold = _threshold;
         underThresholdTier = underTier;
         overThresholdTier = overTier;
-        initialized = true;
     }
 
     function getTier(
         bytes calldata _calldata
     ) external view returns (DataTypes.Tier memory) {
-        if (!initialized) {
-            revert("tier strategy not initialized");
-        }
+        // The function signature of the payload we're trying to decode is:
+        // SetVaultFees(address vault, uint256 mintFee, uint256 redeemFee)
         (, , uint256 mintFee, uint256 redeemFee) = abi.decode(
             _calldata,
             (bytes4, address, uint256, uint256)

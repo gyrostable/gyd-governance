@@ -1,11 +1,8 @@
 import pytest
 
-from brownie import chain, reverts, LPVault, ERC20Mintable
-<<<<<<< HEAD
-=======
+from brownie import chain, reverts, LPVault
 from brownie.exceptions import VirtualMachineError
 from tests.conftest import INITIAL_BALANCE
->>>>>>> 444e342 (Add ActionTierConfig contracts and StaticTierStrategy)
 
 DURATION_SECONDS = 60 * 60
 

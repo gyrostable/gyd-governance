@@ -6,33 +6,18 @@ import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
 
 contract StaticTierStrategy is ImmutableOwner, ITierStrategy {
-    uint256 public quorum;
-    uint256 public proposalThreshold;
-    uint256 public timeLockDuration;
+    DataTypes.Tier private tier;
 
-    constructor(address _owner) ImmutableOwner(_owner) {}
-
-    function setParameters(
-        uint256 _quorum,
-        uint256 _proposalThreshold,
-        uint256 _timeLockDuration
-    ) external onlyOwner {
-        quorum = _quorum;
-        proposalThreshold = _proposalThreshold;
-        timeLockDuration = _timeLockDuration;
+    constructor(
+        address _owner,
+        DataTypes.Tier memory _tier
+    ) ImmutableOwner(_owner) {
+        tier = _tier;
     }
 
     function getTier(
         bytes calldata
     ) external view returns (DataTypes.Tier memory) {
-        if (quorum == 0 && proposalThreshold == 0 && timeLockDuration == 0) {
-            revert("static tier has not been initialized");
-        }
-        return
-            DataTypes.Tier({
-                quorum: quorum,
-                proposalThreshold: proposalThreshold,
-                timeLockDuration: timeLockDuration
-            });
+        return tier;
     }
 }

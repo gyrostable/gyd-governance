@@ -2,40 +2,32 @@ import pytest
 from eth_utils import function_signature_to_4byte_selector
 from eth_abi import encode
 from brownie import reverts, SetVaultFeesStrategy
+from tests.conftest import Tier
 
 
 @pytest.fixture
 def set_vault_fees_strategy(admin):
-    return admin.deploy(SetVaultFeesStrategy, admin)
-
-
-def test_reverts_if_not_initialized_correctly(set_vault_fees_strategy, admin):
-    cd = encode(
-        ["bytes4", "address", "uint256", "uint256"],
-        [
-            function_signature_to_4byte_selector(
-                "setVaultFees(address,uint256,uint256"
-            ),
-            admin.address,
-            0,
-            0,
-        ],
+    underTier = Tier(
+        quorum=2e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
     )
-    with reverts("tier strategy not initialized"):
-        set_vault_fees_strategy.getTier(cd)
+    overTier = Tier(
+        quorum=5e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
+    )
+    return admin.deploy(SetVaultFeesStrategy, admin, 3e18, underTier, overTier)
 
 
 def test_returns_over_tier_if_over(set_vault_fees_strategy, admin):
-    over_params = (500, 20, 20)
-    set_vault_fees_strategy.setParameters(3, (100, 20, 20), over_params)
+    over_params = Tier(
+        quorum=5e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
+    )
     cd = encode(
         ["bytes4", "address", "uint256", "uint256"],
         [
             function_signature_to_4byte_selector(
-                "setVaultFees(address,uint256,uint256"
+                "setVaultFees(address,uint256,uint256)"
             ),
             admin.address,
-            5,
+            int(5e18),
             0,
         ],
     )
@@ -44,16 +36,17 @@ def test_returns_over_tier_if_over(set_vault_fees_strategy, admin):
 
 
 def test_returns_under_tier_if_under(set_vault_fees_strategy, admin):
-    under_params = (100, 20, 20)
-    set_vault_fees_strategy.setParameters(3, under_params, (500, 20, 20))
+    under_params = Tier(
+        quorum=2e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
+    )
     cd = encode(
         ["bytes4", "address", "uint256", "uint256"],
         [
             function_signature_to_4byte_selector(
-                "setVaultFees(address,uint256,uint256"
+                "setVaultFees(address,uint256,uint256)"
             ),
             admin.address,
-            2,
+            int(2e18),
             0,
         ],
     )
