@@ -8,13 +8,9 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
     address internal immutable underlyingAddress;
 
-    constructor(
-        address _owner,
-        address _underlyingAddress,
-        uint256 _underlyingSupply
-    ) NFTVault(_owner) {
+    constructor(address _owner, address _underlyingAddress) NFTVault(_owner) {
         underlyingAddress = _underlyingAddress;
-        sumVotingPowers = _underlyingSupply;
+        sumVotingPowers = IERC721Enumerable(_underlyingAddress).totalSupply();
     }
 
     modifier onlyUnderlying() {

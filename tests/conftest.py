@@ -93,7 +93,6 @@ def nft_vault(recruit_nft, admin):
         RecruitNFTVault,
         admin,
         recruit_nft,
-        recruit_nft.totalSupply(),
     )
     recruit_nft.setGovernanceVault(nft_vault)
 
