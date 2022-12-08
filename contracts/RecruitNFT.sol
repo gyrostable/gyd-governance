@@ -41,7 +41,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner {
 
     function mint(address to, uint256 tokenId) public onlyAllowlistedOrOwner {
         _mint(to, tokenId);
-        vault.updateBaseVotingPower(to, 1);
+        vault.updateBaseVotingPower(to, 1e18);
     }
 
     function _beforeTokenTransfer(

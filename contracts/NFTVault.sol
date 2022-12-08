@@ -67,14 +67,14 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
         address[] calldata users,
         uint128 _multiplier
     ) external onlyOwner {
-        require(_multiplier >= 1, "multiplier cannot be less than 1");
-        require(_multiplier <= 20, "multiplier cannot be more than 20");
+        require(_multiplier >= 1e18, "multiplier cannot be less than 1");
+        require(_multiplier <= 20e18, "multiplier cannot be more than 20");
         for (uint i = 0; i < users.length; i++) {
             DataTypes.BaseVotingPower storage oldVotingPower = ownVotingPowers[
                 users[i]
             ];
             require(
-                oldVotingPower.base >= 1,
+                oldVotingPower.base >= 1e18,
                 "all users must have at least 1 NFT"
             );
             require(

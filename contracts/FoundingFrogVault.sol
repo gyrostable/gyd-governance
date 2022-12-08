@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import "../contracts/NFTVault.sol";
 import "../libraries/DataTypes.sol";
+import "../libraries/ScaledMath.sol";
 import "../libraries/BaseVotingPower.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -43,8 +44,8 @@ contract FoundingFrogVault is NFTVault, EIP712 {
 
         DataTypes.BaseVotingPower storage ovp = ownVotingPowers[msg.sender];
         ovp.initialize();
-        ovp.base += 1;
-        sumVotingPowers += ovp.multiplier - 1;
+        ovp.base += uint128(ScaledMath.ONE);
+        sumVotingPowers += (ovp.multiplier - ScaledMath.ONE);
     }
 
     function _isProofValid(

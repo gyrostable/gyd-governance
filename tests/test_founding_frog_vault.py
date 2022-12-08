@@ -8,7 +8,7 @@ def test_user_owns_no_nft(admin, accounts, frog_vault):
     assert frog_vault.getRawVotingPower(admin) == 0
     # No NFTs means the user's voting power can't be updated
     with reverts("all users must have at least 1 NFT"):
-        frog_vault.updateMultiplier([admin], 2)
+        frog_vault.updateMultiplier([admin], 2e18)
 
 
 def test_invalid_proof_claim(admin, accounts, frog_vault):
@@ -23,31 +23,31 @@ def test_invalid_proof_claim(admin, accounts, frog_vault):
 
 def test_valid_proof(admin, accounts, frog_vault):
     frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address, PROOF))
-    assert frog_vault.getRawVotingPower(admin) == 1
-    frog_vault.updateMultiplier([admin], 2)
-    assert frog_vault.getRawVotingPower(admin) == 2
-    assert frog_vault.getTotalRawVotingPower() == 6
+    assert frog_vault.getRawVotingPower(admin) == 1e18
+    frog_vault.updateMultiplier([admin], 2e18)
+    assert frog_vault.getRawVotingPower(admin) == 2e18
+    assert frog_vault.getTotalRawVotingPower() == 6e18
 
 
 def test_claiming_nft_doesnt_increase_supply(admin, accounts, frog_vault):
-    assert frog_vault.getTotalRawVotingPower() == 5
+    assert frog_vault.getTotalRawVotingPower() == 5e18
     frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address, PROOF))
-    assert frog_vault.getTotalRawVotingPower() == 5
+    assert frog_vault.getTotalRawVotingPower() == 5e18
 
-    frog_vault.updateMultiplier([admin], 5)
+    frog_vault.updateMultiplier([admin], 5e18)
     # Supply increases by multiplier - 1 since the base value (1) is included in the
     # supply
-    assert frog_vault.getTotalRawVotingPower() == 9
+    assert frog_vault.getTotalRawVotingPower() == 9e18
 
 
 def test_updates_raw_power(admin, accounts, frog_vault):
     frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, signature(frog_vault.address, PROOF))
-    assert frog_vault.getRawVotingPower(admin) == 1
-    assert frog_vault.getTotalRawVotingPower() == 5
+    assert frog_vault.getRawVotingPower(admin) == 1e18
+    assert frog_vault.getTotalRawVotingPower() == 5e18
 
-    frog_vault.updateMultiplier([admin], 2)
-    assert frog_vault.getRawVotingPower(admin) == 2
-    assert frog_vault.getTotalRawVotingPower() == 6
+    frog_vault.updateMultiplier([admin], 2e18)
+    assert frog_vault.getRawVotingPower(admin) == 2e18
+    assert frog_vault.getTotalRawVotingPower() == 6e18
 
 
 def test_nft_already_claimed(admin, accounts, frog_vault):

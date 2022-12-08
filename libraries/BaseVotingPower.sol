@@ -12,13 +12,13 @@ library BaseVotingPower {
     ) internal pure returns (uint256) {
         return
             uint256(p.base).mulDown(
-                uint256(p.multiplier == 0 ? 1 : p.multiplier)
+                uint256(p.multiplier == 0 ? ScaledMath.ONE : p.multiplier)
             );
     }
 
     function initialize(DataTypes.BaseVotingPower storage p) internal {
         if (p.multiplier == 0) {
-            p.multiplier = 1;
+            p.multiplier = uint128(ScaledMath.ONE);
         }
     }
 }
