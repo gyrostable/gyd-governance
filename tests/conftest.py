@@ -1,18 +1,23 @@
 import pytest
 from brownie import (
     ERC721Mintable,
+    ERC20Mintable,
     RecruitNFTVault,
     RecruitNFT,
+    StaticTierStrategy,
     FoundingFrogVault,
     accounts,
     chain,
 )
+from typing import NamedTuple
 from eth_account._utils.signing import sign_message_hash
 import eth_keys
 from hexbytes import HexBytes
 from eth_utils import keccak
 from eth_abi import encode
 from eth_abi.packed import encode_packed
+
+INITIAL_BALANCE = 100
 
 ACCOUNT_KEY = "0x416b8a7d9290502f5661da81f0cf43893e3d19cb9aea3c426cfb36e8186e9c09"
 ACCOUNT_ADDRESS = "0x14b0Ed2a7C4cC60DD8F676AE44D0831d3c9b2a9E"
@@ -28,6 +33,13 @@ PROOF_TYPE_HASH = keccak(text="Proof(address owner,bytes32[] elements)")
 DOMAIN_TYPE_HASH = keccak(
     text="EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
 )
+
+
+class Tier(NamedTuple):
+    quorum: int
+    proposal_threshold: int
+    time_lock_duration: int
+    proposal_length: int
 
 
 def signature(verifying_contract, proof):
@@ -127,3 +139,24 @@ def vault(request, nft_vault, frog_vault_with_claimed_nfts):
 def pytest_generate_tests(metafunc):
     if "vault" in metafunc.fixturenames:
         metafunc.parametrize("vault", ["nft_vault", "frog_vault"], indirect=["vault"])
+
+
+@pytest.fixture
+def token(admin):
+    c = admin.deploy(ERC20Mintable)
+    c.mint(admin, INITIAL_BALANCE)
+    return c
+
+
+@pytest.fixture
+def static_tier_strategy(admin):
+    return admin.deploy(
+        StaticTierStrategy,
+        admin,
+        Tier(
+            quorum=1e17,
+            proposal_threshold=2e17,
+            time_lock_duration=10,
+            proposal_length=10,
+        ),
+    )

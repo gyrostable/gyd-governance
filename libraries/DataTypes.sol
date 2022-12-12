@@ -41,8 +41,9 @@ library DataTypes {
     }
 
     struct Tier {
-        uint256 quorum;
-        uint256 proposalThreshold;
-        uint256 timeLockDuration;
+        uint64 quorum;
+        uint64 proposalThreshold;
+        uint32 timeLockDuration;
+        uint32 proposalLength;
     }
 }
