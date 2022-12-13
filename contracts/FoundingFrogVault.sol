@@ -2,10 +2,14 @@
 pragma solidity ^0.8.17;
 
 import "../contracts/NFTVault.sol";
+import "../libraries/DataTypes.sol";
+import "../libraries/ScaledMath.sol";
+import "../libraries/BaseVotingPower.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract FoundingFrogVault is NFTVault, EIP712 {
+    using BaseVotingPower for DataTypes.BaseVotingPower;
     mapping(address => address) private _claimed;
 
     bytes32 private immutable _TYPE_HASH =
@@ -37,7 +41,11 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         require(_isProofValid(owner, proof), "invalid proof");
 
         _claimed[owner] = msg.sender;
-        ownVotingPowers[msg.sender] += 1;
+
+        DataTypes.BaseVotingPower storage ovp = ownVotingPowers[msg.sender];
+        ovp.initialize();
+        ovp.base += uint128(ScaledMath.ONE);
+        sumVotingPowers += (ovp.multiplier - ScaledMath.ONE);
     }
 
     function _isProofValid(

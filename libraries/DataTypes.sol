@@ -46,4 +46,9 @@ library DataTypes {
         uint32 timeLockDuration;
         uint32 proposalLength;
     }
+
+    struct BaseVotingPower {
+        uint128 multiplier;
+        uint128 base;
+    }
 }

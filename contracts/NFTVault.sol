@@ -4,8 +4,11 @@ pragma solidity ^0.8.17;
 import "../interfaces/IVault.sol";
 import "../interfaces/IDelegator.sol";
 import "./access/ImmutableOwner.sol";
+import "../libraries/DataTypes.sol";
+import "../libraries/BaseVotingPower.sol";
 
 abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
+    using BaseVotingPower for DataTypes.BaseVotingPower;
     // Stores the number of votes delegated by a user and to whom.
     mapping(address => mapping(address => uint256)) internal delegations;
 
@@ -17,17 +20,15 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
 
     // A user's own voting power, excluding delegations either to or from the user.
     // This caches voting power and stores voting power mutations.
-    mapping(address => uint256) internal ownVotingPowers;
+    mapping(address => DataTypes.BaseVotingPower) internal ownVotingPowers;
 
-    uint internal sumVotingPowers;
+    uint256 internal sumVotingPowers;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
-    // The user's base voting power, without taking into account
-    // votes delegated from the user to others, and vice versa.
     function delegateVote(address _delegate, uint256 _amount) external {
         // TODO: Delegate fractional amounts
-        uint256 remaining = ownVotingPowers[msg.sender] -
+        uint256 remaining = ownVotingPowers[msg.sender].total() -
             delegatedAmounts[msg.sender];
         require(remaining >= _amount, "insufficient balance to delegate");
 
@@ -53,7 +54,7 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
 
     function getRawVotingPower(address user) external view returns (uint256) {
         return
-            ownVotingPowers[user] -
+            ownVotingPowers[user].total() -
             delegatedAmounts[user] +
             userToDelegatedVotes[user];
     }
@@ -62,18 +63,28 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
         return sumVotingPowers;
     }
 
-    function updateRawVotingPower(
+    function updateMultiplier(
         address[] calldata users,
-        uint256 _amount
+        uint128 _multiplier
     ) external onlyOwner {
-        require(_amount >= 1, "voting power cannot be less than 1");
-        require(_amount <= 20, "voting power cannot be more than 20");
+        require(_multiplier >= 1e18, "multiplier cannot be less than 1");
+        require(_multiplier <= 20e18, "multiplier cannot be more than 20");
         for (uint i = 0; i < users.length; i++) {
-            uint256 oldVotingPower = ownVotingPowers[users[i]];
-            require(oldVotingPower >= 1, "all users must have at least 1 NFT");
-            require(oldVotingPower < _amount, "cannot decrease voting power");
-            ownVotingPowers[users[i]] = _amount;
-            sumVotingPowers += (_amount - oldVotingPower);
+            DataTypes.BaseVotingPower storage oldVotingPower = ownVotingPowers[
+                users[i]
+            ];
+            require(
+                oldVotingPower.base >= 1e18,
+                "all users must have at least 1 NFT"
+            );
+            require(
+                oldVotingPower.multiplier < _multiplier,
+                "cannot decrease voting power"
+            );
+
+            uint256 oldTotal = oldVotingPower.total();
+            oldVotingPower.multiplier = _multiplier;
+            sumVotingPowers += (oldVotingPower.total() - oldTotal);
         }
     }
 }

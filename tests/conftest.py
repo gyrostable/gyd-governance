@@ -116,7 +116,7 @@ def nft_vault(recruit_nft, admin):
 
 @pytest.fixture
 def frog_vault(admin):
-    frog_vault = admin.deploy(FoundingFrogVault, admin, 5, ROOT)
+    frog_vault = admin.deploy(FoundingFrogVault, admin, 5e18, ROOT)
     return frog_vault
 
 
