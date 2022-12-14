@@ -51,4 +51,11 @@ library DataTypes {
         uint128 multiplier;
         uint128 base;
     }
+
+    struct EmergencyRecoveryProposal {
+        uint256 vetos;
+        uint64 completesAt;
+        Status status;
+        bytes payload;
+    }
 }
