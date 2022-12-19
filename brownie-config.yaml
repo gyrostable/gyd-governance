@@ -1,4 +1,5 @@
 compiler:
   solc:
     remappings:
+      - "@gnosis.pm=node_modules/@gnosis.pm"
       - "@openzeppelin=node_modules/@openzeppelin"
