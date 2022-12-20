@@ -60,7 +60,9 @@ contract GovernanceManager {
             votingEndsAt: votingEndsAt,
             executableAt: executableAt,
             status: DataTypes.Status.Active,
-            action: action
+            action: action,
+            quorum: tier.quorum,
+            voteThreshold: tier.voteThreshold
         });
         proposalsCount = proposal.id + 1;
         _activeProposals.add(bytes32(bytes3(proposal.id)));
@@ -99,11 +101,10 @@ contract GovernanceManager {
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
 
         // First, zero out the effect of any vote already cast by the voter.
-        currentTotals.combined -= existingVote.votingPower;
         if (existingVote.ballot == DataTypes.Ballot.FOR) {
-            currentTotals._for -= existingVote.votingPower;
+            currentTotals._for -= uint128(existingVote.votingPower);
         } else if (existingVote.ballot == DataTypes.Ballot.AGAINST) {
-            currentTotals.against -= existingVote.votingPower;
+            currentTotals.against -= uint128(existingVote.votingPower);
         }
 
         // Then update the record of this user's vote to the latest ballot and voting power
@@ -111,11 +112,10 @@ contract GovernanceManager {
         existingVote.votingPower = vp;
 
         // And, finally update running total
-        currentTotals.combined += existingVote.votingPower;
         if (ballot == DataTypes.Ballot.FOR) {
-            currentTotals._for += existingVote.votingPower;
+            currentTotals._for += uint128(existingVote.votingPower);
         } else if (ballot == DataTypes.Ballot.AGAINST) {
-            currentTotals.against += existingVote.votingPower;
+            currentTotals.against += uint128(existingVote.votingPower);
         }
 
         emit VoteCast(proposalId, msg.sender, ballot, vp, currentTotals);
@@ -142,15 +142,12 @@ contract GovernanceManager {
             "voting is ongoing for this proposal"
         );
 
-        DataTypes.Tier memory tier = tierer.getTier(
-            proposal.action.target,
-            proposal.action.data
-        );
         DataTypes.VoteTotals memory currentTotals = _totals[proposalId];
 
         uint256 tvp = votingPowerAggregator.getTotalVotingPower();
 
-        if (currentTotals.combined.divDown(tvp) < tier.quorum) {
+        uint256 combined = currentTotals._for + currentTotals.against;
+        if (combined.divDown(tvp) < proposal.quorum) {
             proposal.status = DataTypes.Status.Rejected;
             _activeProposals.remove(bytes32(bytes3(proposalId)));
             emit ProposalTallied(
@@ -161,9 +158,9 @@ contract GovernanceManager {
             return;
         }
 
-        uint256 result = currentTotals._for.divDown(tvp);
+        uint256 result = uint256(currentTotals._for).divDown(tvp);
         DataTypes.ProposalOutcome outcome = DataTypes.ProposalOutcome.UNDEFINED;
-        if (result > tier.proposalThreshold) {
+        if (result > proposal.voteThreshold) {
             proposal.status = DataTypes.Status.Queued;
             outcome = DataTypes.ProposalOutcome.SUCCESSFUL;
             _timelockedProposals.add(bytes32(bytes3(proposalId)));
@@ -191,10 +188,12 @@ contract GovernanceManager {
 
         DataTypes.ProposalAction memory action = proposal.action;
         (bool success, ) = action.target.call(action.data);
-        emit ProposalExecuted(proposalId, success);
         if (success) {
             proposal.status = DataTypes.Status.Executed;
             _timelockedProposals.remove(bytes32(bytes3(proposalId)));
+            emit ProposalExecuted(proposalId, success);
+        } else {
+            revert("proposal execution failed");
         }
     }
 

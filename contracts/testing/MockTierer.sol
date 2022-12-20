@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "../../interfaces/ITierer.sol";
+import "../../libraries/DataTypes.sol";
 
 contract MockTierer is ITierer {
     DataTypes.Tier private tier;

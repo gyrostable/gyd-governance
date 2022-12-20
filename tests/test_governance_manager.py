@@ -21,7 +21,6 @@ class ProposalAction(NamedTuple):
 class VoteTotals(NamedTuple):
     for_: int
     against: int
-    combined: int
 
 
 def test_create_proposal(governance_manager, voting_power_aggregator, admin):
@@ -38,7 +37,7 @@ def test_create_proposal(governance_manager, voting_power_aggregator, admin):
     assert len(aps) == 1
 
     createdProposal = aps[0]
-    assert tx.events["ProposalCreated"]["id"] == createdProposal[0]
+    assert tx.events["ProposalCreated"]["id"] == createdProposal[5]
     assert proposal == createdProposal[-1]
 
 
@@ -105,7 +104,7 @@ def test_vote(governance_manager, voting_power_aggregator, admin):
     )
     tx = governance_manager.createProposal(proposal)
     tx = governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
-    assert tx.events["VoteCast"]["voteTotals"] == (0, 5e18, 5e18)
+    assert tx.events["VoteCast"]["voteTotals"] == (0, 5e18)
 
 
 def test_vote_doesnt_double_count_if_vote_is_changed(
@@ -122,14 +121,10 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
 
-    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(
-        for_=0, against=5e18, combined=5e18
-    )
+    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(for_=0, against=5e18)
 
     tx = governance_manager.vote(propId, FOR_BALLOT)
-    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(
-        for_=5e18, against=0, combined=5e18
-    )
+    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(for_=5e18, against=0)
 
 
 def test_tally(governance_manager, raising_token, voting_power_aggregator, admin):
@@ -160,12 +155,12 @@ def test_tally(governance_manager, raising_token, voting_power_aggregator, admin
     chain.sleep(TIMELOCKED_DURATION + 1)
     chain.mine()
 
-    tx = governance_manager.executeProposal(propId)
-    # success == True just means the the call didn't raise
-    # an exception, not that it actually did anything,
-    # so to test this the `raising_token` raises on calls to
-    # totalSupply()
-    assert not tx.events["ProposalExecuted"]["success"]
+    with reverts("proposal execution failed"):
+        # success == True just means the the call didn't raise
+        # an exception, not that it actually did anything,
+        # so to test this the `raising_token` raises on calls to
+        # totalSupply()
+        tx = governance_manager.executeProposal(propId)
 
 
 def test_tally_vote_doesnt_succeed(

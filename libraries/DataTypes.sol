@@ -15,11 +15,13 @@ library DataTypes {
     }
 
     struct Proposal {
-        uint24 id;
-        address proposer;
         uint64 createdAt;
         uint64 executableAt;
         uint64 votingEndsAt;
+        uint64 voteThreshold;
+        uint64 quorum;
+        uint24 id;
+        address proposer;
         Status status;
         ProposalAction action;
     }
@@ -40,6 +42,7 @@ library DataTypes {
     struct Tier {
         uint64 quorum;
         uint64 proposalThreshold;
+        uint64 voteThreshold;
         uint32 timeLockDuration;
         uint32 proposalLength;
     }
@@ -68,9 +71,8 @@ library DataTypes {
     }
 
     struct VoteTotals {
-        uint256 _for;
-        uint256 against;
-        uint256 combined;
+        uint128 _for;
+        uint128 against;
     }
 
     enum ProposalOutcome {
