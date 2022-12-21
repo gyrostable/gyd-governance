@@ -8,17 +8,29 @@ from tests.conftest import Tier
 @pytest.fixture
 def set_vault_fees_strategy(admin):
     underTier = Tier(
-        quorum=2e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
+        quorum=2e17,
+        vote_threshold=2e17,
+        proposal_threshold=2e17,
+        time_lock_duration=20,
+        proposal_length=20,
     )
     overTier = Tier(
-        quorum=5e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
+        quorum=5e17,
+        vote_threshold=2e17,
+        proposal_threshold=2e17,
+        time_lock_duration=20,
+        proposal_length=20,
     )
     return admin.deploy(SetVaultFeesStrategy, admin, 3e18, underTier, overTier)
 
 
 def test_returns_over_tier_if_over(set_vault_fees_strategy, admin):
     over_params = Tier(
-        quorum=5e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
+        quorum=5e17,
+        vote_threshold=2e17,
+        proposal_threshold=2e17,
+        time_lock_duration=20,
+        proposal_length=20,
     )
     cd = encode(
         ["bytes4", "address", "uint256", "uint256"],
@@ -37,7 +49,11 @@ def test_returns_over_tier_if_over(set_vault_fees_strategy, admin):
 
 def test_returns_under_tier_if_under(set_vault_fees_strategy, admin):
     under_params = Tier(
-        quorum=2e17, proposal_threshold=2e17, time_lock_duration=20, proposal_length=20
+        quorum=2e17,
+        vote_threshold=2e17,
+        proposal_threshold=2e17,
+        time_lock_duration=20,
+        proposal_length=20,
     )
     cd = encode(
         ["bytes4", "address", "uint256", "uint256"],

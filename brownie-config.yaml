@@ -10,12 +10,3 @@ compiler:
 
 dependencies:
   - OpenZeppelin/openzeppelin-contracts@4.8.0
-
-networks:
-  development:
-    cmd_settings:
-      evm_version: london
-    priority_fee: 2 gwei
-  mainnet-fork:
-    cmd_settings:
-      evm_version: london

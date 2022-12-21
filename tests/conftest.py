@@ -51,6 +51,7 @@ DOMAIN_TYPE_HASH = keccak(
 class Tier(NamedTuple):
     quorum: int
     proposal_threshold: int
+    vote_threshold: int
     time_lock_duration: int
     proposal_length: int
 
@@ -190,6 +191,7 @@ def static_tier_strategy(admin):
         Tier(
             quorum=1e17,
             proposal_threshold=2e17,
+            vote_threshold=2e17,
             time_lock_duration=10,
             proposal_length=10,
         ),
