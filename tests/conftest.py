@@ -16,6 +16,7 @@ from hexbytes import HexBytes
 from eth_utils import keccak
 from eth_abi import encode
 from eth_abi.packed import encode_packed
+from eip712.messages import EIP712Message
 
 INITIAL_BALANCE = 100
 
@@ -42,7 +43,7 @@ class Tier(NamedTuple):
     proposal_length: int
 
 
-def signature(verifying_contract, proof):
+def old_signature(verifying_contract, proof):
     # (cedric): DRAGON AHEAD!
     # I tried multiple different libraries to encode a struct in an EIP712-compliant way,
     # but all had issues which meant I couldn't generate a valid signature:
@@ -80,6 +81,23 @@ def signature(verifying_contract, proof):
             ["bytes", "bytes32", "bytes32"], [b"\x19\x01", domainStructHash, structHash]
         )
     )
+    (v, r, s, signature) = sign_message_hash(pk, signable_message)
+    return signature
+
+def signature(verifying_contract, proof):
+    class Message(EIP712Message):
+        _name_ : "string"
+        _version_: "string"
+        hash_: "bytes32"
+        account: "address"
+        proof: "bytes32[]"
+
+    proofToBytes = [bytearray.fromhex(p[2:]) for p in proof]  # strip 0x prefix
+    msg = Message(_name_="FoundingFrogVault", _version_="1", hash_=PROOF_TYPE_HASH,
+                  account=ACCOUNT_ADDRESS, proof=proofToBytes)
+    local = accounts.add(private_key=ACCOUNT_KEY)
+    local.sign_message(msg)
+    breakpoint()
     (v, r, s, signature) = sign_message_hash(pk, signable_message)
     return signature
 
