@@ -30,7 +30,7 @@ PROOF = [
     "0x007cf7a9076751d7e058320fdf31dacf13a351f5dc08d8bc81ab21ab25d41c64",
 ]
 
-PROOF_TYPE_HASH = keccak(text="Proof(address owner,bytes32[] elements)")
+PROOF_TYPE_HASH = keccak(text="Proof(address account,bytes32[] proof)")
 DOMAIN_TYPE_HASH = keccak(
     text="EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
 )
@@ -43,63 +43,29 @@ class Tier(NamedTuple):
     proposal_length: int
 
 
-def old_signature(verifying_contract, proof):
-    # (cedric): DRAGON AHEAD!
-    # I tried multiple different libraries to encode a struct in an EIP712-compliant way,
-    # but all had issues which meant I couldn't generate a valid signature:
-    # - `eip712` (used by Brownie) didn't support the v4 standard which allows array
-    # attributes in the data struct.
-    # - `py-eip712-structs` failed to generate the correct structHash.
-    # Therefore, I've encoded it manually below, resulting in much nastiness.
-
-    # This coercion from hex string to bytes is required. Without it the subsequent call
-    # to `encode` raises.
-    proofToBytes = [bytearray.fromhex(p[2:]) for p in proof]  # strip 0x prefix
-    structHash = keccak(
-        encode(
-            ["bytes32", "address", "bytes32[]"],
-            [PROOF_TYPE_HASH, ACCOUNT_ADDRESS, proofToBytes],
-        )
-    )
-    domainTypeHash = keccak(DOMAIN_TYPE_HASH)
-    domainStructHash = keccak(
-        encode(
-            *zip(
-                ("bytes32", DOMAIN_TYPE_HASH),
-                # Strings are encoded as keccak hashes in the standard.
-                ("bytes32", keccak(text="FoundingFrogVault")),
-                # Strings are encoded as keccak hashes in the standard.
-                ("bytes32", keccak(text="1")),
-                ("uint256", chain.id),
-                ("address", verifying_contract),
-            )
-        )
-    )
-    pk = eth_keys.keys.PrivateKey(HexBytes(ACCOUNT_KEY))
-    signable_message = keccak(
-        encode_packed(
-            ["bytes", "bytes32", "bytes32"], [b"\x19\x01", domainStructHash, structHash]
-        )
-    )
-    (v, r, s, signature) = sign_message_hash(pk, signable_message)
-    return signature
-
 def signature(verifying_contract, proof):
-    class Message(EIP712Message):
-        _name_ : "string"
+    class Proof(EIP712Message):
+        # domain
+        _name_: "string"
         _version_: "string"
-        hash_: "bytes32"
+        _chainId_: "uint256"
+        _verifyingContract_: "address"
+
         account: "address"
         proof: "bytes32[]"
 
     proofToBytes = [bytearray.fromhex(p[2:]) for p in proof]  # strip 0x prefix
-    msg = Message(_name_="FoundingFrogVault", _version_="1", hash_=PROOF_TYPE_HASH,
-                  account=ACCOUNT_ADDRESS, proof=proofToBytes)
+    msg = Proof(
+        _name_="FoundingFrogVault",
+        _version_="1",
+        _chainId_=chain.id,
+        _verifyingContract_=verifying_contract,
+        account=ACCOUNT_ADDRESS,
+        proof=proofToBytes,
+    )
     local = accounts.add(private_key=ACCOUNT_KEY)
-    local.sign_message(msg)
-    breakpoint()
-    (v, r, s, signature) = sign_message_hash(pk, signable_message)
-    return signature
+    sm = local.sign_message(msg)
+    return sm.signature.hex()
 
 
 @pytest.fixture(scope="session")

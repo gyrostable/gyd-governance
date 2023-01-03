@@ -13,7 +13,7 @@ contract FoundingFrogVault is NFTVault, EIP712 {
     mapping(address => address) private _claimed;
 
     bytes32 private immutable _TYPE_HASH =
-        keccak256("Proof(address owner,bytes32[] elements)");
+        keccak256("Proof(address account,bytes32[] proof)");
     bytes32 private merkleRoot;
 
     constructor(
@@ -31,7 +31,7 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         bytes calldata signature
     ) external {
         bytes32 hash = _hashTypedDataV4(
-            keccak256(abi.encode(_TYPE_HASH, owner, proof))
+            keccak256(abi.encode(_TYPE_HASH, owner, _encodeProof(proof)))
         );
         address claimant = ECDSA.recover(hash, signature);
         require(claimant == owner, "invalid signature");
@@ -46,6 +46,14 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         ovp.initialize();
         ovp.base += uint128(ScaledMath.ONE);
         sumVotingPowers += (ovp.multiplier - ScaledMath.ONE);
+    }
+
+    function _encodeProof(bytes32[] memory proof) internal returns (bytes32) {
+        bytes memory proofB;
+        for (uint256 i = 0; i < proof.length; i++) {
+            proofB = bytes.concat(proofB, abi.encode(proof[i]));
+        }
+        return keccak256(proofB);
     }
 
     function _isProofValid(

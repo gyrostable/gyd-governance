@@ -5,9 +5,9 @@ update_deps:
 	pip3 freeze > requirements.txt
 
 install_deps:
-	yarn global add ganache
+	yarn global add ganache@7.6.0
 	yarn install
-	pip3 install -r requirements.txt
+	pip3 install --no-deps -r requirements.txt
 
 setup: install_deps
 	brownie init --force

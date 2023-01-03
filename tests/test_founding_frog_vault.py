@@ -1,6 +1,6 @@
 import pytest
-from .conftest import ACCOUNT_ADDRESS, PROOF, ROOT, signature
-from brownie import reverts
+from .conftest import ACCOUNT_ADDRESS, ACCOUNT_KEY, PROOF, ROOT, signature
+from brownie import reverts, chain
 
 
 def test_user_owns_no_nft(admin, accounts, frog_vault):
