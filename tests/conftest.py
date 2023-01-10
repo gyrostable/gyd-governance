@@ -43,7 +43,7 @@ class Tier(NamedTuple):
     proposal_length: int
 
 
-def signature(verifying_contract, proof):
+def signature(local_account, verifying_contract, proof):
     class Proof(EIP712Message):
         # domain
         _name_: "string"
@@ -60,12 +60,16 @@ def signature(verifying_contract, proof):
         _version_="1",
         _chainId_=chain.id,
         _verifyingContract_=verifying_contract,
-        account=ACCOUNT_ADDRESS,
+        account=local_account.address,
         proof=proofToBytes,
     )
-    local = accounts.add(private_key=ACCOUNT_KEY)
-    sm = local.sign_message(msg)
+    sm = local_account.sign_message(msg)
     return sm.signature.hex()
+
+
+@pytest.fixture()
+def local_account(accounts):
+    return accounts.add(private_key=ACCOUNT_KEY)
 
 
 @pytest.fixture(scope="session")
@@ -105,8 +109,8 @@ def frog_vault(admin):
 
 
 @pytest.fixture
-def frog_vault_with_claimed_nfts(frog_vault):
-    sig = signature(frog_vault.address, PROOF)
+def frog_vault_with_claimed_nfts(local_account, frog_vault):
+    sig = signature(local_account, frog_vault.address, PROOF)
     frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, sig)
     return frog_vault
 
