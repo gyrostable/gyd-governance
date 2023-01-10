@@ -22,11 +22,6 @@ library DataTypes {
         ProposalAction action;
     }
 
-    struct Vault {
-        address vaultAddress;
-        uint64 weight;
-    }
-
     struct PendingWithdrawal {
         uint256 id;
         uint256 withdrawableAt;

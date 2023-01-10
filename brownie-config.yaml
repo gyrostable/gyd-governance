@@ -1,5 +1,21 @@
 compiler:
   solc:
+    version: "0.8.17"
+    optimizer:
+      enabled: true
+      runs: 200
     remappings:
-      - "@gnosis.pm=node_modules/@gnosis.pm"
-      - "@openzeppelin=node_modules/@openzeppelin"
+    - "@gnosis.pm=node_modules/@gnosis.pm"
+    - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.7.3"
+
+dependencies:
+  - OpenZeppelin/openzeppelin-contracts@4.7.3
+
+networks:
+  development:
+    cmd_settings:
+      evm_version: london
+    priority_fee: 2 gwei
+  mainnet-fork:
+    cmd_settings:
+      evm_version: london

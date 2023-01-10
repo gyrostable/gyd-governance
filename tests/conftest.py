@@ -77,6 +77,30 @@ def admin(accounts):
     return accounts[0]
 
 
+@pytest.fixture(scope="session")
+def dummy_dao_addresses():
+    return [
+        "0xa7588b0d49cB5B9e7447aaBe6299F2EaB83Cf55A",
+        "0xF09E651C2E5537Ea2230eb6EaCAEF215f749f590",
+        "0xF317Ec282d4a5f838a34970Fb9D87ACf369D76aA",
+    ]
+
+
+@pytest.fixture(scope="module")
+def friendly_dao_vault(admin, FriendlyDAOVault):
+    return admin.deploy(FriendlyDAOVault, admin)
+
+
+@pytest.fixture(scope="module")
+def voting_power_aggregator(admin, VotingPowerAggregator):
+    return admin.deploy(VotingPowerAggregator, admin)
+
+
+@pytest.fixture(scope="module")
+def governance_manager(admin, GovernanceManager):
+    return admin.deploy(GovernanceManager, admin)
+
+
 @pytest.fixture(autouse=True)
 def isolation_setup(fn_isolation):
     pass
