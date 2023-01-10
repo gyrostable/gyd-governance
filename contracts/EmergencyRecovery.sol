@@ -145,4 +145,14 @@ contract EmergencyRecovery is GovernanceOnly {
     function setSunsetAt(uint64 _sunsetAt) external governanceOnly {
         sunsetAt = _sunsetAt;
     }
+
+    function setVetoThreshold(uint256 _vetoThreshold) external governanceOnly {
+        vetoThreshold = _vetoThreshold;
+    }
+
+    function setTimelockDuration(
+        uint64 _timelockDuration
+    ) external governanceOnly {
+        timelockDuration = _timelockDuration;
+    }
 }
