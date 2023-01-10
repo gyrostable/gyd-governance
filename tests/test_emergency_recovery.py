@@ -36,6 +36,19 @@ def emergency_recovery(admin, mock_proxy, mock_voting_aggregator):
     )
 
 
+@pytest.fixture()
+def emergency_recovery_with_admin_governance(admin, mock_voting_aggregator):
+    return admin.deploy(
+        EmergencyRecovery,
+        admin.address,
+        admin.address,
+        mock_voting_aggregator,
+        chain.time() + SUNSET_DURATION,
+        VETO_THRESHOLD,
+        TIMELOCK_DURATION,
+    )
+
+
 def test_can_carry_out_emergency_upgrade(emergency_recovery, mock_proxy):
     toAddress = accounts[1]
     tx = emergency_recovery.startGovernanceUpgrade(toAddress)
@@ -131,3 +144,18 @@ def test_reverts_if_upgrade_not_started_from_safe(admin, emergency_recovery):
     toAddress = accounts[1]
     with reverts(""):
         emergency_recovery.startGovernanceUpgrade(toAddress, {"from": accounts[-1]})
+
+
+@pytest.mark.parametrize(
+    "getter,setter,_input",
+    [
+        ("sunsetAt", "setSunsetAt", 20 * 60 * 60),
+        ("vetoThreshold", "setVetoThreshold", 5e17),
+        ("timelockDuration", "setTimelockDuration", 2 * 60 * 60),
+    ],
+)
+def test_setters(
+    admin, emergency_recovery_with_admin_governance, getter, setter, _input
+):
+    getattr(emergency_recovery_with_admin_governance, setter)(_input, {"from": admin})
+    assert getattr(emergency_recovery_with_admin_governance, getter)() == _input
