@@ -4,8 +4,6 @@ from brownie import (
     reverts,
     NoSafeManagementByMultisig,
     SafeManagementModule,
-    GnosisSafe,
-    GnosisSafeProxy,
     Contract,
 )
 from eip712.messages import EIP712Message
@@ -19,7 +17,7 @@ HEAD_ADDR = "0x0000000000000000000000000000000000000001"
 
 
 @pytest.fixture()
-def safe(admin):
+def safe(admin, GnosisSafe, GnosisSafeProxy):
     singleton = admin.deploy(GnosisSafe)
     proxy = admin.deploy(GnosisSafeProxy, singleton)
     return Contract.from_abi("GnosisSafe", proxy.address, GnosisSafe.abi)

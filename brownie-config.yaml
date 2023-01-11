@@ -1,5 +1,12 @@
 compiler:
   solc:
+    version: "0.8.17"
+    optimizer:
+      enabled: true
+      runs: 200
     remappings:
-      - "@gnosis.pm=node_modules/@gnosis.pm"
-      - "@openzeppelin=node_modules/@openzeppelin"
+    - "@gnosis.pm=node_modules/@gnosis.pm"
+    - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.8.0"
+
+dependencies:
+  - OpenZeppelin/openzeppelin-contracts@4.8.0

@@ -15,16 +15,15 @@ library DataTypes {
     }
 
     struct Proposal {
+        uint64 createdAt;
+        uint64 executableAt;
+        uint64 votingEndsAt;
+        uint64 voteThreshold;
+        uint64 quorum;
         uint24 id;
         address proposer;
-        uint64 createdAt;
         Status status;
         ProposalAction action;
-    }
-
-    struct Vault {
-        address vaultAddress;
-        uint64 weight;
     }
 
     struct PendingWithdrawal {
@@ -43,6 +42,7 @@ library DataTypes {
     struct Tier {
         uint64 quorum;
         uint64 proposalThreshold;
+        uint64 voteThreshold;
         uint32 timeLockDuration;
         uint32 proposalLength;
     }
@@ -57,5 +57,28 @@ library DataTypes {
         uint64 completesAt;
         Status status;
         bytes payload;
+    }
+
+    enum Ballot {
+        UNDEFINED,
+        FOR,
+        AGAINST
+    }
+
+    struct Vote {
+        Ballot ballot;
+        uint256 votingPower;
+    }
+
+    struct VoteTotals {
+        uint128 _for;
+        uint128 against;
+    }
+
+    enum ProposalOutcome {
+        UNDEFINED,
+        QUORUM_NOT_MET,
+        THRESHOLD_NOT_MET,
+        SUCCESSFUL
     }
 }

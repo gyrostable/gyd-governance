@@ -1,5 +1,4 @@
 import pytest
-from typing import NamedTuple
 from brownie import ActionTierConfig, StaticTierStrategy, reverts
 from eth_utils import keccak, function_signature_to_4byte_selector
 from tests.conftest import Tier
@@ -26,6 +25,7 @@ def test_get_tier(admin, token, tier_config, static_tier_strategy):
     params = Tier(
         quorum=1e17,  # 0.1
         proposal_threshold=2e17,  # 0.2
+        vote_threshold=2e17,  # 0.2
         time_lock_duration=10,  # 10s
         proposal_length=10,  # 10s
     )

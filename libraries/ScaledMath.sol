@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicensed
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
 library ScaledMath {
     uint256 internal constant ONE = 1e18;

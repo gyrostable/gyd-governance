@@ -2,6 +2,7 @@ import pytest
 from brownie import (
     ERC721Mintable,
     ERC20Mintable,
+    RaisingERC20,
     RecruitNFTVault,
     RecruitNFT,
     StaticTierStrategy,
@@ -17,6 +18,17 @@ from eth_utils import keccak
 from eth_abi import encode
 from eth_abi.packed import encode_packed
 from eip712.messages import EIP712Message
+
+UNDEFINED_BALLOT = 0
+FOR_BALLOT = 1
+AGAINST_BALLOT = 2
+
+PROPOSAL_LENGTH_DURATION = 20
+TIMELOCKED_DURATION = 20
+
+QUORUM_NOT_MET_OUTCOME = 1
+THRESHOLD_NOT_MET_OUTCOME = 2
+SUCCESSFUL_OUTCOME = 3
 
 INITIAL_BALANCE = 100
 
@@ -39,6 +51,7 @@ DOMAIN_TYPE_HASH = keccak(
 class Tier(NamedTuple):
     quorum: int
     proposal_threshold: int
+    vote_threshold: int
     time_lock_duration: int
     proposal_length: int
 
@@ -75,6 +88,40 @@ def local_account(accounts):
 @pytest.fixture(scope="session")
 def admin(accounts):
     return accounts[0]
+
+
+@pytest.fixture(scope="session")
+def dummy_dao_addresses():
+    return [
+        "0xa7588b0d49cB5B9e7447aaBe6299F2EaB83Cf55A",
+        "0xF09E651C2E5537Ea2230eb6EaCAEF215f749f590",
+        "0xF317Ec282d4a5f838a34970Fb9D87ACf369D76aA",
+    ]
+
+
+@pytest.fixture(scope="module")
+def friendly_dao_vault(admin, FriendlyDAOVault):
+    return admin.deploy(FriendlyDAOVault, admin)
+
+
+@pytest.fixture(scope="module")
+def voting_power_aggregator(admin, VotingPowerAggregator):
+    return admin.deploy(VotingPowerAggregator, admin)
+
+
+@pytest.fixture(scope="module")
+def mock_tierer(admin, MockTierer):
+    return admin.deploy(MockTierer, (2e17, 1e17, 1e17, 20, 20))
+
+
+@pytest.fixture(scope="module")
+def governance_manager(admin, GovernanceManager, voting_power_aggregator, mock_tierer):
+    return admin.deploy(GovernanceManager, voting_power_aggregator, mock_tierer)
+
+
+@pytest.fixture(scope="module")
+def raising_token(admin):
+    return admin.deploy(RaisingERC20)
 
 
 @pytest.fixture(autouse=True)
@@ -144,6 +191,7 @@ def static_tier_strategy(admin):
         Tier(
             quorum=1e17,
             proposal_threshold=2e17,
+            vote_threshold=2e17,
             time_lock_duration=10,
             proposal_length=10,
         ),
