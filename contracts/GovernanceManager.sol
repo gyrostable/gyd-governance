@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../libraries/DataTypes.sol";
@@ -10,6 +11,7 @@ import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
 
 contract GovernanceManager {
+    using Address for address;
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
@@ -81,9 +83,7 @@ contract GovernanceManager {
 
     function vote(uint24 proposalId, DataTypes.Ballot ballot) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
-        if (proposal.createdAt == uint64(0)) {
-            revert("proposal does not exist");
-        }
+        require(proposal.createdAt != 0, "proposal does not exist");
 
         require(
             proposal.votingEndsAt > uint64(block.timestamp),
@@ -113,9 +113,9 @@ contract GovernanceManager {
 
         // And, finally update running total
         if (ballot == DataTypes.Ballot.FOR) {
-            currentTotals._for += uint128(existingVote.votingPower);
+            currentTotals._for += uint128(vp);
         } else if (ballot == DataTypes.Ballot.AGAINST) {
-            currentTotals.against += uint128(existingVote.votingPower);
+            currentTotals.against += uint128(vp);
         }
 
         emit VoteCast(proposalId, msg.sender, ballot, vp, currentTotals);
@@ -129,13 +129,12 @@ contract GovernanceManager {
 
     function tallyVote(uint24 proposalId) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
-        if (proposal.createdAt == uint64(0)) {
-            revert("proposal does not exist");
-        }
+        require(proposal.createdAt != 0, "proposal does not exist");
 
-        if (!_activeProposals.contains(bytes32(bytes3(proposalId)))) {
-            revert("proposal is not currently active");
-        }
+        require(
+            _activeProposals.contains(bytes32(bytes3(proposalId))),
+            "proposal is not currently active"
+        );
 
         require(
             uint64(block.timestamp) > proposal.votingEndsAt,
@@ -172,7 +171,7 @@ contract GovernanceManager {
         emit ProposalTallied(proposalId, proposal.status, outcome);
     }
 
-    event ProposalExecuted(uint24 proposalId, bool success);
+    event ProposalExecuted(uint24 proposalId);
 
     function executeProposal(uint24 proposalId) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
@@ -187,14 +186,10 @@ contract GovernanceManager {
         );
 
         DataTypes.ProposalAction memory action = proposal.action;
-        (bool success, ) = action.target.call(action.data);
-        if (success) {
-            proposal.status = DataTypes.Status.Executed;
-            _timelockedProposals.remove(bytes32(bytes3(proposalId)));
-            emit ProposalExecuted(proposalId, success);
-        } else {
-            revert("proposal execution failed");
-        }
+        action.target.functionCall(action.data, "proposal execution failed");
+        proposal.status = DataTypes.Status.Executed;
+        _timelockedProposals.remove(bytes32(bytes3(proposalId)));
+        emit ProposalExecuted(proposalId);
     }
 
     function listActiveProposals()
@@ -202,14 +197,7 @@ contract GovernanceManager {
         view
         returns (DataTypes.Proposal[] memory)
     {
-        uint256 length = _activeProposals.length();
-        DataTypes.Proposal[] memory proposals = new DataTypes.Proposal[](
-            length
-        );
-        for (uint256 i = 0; i < length; i++) {
-            proposals[i] = _proposals[uint24(bytes3(_activeProposals.at(i)))];
-        }
-        return proposals;
+        return _listProposals(_activeProposals.values());
     }
 
     function listTimelockedProposals()
@@ -217,14 +205,16 @@ contract GovernanceManager {
         view
         returns (DataTypes.Proposal[] memory)
     {
-        uint256 length = _timelockedProposals.length();
-        DataTypes.Proposal[] memory proposals = new DataTypes.Proposal[](
-            length
-        );
-        for (uint256 i = 0; i < length; i++) {
-            proposals[i] = _proposals[
-                uint24(bytes3(_timelockedProposals.at(i)))
-            ];
+        return _listProposals(_timelockedProposals.values());
+    }
+
+    function _listProposals(
+        bytes32[] memory ids
+    ) internal view returns (DataTypes.Proposal[] memory) {
+        uint256 len = ids.length;
+        DataTypes.Proposal[] memory proposals = new DataTypes.Proposal[](len);
+        for (uint256 i = 0; i < len; i++) {
+            proposals[i] = _proposals[uint24(bytes3(ids[i]))];
         }
         return proposals;
     }

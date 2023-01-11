@@ -155,7 +155,7 @@ def test_tally(governance_manager, raising_token, voting_power_aggregator, admin
     chain.sleep(TIMELOCKED_DURATION + 1)
     chain.mine()
 
-    with reverts("proposal execution failed"):
+    with reverts("function raised exception"):
         # success == True just means the the call didn't raise
         # an exception, not that it actually did anything,
         # so to test this the `raising_token` raises on calls to
