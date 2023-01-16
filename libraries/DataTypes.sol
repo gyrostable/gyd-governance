@@ -62,7 +62,8 @@ library DataTypes {
     enum Ballot {
         UNDEFINED,
         FOR,
-        AGAINST
+        AGAINST,
+        ABSTAIN
     }
 
     struct Vote {
@@ -73,6 +74,7 @@ library DataTypes {
     struct VoteTotals {
         uint128 _for;
         uint128 against;
+        uint128 abstentions;
     }
 
     enum ProposalOutcome {
