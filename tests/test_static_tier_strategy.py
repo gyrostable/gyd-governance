@@ -10,6 +10,7 @@ def test_returns_params_if_initialized(static_tier_strategy):
         proposal_threshold=2e17,
         time_lock_duration=10,
         proposal_length=10,
+        action_level=10,
     )
     selector = function_signature_to_4byte_selector("totalSupply()")
     got_params = static_tier_strategy.getTier(selector)

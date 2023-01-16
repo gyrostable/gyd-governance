@@ -9,6 +9,8 @@ import "../libraries/ScaledMath.sol";
 
 import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
+import "../interfaces/ITierStrategy.sol";
+import "../interfaces/IWrappedERC20WithEMA.sol";
 
 contract GovernanceManager {
     using Address for address;
@@ -16,6 +18,10 @@ contract GovernanceManager {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     uint24 public proposalsCount;
+    uint8 internal limitUpgradeabilityActionLevelThreshold;
+    uint256 internal limitUpgradeabilityEMAThreshold;
+    ITierStrategy internal limitUpgradeabilityTierStrategy;
+    IWrappedERC20WithEMA internal wGYD;
 
     EnumerableSet.Bytes32Set internal _activeProposals;
     EnumerableSet.Bytes32Set internal _timelockedProposals;
@@ -29,10 +35,18 @@ contract GovernanceManager {
 
     constructor(
         IVotingPowerAggregator _votingPowerAggregator,
-        ITierer _tierer
+        ITierer _tierer,
+        ITierStrategy _limitUpgradeabilityTierStrategy,
+        uint256 _limitUpgradeabilityEMAThreshold,
+        uint8 _limitUpgradeabilityActionLevelThreshold,
+        IWrappedERC20WithEMA _wGYD
     ) {
         votingPowerAggregator = _votingPowerAggregator;
         tierer = _tierer;
+        limitUpgradeabilityTierStrategy = _limitUpgradeabilityTierStrategy;
+        limitUpgradeabilityEMAThreshold = _limitUpgradeabilityEMAThreshold;
+        limitUpgradeabilityActionLevelThreshold = _limitUpgradeabilityActionLevelThreshold;
+        wGYD = _wGYD;
     }
 
     event ProposalCreated(
@@ -43,6 +57,15 @@ contract GovernanceManager {
 
     function createProposal(DataTypes.ProposalAction calldata action) external {
         DataTypes.Tier memory tier = tierer.getTier(action.target, action.data);
+        // If a sufficiently large amount of GYD is wrapped, this signifies that holders
+        // are happy with the system and are against further high-level upgrades.
+        // As a result, we should apply a higher tier if the proposed action has big impacts.
+        if (
+            wGYD.wrappedPctEMA() > limitUpgradeabilityEMAThreshold &&
+            tier.actionLevel > limitUpgradeabilityActionLevelThreshold
+        ) {
+            tier = limitUpgradeabilityTierStrategy.getTier(action.data);
+        }
 
         uint256 rawPower = votingPowerAggregator.getVotingPower(msg.sender);
         uint256 totalPower = votingPowerAggregator.getTotalVotingPower();

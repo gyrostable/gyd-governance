@@ -45,6 +45,7 @@ library DataTypes {
         uint64 voteThreshold;
         uint32 timeLockDuration;
         uint32 proposalLength;
+        uint8 actionLevel;
     }
 
     struct BaseVotingPower {
