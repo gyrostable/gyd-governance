@@ -13,7 +13,7 @@ contract FoundingFrogVault is NFTVault, EIP712 {
     mapping(address => address) private _claimed;
 
     bytes32 private immutable _TYPE_HASH =
-        keccak256("Proof(address account,bytes32[] proof)");
+        keccak256("Proof(address account,uint128 multiplier,bytes32[] proof)");
     bytes32 private merkleRoot;
 
     constructor(
@@ -27,25 +27,30 @@ contract FoundingFrogVault is NFTVault, EIP712 {
 
     function claimNFT(
         address owner,
+        uint128 multiplier,
         bytes32[] calldata proof,
         bytes calldata signature
     ) external {
+        require(multiplier >= 1e18, "multiplier must be greater than 0");
+
         bytes32 hash = _hashTypedDataV4(
-            keccak256(abi.encode(_TYPE_HASH, owner, _encodeProof(proof)))
+            keccak256(
+                abi.encode(_TYPE_HASH, owner, multiplier, _encodeProof(proof))
+            )
         );
         address claimant = ECDSA.recover(hash, signature);
         require(claimant == owner, "invalid signature");
 
         require(_claimed[owner] == address(0), "NFT already claimed");
 
-        require(_isProofValid(owner, proof), "invalid proof");
+        require(_isProofValid(owner, multiplier, proof), "invalid proof");
 
         _claimed[owner] = msg.sender;
 
         DataTypes.BaseVotingPower storage ovp = ownVotingPowers[msg.sender];
-        ovp.initialize();
+        ovp.multiplier = multiplier;
         ovp.base += uint128(ScaledMath.ONE);
-        sumVotingPowers += (ovp.multiplier - ScaledMath.ONE);
+        sumVotingPowers += (multiplier - ScaledMath.ONE);
     }
 
     function _encodeProof(bytes32[] memory proof) internal returns (bytes32) {
@@ -58,9 +63,10 @@ contract FoundingFrogVault is NFTVault, EIP712 {
 
     function _isProofValid(
         address owner,
+        uint128 multiplier,
         bytes32[] memory proof
     ) internal view returns (bool) {
-        bytes32 node = keccak256(abi.encodePacked(owner));
+        bytes32 node = keccak256(abi.encodePacked(owner, multiplier));
         for (uint256 i = 0; i < proof.length; i++) {
             (bytes32 left, bytes32 right) = (node, proof[i]);
             if (left > right) (left, right) = (right, left);
