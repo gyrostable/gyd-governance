@@ -92,7 +92,7 @@ contract GovernanceManager {
 
         require(
             ballot != DataTypes.Ballot.UNDEFINED,
-            "ballot must be cast FOR or AGAINST"
+            "ballot must be cast FOR, AGAINST, or ABSTAIN"
         );
 
         uint256 vp = votingPowerAggregator.getVotingPower(msg.sender);
@@ -105,6 +105,8 @@ contract GovernanceManager {
             currentTotals._for -= uint128(existingVote.votingPower);
         } else if (existingVote.ballot == DataTypes.Ballot.AGAINST) {
             currentTotals.against -= uint128(existingVote.votingPower);
+        } else if (existingVote.ballot == DataTypes.Ballot.ABSTAIN) {
+            currentTotals.abstentions -= uint128(existingVote.votingPower);
         }
 
         // Then update the record of this user's vote to the latest ballot and voting power
@@ -116,6 +118,8 @@ contract GovernanceManager {
             currentTotals._for += uint128(vp);
         } else if (ballot == DataTypes.Ballot.AGAINST) {
             currentTotals.against += uint128(vp);
+        } else if (ballot == DataTypes.Ballot.ABSTAIN) {
+            currentTotals.abstentions += uint128(vp);
         }
 
         emit VoteCast(proposalId, msg.sender, ballot, vp, currentTotals);
@@ -145,7 +149,9 @@ contract GovernanceManager {
 
         uint256 tvp = votingPowerAggregator.getTotalVotingPower();
 
-        uint256 combined = currentTotals._for + currentTotals.against;
+        uint256 combined = currentTotals._for +
+            currentTotals.against +
+            currentTotals.abstentions;
         if (combined.divDown(tvp) < proposal.quorum) {
             proposal.status = DataTypes.Status.Rejected;
             _activeProposals.remove(bytes32(bytes3(proposalId)));

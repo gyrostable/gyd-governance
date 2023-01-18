@@ -5,6 +5,7 @@ from tests.conftest import (
     FOR_BALLOT,
     AGAINST_BALLOT,
     UNDEFINED_BALLOT,
+    ABSTAIN_BALLOT,
     PROPOSAL_LENGTH_DURATION,
     TIMELOCKED_DURATION,
     QUORUM_NOT_MET_OUTCOME,
@@ -21,6 +22,7 @@ class ProposalAction(NamedTuple):
 class VoteTotals(NamedTuple):
     for_: int
     against: int
+    abstain: int
 
 
 def test_create_proposal(governance_manager, voting_power_aggregator, admin):
@@ -89,8 +91,7 @@ def test_invalid_vote(governance_manager, voting_power_aggregator, admin):
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
     tx = governance_manager.createProposal(proposal)
-
-    with reverts("ballot must be cast FOR or AGAINST"):
+    with reverts("ballot must be cast FOR, AGAINST, or ABSTAIN"):
         governance_manager.vote(tx.events["ProposalCreated"]["id"], UNDEFINED_BALLOT)
 
 
@@ -104,7 +105,7 @@ def test_vote(governance_manager, voting_power_aggregator, admin):
     )
     tx = governance_manager.createProposal(proposal)
     tx = governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
-    assert tx.events["VoteCast"]["voteTotals"] == (0, 5e18)
+    assert tx.events["VoteCast"]["voteTotals"] == (0, 5e18, 0)
 
 
 def test_vote_doesnt_double_count_if_vote_is_changed(
@@ -121,10 +122,14 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
 
-    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(for_=0, against=5e18)
+    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(
+        for_=0, against=5e18, abstain=0
+    )
 
     tx = governance_manager.vote(propId, FOR_BALLOT)
-    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(for_=5e18, against=0)
+    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(
+        for_=5e18, against=0, abstain=0
+    )
 
 
 def test_tally(governance_manager, raising_token, voting_power_aggregator, admin):
@@ -205,6 +210,28 @@ def test_tally_vote_doesnt_meet_quorum(
 
     tx = governance_manager.tallyVote(propId)
     assert tx.events["ProposalTallied"]["outcome"] == QUORUM_NOT_MET_OUTCOME
+
+
+def test_tally_vote_abstentions_contribute_to_quorum(
+    governance_manager, raising_token, voting_power_aggregator, admin
+):
+    mv = admin.deploy(MockVault, 50e18, 100e18)
+    voting_power_aggregator.updateVaults([(mv, 1e18)], {"from": admin})
+
+    proposal = ProposalAction(
+        raising_token,
+        "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
+    )
+    tx = governance_manager.createProposal(proposal)
+    propId = tx.events["ProposalCreated"]["id"]
+    tx = governance_manager.vote(propId, ABSTAIN_BALLOT)
+
+    proposal_duration = PROPOSAL_LENGTH_DURATION + 1
+    chain.sleep(proposal_duration)
+    chain.mine()
+
+    tx = governance_manager.tallyVote(propId)
+    assert tx.events["ProposalTallied"]["outcome"] == THRESHOLD_NOT_MET_OUTCOME
 
 
 def test_tally_inactive_proposal(
