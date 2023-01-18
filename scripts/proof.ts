@@ -9,11 +9,14 @@ const defaultOutFile = path.join(path.dirname(__dirname), "data", "proofs.json")
 
 type Proofs = { root: string, proofs: Map<string,string[]> };
 
+type Element = { owner: string, multiplier: BigInt }
+
+
 function traverseMerkle(
-  accounts: string[],
+  elements: Element[],
   process: ((leaves: string[]) => void) | undefined = undefined,
 ): string {
-  let leaves = accounts.map((a) => utils.solidityKeccak256(["address"], [a]));
+  let leaves = elements.map((a) => utils.solidityKeccak256(["address", "uint128"], [a.owner, a.multiplier]));
   while (leaves.length > 1) {
     if (leaves.length % 2 === 1) {
       leaves.push(utils.solidityKeccak256([], []));
@@ -31,12 +34,12 @@ function traverseMerkle(
   return leaves[0];
 }
 
-function generateRoot(accounts: string[]): string {
-  return traverseMerkle(accounts);
+function generateRoot(elements: Element[]): string {
+  return traverseMerkle(elements);
 }
 
-function generateProof(account: string, accounts: string[]): string[] {
-  const leafIndex = accounts.findIndex((a) => a === account);
+function generateProof(line: Element, lines: Element[]): string[] {
+  const leafIndex = lines.findIndex((l) => l.owner === line.owner);
   if (leafIndex === -1) {
     throw new Error("Account not found");
   }
@@ -45,36 +48,42 @@ function generateProof(account: string, accounts: string[]): string[] {
 
   const process = (leaves: string[]) => {
     const delta = nodeIndex % 2 === 0 ? 1 : -1;
-    hashes.push(leaves[nodeIndex + delta]);
+    const hash = leaves[nodeIndex+delta]
+    hashes.push(hash);
     nodeIndex = Math.floor(nodeIndex / 2);
   };
 
-  traverseMerkle(accounts, process);
+  traverseMerkle(lines, process);
 
   return hashes;
 }
 
 async function generateProofs(inFile: string = defaultInFile, outFile: string = defaultOutFile): Promise<void> {
   const ownerData = await readFile(inFile, "utf-8");
-  const owners = ownerData.trim().split("\n");
+  const lines = ownerData.trim().split("\n")
+  const parse = (line: string) => {
+   const parsed = line.split(",");
+   return { owner: parsed[0], multiplier: BigInt(parseInt(parsed[1])) };
+  }
+  const data = lines.map(parse);
 
-  const root = generateRoot(owners);
+  const root = generateRoot(data);
   const proofs = new Map<string,string[]>();
-  for (const owner of owners) {
-    const proof = generateProof(owner, owners);
-    let result = validateProof(owner, proof, root);
+  for (const datum of data) {
+    const proof = generateProof(datum, data);
+    let result = validateProof(datum.owner, datum.multiplier, proof, root);
     if (!result) {
 	throw "invalid proof"
     }
-    proofs[owner] = proof;
+    proofs[datum.owner] = proof;
   }
 
   const out = await open(outFile, 'w');
-  out.writeFile(JSON.stringify({ root: generateRoot(owners), proofs: proofs}));
+  out.writeFile(JSON.stringify({ root: generateRoot(data), proofs: proofs}));
 }
 
-function validateProof(owner: string, proof: string[], root: string): boolean {
-  let node = utils.solidityKeccak256(["address"], [owner]);
+function validateProof(owner: string, multiplier: BigInt, proof: string[], root: string): boolean {
+  let node = utils.solidityKeccak256(["address", "uint128"], [owner, multiplier]);
   for (const proofElement of proof) {
       let [left, right] = [node, proofElement];
       if (left > right) [left, right] = [right, left];

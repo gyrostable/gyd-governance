@@ -35,15 +35,16 @@ INITIAL_BALANCE = 100
 
 ACCOUNT_KEY = "0x416b8a7d9290502f5661da81f0cf43893e3d19cb9aea3c426cfb36e8186e9c09"
 ACCOUNT_ADDRESS = "0x14b0Ed2a7C4cC60DD8F676AE44D0831d3c9b2a9E"
-ROOT = "0x9d072b90eca791964a86c0bb8394ead65d9328add64951e77081df8aeff1dcb0"
+ROOT = "0x3b0fa5d841dd15eeb43742793d303d92fe5f11a7b4011a0aacb4de21eaa4d722"
 PROOF = [
-    "0x6d59f15c5814d9fddd2e69d1f6f61edd0718e337c41ec74011900c0d736a9fec",
-    "0x8e89a990f8382382723aaab6524cce02c64aa67c7e0e6cc0ba139101a1a279ed",
-    "0xcd57deac00b520f01cb649a5846e0c6de860c4aceeb4e18f44f0cc3cfcd2b28b",
-    "0x007cf7a9076751d7e058320fdf31dacf13a351f5dc08d8bc81ab21ab25d41c64",
+    "0x133d5e46fd4b61ce357008e2433932a1f7b102d00b679a3e7b10b0ec10097176",
+    "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+    "0xcc20bdebe234641ec9c9c1c278579ef608f23fb46f1be71cd61a8cb3d6a53735",
 ]
 
-PROOF_TYPE_HASH = keccak(text="Proof(address account,bytes32[] proof)")
+PROOF_TYPE_HASH = keccak(
+    text="Proof(address account,uint128 multiplier,bytes32[] proof)"
+)
 DOMAIN_TYPE_HASH = keccak(
     text="EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
 )
@@ -57,7 +58,7 @@ class Tier(NamedTuple):
     proposal_length: int
 
 
-def signature(local_account, verifying_contract, proof):
+def signature(local_account, multiplier, verifying_contract, proof):
     class Proof(EIP712Message):
         # domain
         _name_: "string"
@@ -66,6 +67,7 @@ def signature(local_account, verifying_contract, proof):
         _verifyingContract_: "address"
 
         account: "address"
+        multiplier: "uint128"
         proof: "bytes32[]"
 
     proofToBytes = [bytearray.fromhex(p[2:]) for p in proof]  # strip 0x prefix
@@ -75,6 +77,10 @@ def signature(local_account, verifying_contract, proof):
         _chainId_=chain.id,
         _verifyingContract_=verifying_contract,
         account=local_account.address,
+        # Coerce to int, since numbers created using e-notation are created as floats, not
+        # ints. This results in eip712 being unable to encode the number to a uint128
+        # type.
+        multiplier=int(multiplier),
         proof=proofToBytes,
     )
     sm = local_account.sign_message(msg)
@@ -158,8 +164,8 @@ def frog_vault(admin):
 
 @pytest.fixture
 def frog_vault_with_claimed_nfts(local_account, frog_vault):
-    sig = signature(local_account, frog_vault.address, PROOF)
-    frog_vault.claimNFT(ACCOUNT_ADDRESS, PROOF, sig)
+    sig = signature(local_account, 1e18, frog_vault.address, PROOF)
+    frog_vault.claimNFT(ACCOUNT_ADDRESS, 1e18, PROOF, sig)
     return frog_vault
 
 
