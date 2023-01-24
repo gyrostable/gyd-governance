@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "../interfaces/ITierStrategy.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 library DataTypes {
     enum Status {
@@ -49,6 +50,11 @@ library DataTypes {
         uint256 targetWeight;
     }
 
+    struct VaultVotingPower {
+        address vaultAddress;
+        uint256 votingPower;
+    }
+
     struct Tier {
         uint64 quorum;
         uint64 proposalThreshold;
@@ -64,10 +70,10 @@ library DataTypes {
     }
 
     struct EmergencyRecoveryProposal {
-        uint256 vetos;
         uint64 completesAt;
         Status status;
         bytes payload;
+        EnumerableMap.AddressToUintMap vetos;
     }
 
     enum Ballot {
@@ -79,13 +85,13 @@ library DataTypes {
 
     struct Vote {
         Ballot ballot;
-        uint256 votingPower;
+        VaultVotingPower[] vaults;
     }
 
     struct VoteTotals {
-        uint128 _for;
-        uint128 against;
-        uint128 abstentions;
+        VaultVotingPower[] _for;
+        VaultVotingPower[] against;
+        VaultVotingPower[] abstentions;
     }
 
     enum ProposalOutcome {

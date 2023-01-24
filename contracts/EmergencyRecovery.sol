@@ -6,8 +6,11 @@ import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+
 contract EmergencyRecovery is GovernanceOnly {
     using ScaledMath for uint256;
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
 
     address public safeAddress;
     uint64 public sunsetAt;
@@ -18,7 +21,8 @@ contract EmergencyRecovery is GovernanceOnly {
 
     mapping(uint32 => DataTypes.EmergencyRecoveryProposal) private proposals;
 
-    mapping(uint32 => mapping(address => uint256)) private vetos;
+    mapping(uint32 => mapping(address => EnumerableMap.AddressToUintMap))
+        private vetos;
 
     uint32 private currentProposalCount;
 
@@ -64,15 +68,13 @@ contract EmergencyRecovery is GovernanceOnly {
         );
 
         uint32 propId = currentProposalCount;
-        DataTypes.EmergencyRecoveryProposal memory prop = DataTypes
-            .EmergencyRecoveryProposal({
-                completesAt: uint64(block.timestamp) + timelockDuration,
-                vetos: 0,
-                status: DataTypes.Status.Queued,
-                payload: payload
-            });
-        proposals[propId] = prop;
+        proposals[propId].completesAt =
+            uint64(block.timestamp) +
+            timelockDuration;
+        proposals[propId].status = DataTypes.Status.Queued;
+        proposals[propId].payload = payload;
         currentProposalCount++;
+
         emit UpgradeProposed(propId, payload);
         return propId;
     }
@@ -101,8 +103,10 @@ contract EmergencyRecovery is GovernanceOnly {
             "proposal must be queued"
         );
 
-        uint256 tvp = votingAggregator.getTotalVotingPower();
-        bool isVetoed = prop.vetos.divDown(tvp) > vetoThreshold;
+        uint256 vetoedPct = votingAggregator.calculateWeightedPowerPct(
+            _toVotingPowers(prop.vetos)
+        );
+        bool isVetoed = vetoedPct > vetoThreshold;
         if (isVetoed) {
             prop.status = DataTypes.Status.Rejected;
             emit UpgradeVetoed(proposalId);
@@ -118,8 +122,8 @@ contract EmergencyRecovery is GovernanceOnly {
 
     event VetoCast(
         uint24 proposalId,
-        uint256 castVetoPower,
-        uint256 totalVetos
+        DataTypes.VaultVotingPower[] castVetoPower,
+        DataTypes.VaultVotingPower[] totalVetos
     );
 
     function veto(uint24 proposalId) external notSunset {
@@ -133,13 +137,47 @@ contract EmergencyRecovery is GovernanceOnly {
         );
 
         // Zero out the effect of previous vetos to avoid double-counting;
-        uint256 currentVetoPower = vetos[proposalId][msg.sender];
-        prop.vetos -= currentVetoPower;
+        EnumerableMap.AddressToUintMap storage currentVetoPower = vetos[
+            proposalId
+        ][msg.sender];
+        for (uint256 i = 0; i < prop.vetos.length(); i++) {
+            (address vault, uint256 vaultVetoPower) = prop.vetos.at(i);
+            (, uint256 votingPower) = currentVetoPower.tryGet(vault);
+            prop.vetos.set(vault, vaultVetoPower - votingPower);
+        }
 
-        uint256 newVetoPower = votingAggregator.getVotingPower(msg.sender);
-        prop.vetos += newVetoPower;
-        vetos[proposalId][msg.sender] = newVetoPower;
-        emit VetoCast(proposalId, newVetoPower, prop.vetos);
+        DataTypes.VaultVotingPower[] memory newVetoPower = votingAggregator
+            .getVotingPower(msg.sender);
+        for (uint256 i = 0; i < newVetoPower.length; i++) {
+            DataTypes.VaultVotingPower memory vault = newVetoPower[i];
+            (, uint256 currentVetoTotal) = prop.vetos.tryGet(
+                vault.vaultAddress
+            );
+            uint256 newVetoTotal = currentVetoTotal + vault.votingPower;
+            prop.vetos.set(vault.vaultAddress, newVetoTotal);
+            vetos[proposalId][msg.sender].set(vault.vaultAddress, newVetoTotal);
+        }
+        emit VetoCast(
+            proposalId,
+            _toVotingPowers(vetos[proposalId][msg.sender]),
+            _toVotingPowers(prop.vetos)
+        );
+    }
+
+    function _toVotingPowers(
+        EnumerableMap.AddressToUintMap storage map
+    ) internal view returns (DataTypes.VaultVotingPower[] memory) {
+        DataTypes.VaultVotingPower[]
+            memory vvps = new DataTypes.VaultVotingPower[](map.length());
+        for (uint256 i = 0; i < map.length(); i++) {
+            (address key, uint256 value) = map.at(i);
+            vvps[i] = DataTypes.VaultVotingPower({
+                vaultAddress: key,
+                votingPower: value
+            });
+        }
+
+        return vvps;
     }
 
     function setSunsetAt(uint64 _sunsetAt) external governanceOnly {
