@@ -234,6 +234,33 @@ def test_tally_vote_abstentions_contribute_to_quorum(
     assert tx.events["ProposalTallied"]["outcome"] == THRESHOLD_NOT_MET_OUTCOME
 
 
+def test_tally_result_determined_by_for_and_against_not_abstentions(
+    governance_manager, raising_token, voting_power_aggregator, admin, accounts
+):
+    mv = admin.deploy(MockVault, 20e18, 100e18)
+    voting_power_aggregator.updateVaults([(mv, 1e18)], {"from": admin})
+
+    proposal = ProposalAction(
+        raising_token,
+        "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
+    )
+    tx = governance_manager.createProposal(proposal)
+    propId = tx.events["ProposalCreated"]["id"]
+
+    # voteThreshold is 1e17, so since each vote has 20 voting power (out of 100 for the
+    # vault), with a weight of 1, this means the total for vaults will be 50%, passing the
+    # threshold.
+    tx = governance_manager.vote(propId, FOR_BALLOT)
+    tx = governance_manager.vote(propId, AGAINST_BALLOT, {"from": accounts[1]})
+
+    proposal_duration = PROPOSAL_LENGTH_DURATION + 1
+    chain.sleep(proposal_duration)
+    chain.mine()
+
+    tx = governance_manager.tallyVote(propId)
+    assert tx.events["ProposalTallied"]["outcome"] == SUCCESSFUL_OUTCOME
+
+
 def test_tally_inactive_proposal(
     governance_manager, raising_token, voting_power_aggregator, admin
 ):

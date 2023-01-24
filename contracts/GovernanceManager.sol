@@ -186,7 +186,16 @@ contract GovernanceManager {
             return;
         }
 
-        uint256 result = uint256(currentTotals._for).divDown(tvp);
+        // Calculate the total of for and against, so we can calculate the
+        // vote percentage.
+        // If the total == 0, this implies that for == 0, so we set `forAndAgainst`
+        // to 1 to prevent a division by zero error when calculating the total.
+        uint256 forAndAgainst = currentTotals._for + currentTotals.against;
+        if (forAndAgainst == 0) {
+            forAndAgainst = 1;
+        }
+
+        uint256 result = uint256(currentTotals._for).divDown(forAndAgainst);
         DataTypes.ProposalOutcome outcome = DataTypes.ProposalOutcome.UNDEFINED;
         if (result > proposal.voteThreshold) {
             proposal.status = DataTypes.Status.Queued;
