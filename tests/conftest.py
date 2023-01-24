@@ -141,9 +141,7 @@ def governance_manager(
         GovernanceManager,
         voting_power_aggregator,
         mock_tierer,
-        upgradeability_tier_strategy,
-        10e16,
-        10,
+        (10, 10e16, upgradeability_tier_strategy),
         wrapped_erc20,
     )
 

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
+import "../interfaces/ITierStrategy.sol";
+
 library DataTypes {
     enum Status {
         Active,
@@ -83,5 +85,11 @@ library DataTypes {
         QUORUM_NOT_MET,
         THRESHOLD_NOT_MET,
         SUCCESSFUL
+    }
+
+    struct LimitUpgradeabilityParameters {
+        uint8 actionLevelThreshold;
+        uint256 emaThreshold;
+        ITierStrategy tierStrategy;
     }
 }
