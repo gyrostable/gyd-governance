@@ -18,10 +18,9 @@ contract GovernanceManager {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     uint24 public proposalsCount;
-    uint8 internal limitUpgradeabilityActionLevelThreshold;
-    uint256 internal limitUpgradeabilityEMAThreshold;
-    ITierStrategy internal limitUpgradeabilityTierStrategy;
     IWrappedERC20WithEMA internal wGYD;
+
+    DataTypes.LimitUpgradeabilityParameters limitUpgradeabilityParams;
 
     EnumerableSet.Bytes32Set internal _activeProposals;
     EnumerableSet.Bytes32Set internal _timelockedProposals;
@@ -36,16 +35,12 @@ contract GovernanceManager {
     constructor(
         IVotingPowerAggregator _votingPowerAggregator,
         ITierer _tierer,
-        ITierStrategy _limitUpgradeabilityTierStrategy,
-        uint256 _limitUpgradeabilityEMAThreshold,
-        uint8 _limitUpgradeabilityActionLevelThreshold,
+        DataTypes.LimitUpgradeabilityParameters memory _params,
         IWrappedERC20WithEMA _wGYD
     ) {
         votingPowerAggregator = _votingPowerAggregator;
         tierer = _tierer;
-        limitUpgradeabilityTierStrategy = _limitUpgradeabilityTierStrategy;
-        limitUpgradeabilityEMAThreshold = _limitUpgradeabilityEMAThreshold;
-        limitUpgradeabilityActionLevelThreshold = _limitUpgradeabilityActionLevelThreshold;
+        limitUpgradeabilityParams = _params;
         wGYD = _wGYD;
     }
 
@@ -61,10 +56,10 @@ contract GovernanceManager {
         // are happy with the system and are against further high-level upgrades.
         // As a result, we should apply a higher tier if the proposed action has big impacts.
         if (
-            wGYD.wrappedPctEMA() > limitUpgradeabilityEMAThreshold &&
-            tier.actionLevel > limitUpgradeabilityActionLevelThreshold
+            wGYD.wrappedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
+            tier.actionLevel > limitUpgradeabilityParams.actionLevelThreshold
         ) {
-            tier = limitUpgradeabilityTierStrategy.getTier(action.data);
+            tier = limitUpgradeabilityParams.tierStrategy.getTier(action.data);
         }
 
         uint256 rawPower = votingPowerAggregator.getVotingPower(msg.sender);
