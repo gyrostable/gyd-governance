@@ -299,3 +299,32 @@ def test_execute_must_be_queued(
 
     with reverts("proposal must be queued and ready to execute"):
         tx = governance_manager.executeProposal(propId)
+
+
+def test_uses_override_tier_if_enough_gyd_is_wrapped(
+    admin, voting_power_aggregator, governance_manager, wrapped_erc20, token
+):
+    mv = admin.deploy(MockVault, 50e18, 100e18)
+    voting_power_aggregator.updateVaults([(mv, 1e18)], {"from": admin})
+
+    proposal = ProposalAction(
+        governance_manager,
+        "0x" + function_signature_to_4byte_selector("upgradeTo()").hex(),
+    )
+    tx = governance_manager.createProposal(proposal)
+
+    prop = governance_manager.listActiveProposals()[-1]
+    assert prop[3] == 1e17  # vote threshold
+
+    token.approve(wrapped_erc20.address, 100, {"from": admin})
+    wrapped_erc20.deposit(100, {"from": admin})
+    chain.mine()
+
+    # trigger another update since the EMA lags by one update.
+    wrapped_erc20.updateEMA({"from": admin})
+    chain.mine()
+
+    tx = governance_manager.createProposal(proposal)
+
+    prop = governance_manager.listActiveProposals()[-1]
+    assert prop[3] == 4e17  # vote threshold

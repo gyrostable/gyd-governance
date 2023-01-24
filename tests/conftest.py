@@ -9,6 +9,7 @@ from brownie import (
     FoundingFrogVault,
     accounts,
     chain,
+    ZERO_ADDRESS,
 )
 from typing import NamedTuple
 from eth_account._utils.signing import sign_message_hash
@@ -56,6 +57,7 @@ class Tier(NamedTuple):
     vote_threshold: int
     time_lock_duration: int
     proposal_length: int
+    action_level: int
 
 
 def signature(local_account, multiplier, verifying_contract, proof):
@@ -118,12 +120,32 @@ def voting_power_aggregator(admin, VotingPowerAggregator):
 
 @pytest.fixture(scope="module")
 def mock_tierer(admin, MockTierer):
-    return admin.deploy(MockTierer, (2e17, 1e17, 1e17, 20, 20))
+    return admin.deploy(MockTierer, (2e17, 1e17, 1e17, 20, 20, 20))
 
 
 @pytest.fixture(scope="module")
-def governance_manager(admin, GovernanceManager, voting_power_aggregator, mock_tierer):
-    return admin.deploy(GovernanceManager, voting_power_aggregator, mock_tierer)
+def wrapped_erc20(admin, WrappedERC20WithEMA, token):
+    return admin.deploy(WrappedERC20WithEMA, admin, token.address, 2e18)
+
+
+@pytest.fixture(scope="module")
+def governance_manager(
+    admin,
+    GovernanceManager,
+    voting_power_aggregator,
+    mock_tierer,
+    upgradeability_tier_strategy,
+    wrapped_erc20,
+):
+    return admin.deploy(
+        GovernanceManager,
+        voting_power_aggregator,
+        mock_tierer,
+        upgradeability_tier_strategy,
+        10e16,
+        10,
+        wrapped_erc20,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -183,14 +205,14 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("vault", ["nft_vault", "frog_vault"], indirect=["vault"])
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def token(admin):
     c = admin.deploy(ERC20Mintable)
     c.mint(admin, INITIAL_BALANCE)
     return c
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def static_tier_strategy(admin):
     return admin.deploy(
         StaticTierStrategy,
@@ -201,5 +223,22 @@ def static_tier_strategy(admin):
             vote_threshold=2e17,
             time_lock_duration=10,
             proposal_length=10,
+            action_level=10,
+        ),
+    )
+
+
+@pytest.fixture(scope="module")
+def upgradeability_tier_strategy(admin):
+    return admin.deploy(
+        StaticTierStrategy,
+        admin,
+        Tier(
+            quorum=2e17,
+            proposal_threshold=2e17,
+            vote_threshold=4e17,
+            time_lock_duration=10,
+            proposal_length=10,
+            action_level=20,
         ),
     )
