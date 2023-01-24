@@ -62,24 +62,11 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
         return (totalSupply() * ScaledMath.ONE) / underlying.totalSupply();
     }
 
-    event Debug(
-        uint256 deltaBlockNb,
-        int256 exponent,
-        uint256 windowWidth,
-        uint256 ema
-    );
-
     function _updateEMA() internal {
         if (previousWrappedPctOfSupply.blockNb < block.number) {
             uint256 deltaBlockNb = (previousWrappedPctOfSupply.blockNb -
                 expMovingAverage.blockNb) * ScaledMath.ONE;
             int256 exponent = -int256(deltaBlockNb.divDown(windowWidth));
-            emit Debug(
-                deltaBlockNb,
-                exponent,
-                windowWidth,
-                expMovingAverage.value
-            );
             expMovingAverage.value += uint256(
                 ((int256(ScaledMath.ONE) - LogExpMath.exp(exponent)) *
                     int256(
