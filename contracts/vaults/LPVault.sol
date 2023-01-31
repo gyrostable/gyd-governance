@@ -105,6 +105,7 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
         if (_delegate != address(0) && _delegate != msg.sender) {
             delegations.undelegateVote(msg.sender, _delegate, _amount);
         }
+        totalSupply -= _amount;
 
         DataTypes.PendingWithdrawal memory withdrawal = DataTypes
             .PendingWithdrawal({
@@ -145,7 +146,6 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
 
         lpToken.transfer(pending.to, pending.amount);
 
-        totalSupply -= pending.amount;
         delete pendingWithdrawals[withdrawalId];
         userPendingWithdrawalIds[pending.to].remove(withdrawalId);
 

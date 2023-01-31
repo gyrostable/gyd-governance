@@ -67,10 +67,12 @@ def test_delegation(admin, accounts, token, lp_vault):
 def test_initiate_withdrawal(admin, token, lp_vault):
     token.approve(lp_vault, 10)
     lp_vault.deposit(10, admin)
+    assert lp_vault.getTotalRawVotingPower() == 10
     assert lp_vault.getRawVotingPower(admin) == 10
 
     lp_vault.initiateWithdrawal(10, admin)
     assert lp_vault.getRawVotingPower(admin) == 0
+    assert lp_vault.getTotalRawVotingPower() == 0
 
     with reverts(revert_msg="not enough to undelegate"):
         lp_vault.initiateWithdrawal(10, admin)
