@@ -158,7 +158,7 @@ def isolation_setup(fn_isolation):
 
 @pytest.fixture
 def recruit_nft(admin):
-    return admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin)
+    return admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin, 10, ROOT)
 
 
 @pytest.fixture
@@ -171,7 +171,7 @@ def nft_vault(recruit_nft, admin):
     recruit_nft.setGovernanceVault(nft_vault)
 
     for i in range(5):
-        recruit_nft.mint(accounts[i], i)
+        recruit_nft.mint(accounts[i], PROOF, i)
 
     return nft_vault
 

@@ -5,43 +5,100 @@ import "../../../interfaces/IVotingPowersUpdater.sol";
 import "./access/ImmutableOwner.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
-contract RecruitNFT is ERC721Enumerable, ImmutableOwner {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
+contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
     constructor(
         string memory _name,
         string memory _ticker,
-        address _owner
-    ) ERC721(_name, _ticker) ImmutableOwner(_owner) {}
+        address _owner,
+        uint16 _maxSupply,
+        bytes32 _merkleRoot
+    ) ERC721(_name, _ticker) ImmutableOwner(_owner) EIP712(_name, "1") {
+        maxSupply = _maxSupply;
+        merkleRoot = _merkleRoot;
+    }
 
     IVotingPowersUpdater private vault;
+    uint16 private tokenId;
+    uint16 private maxSupply;
+    bool private transfersAllowed;
 
-    EnumerableSet.AddressSet private allowlistedAddresses;
+    bytes32 private merkleRoot;
+    bytes32 private immutable _TYPE_HASH =
+        keccak256("Proof(address to, bytes32[] proof)");
 
-    modifier onlyAllowlistedOrOwner() {
-        require(
-            allowlistedAddresses.contains(msg.sender) || msg.sender == owner,
-            "must be allowlisted or owner to call this function"
-        );
-        _;
-    }
-
-    function addToAllowlist(address added) external onlyOwner {
-        allowlistedAddresses.add(added);
-    }
-
-    function removeFromAllowlist(address removed) external onlyOwner {
-        allowlistedAddresses.remove(removed);
-    }
+    mapping(address => bool) private _claimed;
 
     function setGovernanceVault(address _vault) public onlyOwner {
         vault = IVotingPowersUpdater(_vault);
     }
 
-    function mint(address to, uint256 tokenId) public onlyAllowlistedOrOwner {
+    function setTransfersAllowed(bool _transfersAllowed) public onlyOwner {
+        transfersAllowed = _transfersAllowed;
+    }
+
+    function mint(
+        address to,
+        bytes32[] calldata proof,
+        bytes calldata signature
+    ) public {
+        _requireValidProof(to, proof, signature);
+
+        require(!_claimed[to], "user has already claimed NFT");
+
         _mint(to, tokenId);
+        tokenId++;
+
+        _claimed[to] = true;
+
+        require(
+            tokenId < maxSupply,
+            "mint error: supply cap would be exceeded"
+        );
         vault.updateBaseVotingPower(to, 1e18);
+    }
+
+    function _requireValidProof(
+        address to,
+        bytes32[] calldata proof,
+        bytes calldata signature
+    ) public {
+        if (msg.sender == owner) {
+            return;
+        }
+
+        bytes32 hash = _hashTypedDataV4(
+            keccak256(abi.encode(_TYPE_HASH, to, _encodeProof(proof)))
+        );
+        address claimant = ECDSA.recover(hash, signature);
+
+        require(claimant == to, "invalid signature");
+        require(_isProofValid(to, proof), "invalid proof");
+    }
+
+    function _encodeProof(
+        bytes32[] memory proof
+    ) internal pure returns (bytes32) {
+        bytes memory proofB;
+        for (uint256 i = 0; i < proof.length; i++) {
+            proofB = bytes.concat(proofB, abi.encode(proof[i]));
+        }
+        return keccak256(proofB);
+    }
+
+    function _isProofValid(
+        address to,
+        bytes32[] memory proof
+    ) internal view returns (bool) {
+        bytes32 node = keccak256(abi.encodePacked(owner));
+        for (uint256 i = 0; i < proof.length; i++) {
+            (bytes32 left, bytes32 right) = (node, proof[i]);
+            if (left > right) (left, right) = (right, left);
+            node = keccak256(abi.encodePacked(left, right));
+        }
+
+        return node == merkleRoot;
     }
 
     function _beforeTokenTransfer(
@@ -51,9 +108,9 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner {
         uint256 batchSize
     ) internal override {
         // `from == address(0)` in the case of mints.
-        // In all other cases we want to revert to make
-        // the NFT non-transferable.
-        require(from == address(0), "cannot transfer NFT");
+        // We want to revert unless we're minting or transfers have been enabled.
+        // In any case, we don't want to transfer the associated voting power.
+        require(from == address(0) || transfersAllowed, "cannot transfer NFT");
         super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 }
