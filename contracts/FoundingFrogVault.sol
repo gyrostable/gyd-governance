@@ -31,7 +31,10 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         bytes32[] calldata proof,
         bytes calldata signature
     ) external {
-        require(multiplier >= 1e18, "multiplier must be greater than 0");
+        require(
+            multiplier >= 1e18,
+            "multiplier must be greater or equal than 1e18"
+        );
 
         bytes32 hash = _hashTypedDataV4(
             keccak256(
@@ -50,10 +53,11 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         DataTypes.BaseVotingPower storage ovp = ownVotingPowers[msg.sender];
         ovp.multiplier = multiplier;
         ovp.base += uint128(ScaledMath.ONE);
-        sumVotingPowers += (multiplier - ScaledMath.ONE);
     }
 
-    function _encodeProof(bytes32[] memory proof) internal returns (bytes32) {
+    function _encodeProof(
+        bytes32[] memory proof
+    ) internal pure returns (bytes32) {
         bytes memory proofB;
         for (uint256 i = 0; i < proof.length; i++) {
             proofB = bytes.concat(proofB, abi.encode(proof[i]));

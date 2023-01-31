@@ -96,7 +96,7 @@ def test_nft_claimed_with_nonzero_multiplier(admin, local_account, FoundingFrogV
         "0xcc20bdebe234641ec9c9c1c278579ef608f23fb46f1be71cd61a8cb3d6a53735",
     ]
     multiplier = 2e18
-    frog_vault = admin.deploy(FoundingFrogVault, admin, 5e18, root)
+    frog_vault = admin.deploy(FoundingFrogVault, admin, 6e18, root)
     frog_vault.claimNFT(
         ACCOUNT_ADDRESS,
         multiplier,
