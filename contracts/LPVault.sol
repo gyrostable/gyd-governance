@@ -7,10 +7,12 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../interfaces/IVault.sol";
 import "../interfaces/ILockingVault.sol";
 import "../libraries/DataTypes.sol";
+import "../libraries/Delegations.sol";
 import "./access/ImmutableOwner.sol";
 
 contract LPVault is IVault, ILockingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.UintSet;
+    using Delegations for Delegations.Delegations;
 
     IERC20 internal lpToken;
     uint256 internal withdrawalWaitDuration;
@@ -19,9 +21,7 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
     // i.e. shares queued for withdrawal are not accounted here.
     mapping(address => uint256) internal balances;
 
-    // Delegations tracks all of the delegations a user has made. As above,
-    // this excludes shares queued for withdrawal.
-    mapping(address => mapping(address => uint256)) internal delegations;
+    Delegations.Delegations internal delegations;
 
     // Mapping of a user's address to their pending withdrawal ids.
     mapping(address => EnumerableSet.UintSet) internal userPendingWithdrawalIds;
@@ -52,11 +52,32 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
         require(_amount > 0, "cannot deposit zero _amount");
 
         lpToken.transferFrom(msg.sender, address(this), _amount);
-        balances[_delegate] += _amount;
-        delegations[msg.sender][_delegate] += _amount;
+        balances[msg.sender] += _amount;
+        if (_delegate != address(0) && _delegate != msg.sender) {
+            delegations.delegateVote(
+                msg.sender,
+                _delegate,
+                _amount,
+                balances[msg.sender]
+            );
+        }
         totalSupply += _amount;
 
         emit Deposit(msg.sender, _delegate, _amount);
+    }
+
+    function changeDelegate(
+        address _oldDelegate,
+        address _newDelegate,
+        uint256 _amount
+    ) external {
+        delegations.undelegateVote(msg.sender, _oldDelegate, _amount);
+        delegations.delegateVote(
+            msg.sender,
+            _newDelegate,
+            _amount,
+            balances[msg.sender]
+        );
     }
 
     function initiateWithdrawal(
@@ -64,13 +85,12 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
         address _delegate
     ) external returns (uint256) {
         require(_amount >= 0, "invalid withdrawal amount");
-        require(
-            delegations[msg.sender][_delegate] >= _amount,
-            "not enough delegated to unlock from _delegate"
-        );
 
-        balances[_delegate] -= _amount;
-        delegations[msg.sender][_delegate] -= _amount;
+        require(balances[msg.sender] >= _amount, "not enough to undelegate");
+        balances[msg.sender] -= _amount;
+        if (_delegate != address(0) && _delegate != msg.sender) {
+            delegations.undelegateVote(msg.sender, _delegate, _amount);
+        }
 
         DataTypes.PendingWithdrawal memory withdrawal = DataTypes
             .PendingWithdrawal({
@@ -119,7 +139,10 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
     }
 
     function getRawVotingPower(address _user) external view returns (uint256) {
-        return balances[_user];
+        return
+            uint256(
+                int256(balances[_user]) + delegations.netDelegatedVotes(_user)
+            );
     }
 
     function getTotalRawVotingPower() external view returns (uint256) {

@@ -5,18 +5,14 @@ import "../interfaces/IVault.sol";
 import "../interfaces/IDelegator.sol";
 import "./access/ImmutableOwner.sol";
 import "../libraries/DataTypes.sol";
+import "../libraries/Delegations.sol";
 import "../libraries/BaseVotingPower.sol";
 
 abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     using BaseVotingPower for DataTypes.BaseVotingPower;
-    // Stores the number of votes delegated by a user and to whom.
-    mapping(address => mapping(address => uint256)) internal delegations;
+    using Delegations for Delegations.Delegations;
 
-    // Stores the sum of votes delegated by a user to others.
-    mapping(address => uint256) internal delegatedAmounts;
-
-    // All of the delegated votes a user has received.
-    mapping(address => uint256) internal userToDelegatedVotes;
+    Delegations.Delegations internal delegations;
 
     // A user's own voting power, excluding delegations either to or from the user.
     // This caches voting power and stores voting power mutations.
@@ -27,36 +23,38 @@ abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     constructor(address _owner) ImmutableOwner(_owner) {}
 
     function delegateVote(address _delegate, uint256 _amount) external {
-        // TODO: Delegate fractional amounts
-        uint256 remaining = ownVotingPowers[msg.sender].total() -
-            delegatedAmounts[msg.sender];
-        require(remaining >= _amount, "insufficient balance to delegate");
-
-        userToDelegatedVotes[_delegate] += _amount;
-        delegatedAmounts[msg.sender] += _amount;
-        delegations[msg.sender][_delegate] += _amount;
-
-        emit VotesDelegated(msg.sender, _delegate, _amount);
+        delegations.delegateVote(
+            msg.sender,
+            _delegate,
+            _amount,
+            ownVotingPowers[msg.sender].total()
+        );
     }
 
     function undelegateVote(address _delegate, uint256 _amount) external {
-        require(
-            delegations[msg.sender][_delegate] >= _amount,
-            "user has not delegated enough to _delegate"
+        delegations.undelegateVote(msg.sender, _delegate, _amount);
+    }
+
+    function changeDelegate(
+        address _oldDelegate,
+        address _newDelegate,
+        uint256 _amount
+    ) external {
+        delegations.undelegateVote(msg.sender, _oldDelegate, _amount);
+        delegations.delegateVote(
+            msg.sender,
+            _newDelegate,
+            _amount,
+            ownVotingPowers[msg.sender].total()
         );
-
-        delegations[msg.sender][_delegate] -= _amount;
-        delegatedAmounts[msg.sender] -= _amount;
-        userToDelegatedVotes[_delegate] -= _amount;
-
-        emit VotesUndelegated(msg.sender, _delegate, _amount);
     }
 
     function getRawVotingPower(address user) external view returns (uint256) {
         return
-            ownVotingPowers[user].total() -
-            delegatedAmounts[user] +
-            userToDelegatedVotes[user];
+            uint256(
+                int256(ownVotingPowers[user].total()) +
+                    delegations.netDelegatedVotes(user)
+            );
     }
 
     function getTotalRawVotingPower() external view returns (uint256) {

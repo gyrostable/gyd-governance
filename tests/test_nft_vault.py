@@ -76,18 +76,18 @@ def test_delegation_with_mutable_voting_power(vault, admin, accounts):
 def test_undelegation(vault, admin, accounts):
     # first, undelegate account[0]'s vote to account[1];
     # This should fail since account[0] won't have delegated yet.
-    with reverts("user has not delegated enough to _delegate"):
+    with reverts("user has not delegated enough to delegate"):
         vault.undelegateVote(accounts[1], 1e18, {"from": admin})
 
     # then, delegate account[0]'s vote to account[1]
     vault.delegateVote(accounts[1], 1e18, {"from": admin})
 
     # try to undelegate the wrong amount
-    with reverts("user has not delegated enough to _delegate"):
+    with reverts("user has not delegated enough to delegate"):
         vault.undelegateVote(accounts[1], 2e18, {"from": admin})
 
     # try to undelegate from the wrong person
-    with reverts("user has not delegated enough to _delegate"):
+    with reverts("user has not delegated enough to delegate"):
         vault.undelegateVote(admin, 1e18, {"from": admin})
 
     vault.undelegateVote(accounts[1], 1e18, {"from": admin})
