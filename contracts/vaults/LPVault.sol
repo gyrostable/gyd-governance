@@ -6,11 +6,12 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../../interfaces/IVault.sol";
 import "../../interfaces/ILockingVault.sol";
+import "../../interfaces/IDelegatingVault.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/Delegations.sol";
 import "../access/ImmutableOwner.sol";
 
-contract LPVault is IVault, ILockingVault, ImmutableOwner {
+contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.UintSet;
     using Delegations for Delegations.Delegations;
 
@@ -64,6 +65,19 @@ contract LPVault is IVault, ILockingVault, ImmutableOwner {
         totalSupply += _amount;
 
         emit Deposit(msg.sender, _delegate, _amount);
+    }
+
+    function delegateVote(address _delegate, uint256 _amount) external {
+        delegations.delegateVote(
+            msg.sender,
+            _delegate,
+            _amount,
+            balances[msg.sender]
+        );
+    }
+
+    function undelegateVote(address _delegate, uint256 _amount) external {
+        delegations.undelegateVote(msg.sender, _delegate, _amount);
     }
 
     function changeDelegate(

@@ -2,13 +2,13 @@
 pragma solidity ^0.8.17;
 
 import "../../interfaces/IVault.sol";
-import "../../interfaces/IDelegator.sol";
+import "../../interfaces/IDelegatingVault.sol";
 import "./../access/ImmutableOwner.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/Delegations.sol";
 import "../../libraries/BaseVotingPower.sol";
 
-abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
+abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
     using BaseVotingPower for DataTypes.BaseVotingPower;
     using Delegations for Delegations.Delegations;
 
