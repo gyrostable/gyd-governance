@@ -15,5 +15,9 @@ interface IVotingPowerAggregator {
 
     function getVaultWeight(address vault) external view returns (uint256);
 
-    function updateVaults(DataTypes.VaultWeight[] memory vault) external;
+    function setSchedule(
+        DataTypes.VaultWeightConfiguration[] memory vaults,
+        uint256 _scheduleStartsAt,
+        uint256 _scheduleEndsAt
+    ) external;
 }
