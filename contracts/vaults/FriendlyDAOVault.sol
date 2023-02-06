@@ -4,14 +4,19 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 import "../access/ImmutableOwner.sol";
+import "../../libraries/Delegations.sol";
 
 import "../../interfaces/IVault.sol";
+import "../../interfaces/IDelegatingVault.sol";
 
-contract FriendlyDAOVault is IVault, ImmutableOwner {
+contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
+    using Delegations for Delegations.Delegations;
 
     EnumerableMap.AddressToUintMap internal _daoVotingPower;
     uint256 internal _totalRawVotingPower;
+
+    Delegations.Delegations internal delegations;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
@@ -36,10 +41,46 @@ contract FriendlyDAOVault is IVault, ImmutableOwner {
             );
     }
 
+    function baseTotalFor(address account) internal view returns (uint256) {
+        (, uint256 baseTotal) = _daoVotingPower.tryGet(account);
+        return baseTotal;
+    }
+
+    function delegateVote(address _delegate, uint256 _amount) external {
+        delegations.delegateVote(
+            msg.sender,
+            _delegate,
+            _amount,
+            baseTotalFor(msg.sender)
+        );
+    }
+
+    function undelegateVote(address _delegate, uint256 _amount) external {
+        delegations.undelegateVote(msg.sender, _delegate, _amount);
+    }
+
+    function changeDelegate(
+        address _oldDelegate,
+        address _newDelegate,
+        uint256 _amount
+    ) external {
+        delegations.undelegateVote(msg.sender, _oldDelegate, _amount);
+        delegations.delegateVote(
+            msg.sender,
+            _newDelegate,
+            _amount,
+            baseTotalFor(msg.sender)
+        );
+    }
+
     function getRawVotingPower(
         address account
     ) external view returns (uint256) {
-        return _daoVotingPower.get(account);
+        return
+            uint256(
+                int256(baseTotalFor(account)) +
+                    delegations.netDelegatedVotes(account)
+            );
     }
 
     function getTotalRawVotingPower() external view returns (uint256) {
