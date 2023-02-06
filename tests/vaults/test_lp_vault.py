@@ -29,6 +29,22 @@ def test_deposit(admin, token, lp_vault):
     assert token.balanceOf(lp_vault) == 10
 
 
+def test_change_delegate(admin, accounts, token, lp_vault):
+    assert lp_vault.getTotalRawVotingPower() == 0
+
+    token.approve(lp_vault, 10)
+    lp_vault.deposit(10, accounts[1], {"from": admin})
+    assert (
+        lp_vault.getRawVotingPower(accounts[1])
+        == lp_vault.getTotalRawVotingPower()
+        == 10
+    )
+
+    lp_vault.changeDelegate(accounts[1], accounts[2], 10)
+    assert lp_vault.getRawVotingPower(accounts[2]) == 10
+    assert lp_vault.getRawVotingPower(accounts[1]) == 0
+
+
 def test_delegation(admin, accounts, token, lp_vault):
     token.approve(lp_vault, 10)
     lp_vault.deposit(10, accounts[1])
@@ -56,7 +72,7 @@ def test_initiate_withdrawal(admin, token, lp_vault):
     lp_vault.initiateWithdrawal(10, admin)
     assert lp_vault.getRawVotingPower(admin) == 0
 
-    with reverts(revert_msg="not enough delegated to unlock from _delegate"):
+    with reverts(revert_msg="not enough to undelegate"):
         lp_vault.initiateWithdrawal(10, admin)
 
 
