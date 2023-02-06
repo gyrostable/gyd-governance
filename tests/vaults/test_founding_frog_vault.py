@@ -1,5 +1,5 @@
 import pytest
-from .conftest import ACCOUNT_ADDRESS, ACCOUNT_KEY, PROOF, ROOT, signature
+from ..conftest import ACCOUNT_ADDRESS, ACCOUNT_KEY, PROOF, ROOT, signature
 from brownie import reverts, chain
 
 
