@@ -3,10 +3,10 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
-import "../interfaces/IVault.sol";
-import "../libraries/DataTypes.sol";
-import "../libraries/ScaledMath.sol";
-import "./access/ImmutableOwner.sol";
+import "../../interfaces/IVault.sol";
+import "../../libraries/DataTypes.sol";
+import "../../libraries/ScaledMath.sol";
+import "../access/ImmutableOwner.sol";
 
 contract AggregateLPVault is IVault, ImmutableOwner {
     using EnumerableMap for EnumerableMap.AddressToUintMap;

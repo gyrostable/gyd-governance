@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../interfaces/IVault.sol";
-import "../interfaces/IDelegator.sol";
-import "./access/ImmutableOwner.sol";
-import "../libraries/DataTypes.sol";
-import "../libraries/Delegations.sol";
-import "../libraries/BaseVotingPower.sol";
+import "../../interfaces/IVault.sol";
+import "../../interfaces/IDelegator.sol";
+import "./../access/ImmutableOwner.sol";
+import "../../libraries/DataTypes.sol";
+import "../../libraries/Delegations.sol";
+import "../../libraries/BaseVotingPower.sol";
 
 abstract contract NFTVault is IVault, IDelegator, ImmutableOwner {
     using BaseVotingPower for DataTypes.BaseVotingPower;

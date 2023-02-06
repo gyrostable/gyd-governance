@@ -4,11 +4,11 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "../interfaces/IVault.sol";
-import "../interfaces/ILockingVault.sol";
-import "../libraries/DataTypes.sol";
-import "../libraries/Delegations.sol";
-import "./access/ImmutableOwner.sol";
+import "../../interfaces/IVault.sol";
+import "../../interfaces/ILockingVault.sol";
+import "../../libraries/DataTypes.sol";
+import "../../libraries/Delegations.sol";
+import "../access/ImmutableOwner.sol";
 
 contract LPVault is IVault, ILockingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.UintSet;

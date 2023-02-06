@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../contracts/NFTVault.sol";
-import "../libraries/DataTypes.sol";
-import "../libraries/ScaledMath.sol";
-import "../libraries/BaseVotingPower.sol";
+import "./NFTVault.sol";
+import "../../libraries/DataTypes.sol";
+import "../../libraries/ScaledMath.sol";
+import "../../libraries/BaseVotingPower.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 

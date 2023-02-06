@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../contracts/NFTVault.sol";
-import "../libraries/BaseVotingPower.sol";
-import "../libraries/DataTypes.sol";
-import "../interfaces/IVotingPowersUpdater.sol";
+import "./NFTVault.sol";
+import "../../libraries/BaseVotingPower.sol";
+import "../../libraries/DataTypes.sol";
+import "../../interfaces/IVotingPowersUpdater.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
