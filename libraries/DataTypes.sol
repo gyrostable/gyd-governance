@@ -36,9 +36,17 @@ library DataTypes {
         address delegate;
     }
 
+    struct VaultWeightConfiguration {
+        address vaultAddress;
+        uint256 initialWeight;
+        uint256 targetWeight;
+    }
+
     struct VaultWeight {
         address vaultAddress;
-        uint256 weight;
+        uint256 currentWeight;
+        uint256 initialWeight;
+        uint256 targetWeight;
     }
 
     struct Tier {

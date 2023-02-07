@@ -37,7 +37,11 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
         revert("not implemented");
     }
 
-    function updateVaults(DataTypes.VaultWeight[] memory) external {
+    function setSchedule(
+        DataTypes.VaultWeightConfiguration[] memory,
+        uint256,
+        uint256
+    ) external {
         revert("not implemented");
     }
 }

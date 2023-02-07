@@ -16,7 +16,10 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     EnumerableSet.AddressSet internal _vaultAddresses;
-    mapping(address => DataTypes.VaultWeight) internal _vaults;
+    mapping(address => DataTypes.VaultWeightConfiguration) internal _vaults;
+
+    uint256 public scheduleStartsAt;
+    uint256 public scheduleEndsAt;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
@@ -27,7 +30,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         for (uint256 i; i < vaultsCount; i++) {
             IVault vault = IVault(_vaultAddresses.at(i));
             uint256 userRawVotingPower = vault.getRawVotingPower(account);
-            uint256 vaultWeight = _vaults[address(vault)].weight;
+            uint256 vaultWeight = this.getVaultWeight(address(vault));
             userVotingPower += userRawVotingPower.mulDown(vaultWeight);
         }
 
@@ -41,7 +44,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         for (uint256 i; i < vaultsCount; i++) {
             IVault vault = IVault(_vaultAddresses.at(i));
             uint256 vaultTotalVotingPower = vault.getTotalRawVotingPower();
-            uint256 vaultWeight = _vaults[address(vault)].weight;
+            uint256 vaultWeight = this.getVaultWeight(address(vault));
             totalVotingPower += vaultTotalVotingPower.mulDown(vaultWeight);
         }
 
@@ -57,34 +60,97 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         DataTypes.VaultWeight[] memory vaults = new DataTypes.VaultWeight[](
             length
         );
+        uint256 totalWeight;
         for (uint256 i; i < length; i++) {
-            vaults[i] = _vaults[_vaultAddresses.at(i)];
+            DataTypes.VaultWeightConfiguration memory conf = _vaults[
+                _vaultAddresses.at(i)
+            ];
+            vaults[i].vaultAddress = conf.vaultAddress;
+            vaults[i].initialWeight = conf.initialWeight;
+            vaults[i].targetWeight = conf.targetWeight;
+
+            uint256 vaultWeight = this.getVaultWeight(conf.vaultAddress);
+            vaults[i].currentWeight = vaultWeight;
+
+            totalWeight += vaultWeight;
         }
+
+        // Normalize
+        for (uint256 i; i < length; i++) {
+            vaults[i].currentWeight = vaults[i].currentWeight.divDown(
+                totalWeight
+            );
+        }
+
         return vaults;
     }
 
     function getVaultWeight(address vault) external view returns (uint256) {
-        return _vaults[vault].weight;
-    }
+        DataTypes.VaultWeightConfiguration memory vaultWeight = _vaults[vault];
 
-    function updateVaults(
-        DataTypes.VaultWeight[] calldata vaults
-    ) external onlyOwner {
-        _removeAllVaults();
-
-        uint256 totalWeight;
-
-        for (uint256 i; i < vaults.length; i++) {
-            DataTypes.VaultWeight calldata vault = vaults[i];
-            _addVault(vault);
-            totalWeight += vault.weight;
+        if (block.timestamp > scheduleEndsAt) {
+            return vaultWeight.targetWeight;
         }
 
-        if (totalWeight != ScaledMath.ONE)
-            revert Errors.InvalidTotalWeight(totalWeight);
+        if (block.timestamp < scheduleStartsAt) {
+            return vaultWeight.initialWeight;
+        }
+
+        uint256 scheduleElapsedPct = (block.timestamp - scheduleStartsAt)
+            .divDown(scheduleEndsAt - scheduleStartsAt);
+
+        uint256 currentWeight;
+        if (vaultWeight.targetWeight > vaultWeight.initialWeight) {
+            uint256 absWeightChange = vaultWeight.targetWeight -
+                vaultWeight.initialWeight;
+            currentWeight =
+                vaultWeight.initialWeight +
+                absWeightChange.mulDown(scheduleElapsedPct);
+        } else {
+            uint256 absWeightChange = vaultWeight.initialWeight -
+                vaultWeight.targetWeight;
+            currentWeight =
+                vaultWeight.initialWeight -
+                absWeightChange.mulDown(scheduleElapsedPct);
+        }
+        return currentWeight;
     }
 
-    function _addVault(DataTypes.VaultWeight calldata vault) internal {
+    function setSchedule(
+        DataTypes.VaultWeightConfiguration[] calldata vaults,
+        uint256 _scheduleStartsAt,
+        uint256 _scheduleEndsAt
+    ) external onlyOwner {
+        require(
+            _scheduleEndsAt >= _scheduleStartsAt,
+            "schedule must end after it begins"
+        );
+
+        scheduleStartsAt = _scheduleStartsAt;
+        scheduleEndsAt = _scheduleEndsAt;
+
+        _removeAllVaults();
+
+        uint256 totalInitialWeight;
+        uint256 totalTargetWeight;
+
+        for (uint256 i; i < vaults.length; i++) {
+            DataTypes.VaultWeightConfiguration calldata vault = vaults[i];
+            _addVault(vault);
+            totalInitialWeight += vault.initialWeight;
+            totalTargetWeight += vault.targetWeight;
+        }
+
+        if (totalInitialWeight != ScaledMath.ONE)
+            revert Errors.InvalidTotalWeight(totalInitialWeight);
+
+        if (totalTargetWeight != ScaledMath.ONE)
+            revert Errors.InvalidTotalWeight(totalTargetWeight);
+    }
+
+    function _addVault(
+        DataTypes.VaultWeightConfiguration calldata vault
+    ) internal {
         if (!_vaultAddresses.add(vault.vaultAddress))
             revert Errors.DuplicatedVault(vault.vaultAddress);
         _vaults[vault.vaultAddress] = vault;

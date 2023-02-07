@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 import "../../interfaces/IVault.sol";
-import "../../libraries/DataTypes.sol";
 import "../../libraries/ScaledMath.sol";
 import "../access/ImmutableOwner.sol";
 
@@ -20,18 +19,23 @@ contract AggregateLPVault is IVault, ImmutableOwner {
         threshold = _threshold;
     }
 
+    struct VaultWeight {
+        address vaultAddress;
+        uint256 weight;
+    }
+
     function setVaultWeights(
-        DataTypes.VaultWeight[] calldata vaultWeights
+        VaultWeight[] calldata vaultWeights
     ) external onlyOwner {
         _removeAllVaultWeights();
 
         for (uint256 i = 0; i < vaultWeights.length; i++) {
-            DataTypes.VaultWeight memory v = vaultWeights[i];
+            VaultWeight memory v = vaultWeights[i];
             require(v.weight > 0, "cannot have a 0 weight");
         }
 
         for (uint256 i = 0; i < vaultWeights.length; i++) {
-            DataTypes.VaultWeight memory v = vaultWeights[i];
+            VaultWeight memory v = vaultWeights[i];
             vaultsToWeights.set(v.vaultAddress, v.weight);
         }
     }
