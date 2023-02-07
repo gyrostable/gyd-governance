@@ -1,12 +1,11 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
 import "../access/ImmutableOwner.sol";
 import "../../libraries/DataTypes.sol";
-import "../../interfaces/ITierStrategy.sol";
+import "./BaseThresholdStrategy.sol";
 
-contract SetSystemParamsStrategy is ITierStrategy {
-    DataTypes.Tier private underThresholdTier;
-    DataTypes.Tier private overThresholdTier;
+contract SetSystemParamsStrategy is BaseThresholdStrategy {
     uint64 private thetaBarThreshold;
     uint64 private outflowMemoryThreshold;
 
@@ -15,9 +14,7 @@ contract SetSystemParamsStrategy is ITierStrategy {
         DataTypes.Tier memory _overThresholdTier,
         uint64 _thetaBarThreshold,
         uint64 _outflowMemoryThreshold
-    ) {
-        underThresholdTier = _underThresholdTier;
-        overThresholdTier = _overThresholdTier;
+    ) BaseThresholdStrategy(_underThresholdTier, _overThresholdTier) {
         thetaBarThreshold = _thetaBarThreshold;
         outflowMemoryThreshold = _outflowMemoryThreshold;
     }
@@ -29,19 +26,12 @@ contract SetSystemParamsStrategy is ITierStrategy {
         uint64 outflowMemory;
     }
 
-    function getTier(
-        bytes calldata _calldata
-    ) external view returns (DataTypes.Tier memory) {
-        // SetSystemParams((uint64, uint64, uint64, uint64))
-        (, Params memory params) = abi.decode(_calldata, (bytes4, Params));
-
-        if (
-            params.thetaBar <= thetaBarThreshold ||
-            params.outflowMemory <= outflowMemoryThreshold
-        ) {
-            return underThresholdTier;
-        } else {
-            return overThresholdTier;
-        }
+    function _isOverThreshold(
+        bytes calldata data
+    ) internal view virtual override returns (bool) {
+        Params memory params = abi.decode(data[4:], (Params));
+        return
+            params.thetaBar > thetaBarThreshold &&
+            params.outflowMemory > outflowMemoryThreshold;
     }
 }

@@ -10,10 +10,9 @@ def test_set_system_params_strategy(admin, under_tier, over_tier):
         SetSystemParamsStrategy, under_tier, over_tier, 3e18, 3e18
     )
 
-    cd = encode(
-        ["bytes4", "uint64", "uint64", "uint64", "uint64"],
+    cd = fn_selector("setSystemParams((uint64,uint64,uint64,uint64))") + encode(
+        ["uint64", "uint64", "uint64", "uint64"],
         [
-            fn_selector("setSystemParams((uint64,uint64,uint64,uint64))"),
             0,
             0,
             int(2e18),
@@ -24,10 +23,9 @@ def test_set_system_params_strategy(admin, under_tier, over_tier):
     got_params = tier_strategy.getTier(cd)
     assert got_params == under_tier
 
-    cd = encode(
-        ["bytes4", "uint64", "uint64", "uint64", "uint64"],
+    cd = fn_selector("setSystemParams((uint64,uint64,uint64,uint64))") + encode(
+        ["uint64", "uint64", "uint64", "uint64"],
         [
-            fn_selector("setSystemParams((uint64,uint64,uint64,uint64))"),
             0,
             0,
             int(4e18),
@@ -38,10 +36,9 @@ def test_set_system_params_strategy(admin, under_tier, over_tier):
     got_params = tier_strategy.getTier(cd)
     assert got_params == under_tier
 
-    cd = encode(
-        ["bytes4", "uint64", "uint64", "uint64", "uint64"],
+    cd = fn_selector("setSystemParams((uint64,uint64,uint64,uint64))") + encode(
+        ["uint64", "uint64", "uint64", "uint64"],
         [
-            fn_selector("setSystemParams((uint64,uint64,uint64,uint64))"),
             0,
             0,
             int(2e18),
@@ -52,10 +49,9 @@ def test_set_system_params_strategy(admin, under_tier, over_tier):
     got_params = tier_strategy.getTier(cd)
     assert got_params == under_tier
 
-    cd = encode(
-        ["bytes4", "uint64", "uint64", "uint64", "uint64"],
+    cd = fn_selector("setSystemParams((uint64,uint64,uint64,uint64))") + encode(
+        ["uint64", "uint64", "uint64", "uint64"],
         [
-            fn_selector("setSystemParams((uint64,uint64,uint64,uint64))"),
             0,
             0,
             int(4e18),
