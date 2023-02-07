@@ -5,16 +5,19 @@ import "./NFTVault.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/ScaledMath.sol";
 import "../../libraries/BaseVotingPower.sol";
+import "../../libraries/Merkle.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract FoundingFrogVault is NFTVault, EIP712 {
     using BaseVotingPower for DataTypes.BaseVotingPower;
+    using Merkle for Merkle.Root;
+
     mapping(address => address) private _claimed;
 
     bytes32 private immutable _TYPE_HASH =
         keccak256("Proof(address account,uint128 multiplier,bytes32[] proof)");
-    bytes32 private merkleRoot;
+    Merkle.Root private merkleRoot;
 
     constructor(
         address _owner,
@@ -22,7 +25,7 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         bytes32 _merkleRoot
     ) EIP712("FoundingFrogVault", "1") NFTVault(_owner) {
         sumVotingPowers = _sumVotingPowers;
-        merkleRoot = _merkleRoot;
+        merkleRoot = Merkle.Root(_merkleRoot);
     }
 
     function claimNFT(
@@ -46,7 +49,8 @@ contract FoundingFrogVault is NFTVault, EIP712 {
 
         require(_claimed[owner] == address(0), "NFT already claimed");
 
-        require(_isProofValid(owner, multiplier, proof), "invalid proof");
+        bytes32 node = keccak256(abi.encodePacked(owner, multiplier));
+        require(merkleRoot.isProofValid(node, proof), "invalid proof");
 
         _claimed[owner] = msg.sender;
 
@@ -63,20 +67,5 @@ contract FoundingFrogVault is NFTVault, EIP712 {
             proofB = bytes.concat(proofB, abi.encode(proof[i]));
         }
         return keccak256(proofB);
-    }
-
-    function _isProofValid(
-        address owner,
-        uint128 multiplier,
-        bytes32[] memory proof
-    ) internal view returns (bool) {
-        bytes32 node = keccak256(abi.encodePacked(owner, multiplier));
-        for (uint256 i = 0; i < proof.length; i++) {
-            (bytes32 left, bytes32 right) = (node, proof[i]);
-            if (left > right) (left, right) = (right, left);
-            node = keccak256(abi.encodePacked(left, right));
-        }
-
-        return node == merkleRoot;
     }
 }
