@@ -4,10 +4,9 @@ pragma solidity ^0.8.17;
 import "../access/ImmutableOwner.sol";
 import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
+import "./BaseThresholdStrategy.sol";
 
-contract SetVaultFeesStrategy is ImmutableOwner, ITierStrategy {
-    DataTypes.Tier private underThresholdTier;
-    DataTypes.Tier private overThresholdTier;
+contract SetVaultFeesStrategy is ImmutableOwner, BaseThresholdStrategy {
     uint256 private threshold;
 
     constructor(
@@ -15,10 +14,8 @@ contract SetVaultFeesStrategy is ImmutableOwner, ITierStrategy {
         uint256 _threshold,
         DataTypes.Tier memory underTier,
         DataTypes.Tier memory overTier
-    ) ImmutableOwner(_owner) {
+    ) BaseThresholdStrategy(underTier, overTier) ImmutableOwner(_owner) {
         threshold = _threshold;
-        underThresholdTier = underTier;
-        overThresholdTier = overTier;
     }
 
     function setParameters(
@@ -31,19 +28,15 @@ contract SetVaultFeesStrategy is ImmutableOwner, ITierStrategy {
         overThresholdTier = overTier;
     }
 
-    function getTier(
+    function _isOverThreshold(
         bytes calldata _calldata
-    ) external view returns (DataTypes.Tier memory) {
+    ) internal view virtual override returns (bool) {
         // The function signature of the payload we're trying to decode is:
         // SetVaultFees(address vault, uint256 mintFee, uint256 redeemFee)
-        (, , uint256 mintFee, uint256 redeemFee) = abi.decode(
-            _calldata,
-            (bytes4, address, uint256, uint256)
+        (, uint256 mintFee, uint256 redeemFee) = abi.decode(
+            _calldata[4:],
+            (address, uint256, uint256)
         );
-        if (mintFee > threshold || redeemFee > threshold) {
-            return overThresholdTier;
-        } else {
-            return underThresholdTier;
-        }
+        return mintFee > threshold || redeemFee > threshold;
     }
 }
