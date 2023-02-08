@@ -85,7 +85,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         return vaults;
     }
 
-    function blockTimestamp() internal virtual view returns (uint256) {
+    function blockTimestamp() internal view virtual returns (uint256) {
         return block.timestamp;
     }
 

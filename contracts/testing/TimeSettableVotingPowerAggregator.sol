@@ -18,7 +18,7 @@ contract TimeSettableVotingPowerAggregator is VotingPowerAggregator {
         currentTime += secs;
     }
 
-    function blockTimestamp() internal override view returns (uint256) {
+    function blockTimestamp() internal view override returns (uint256) {
         return currentTime;
     }
 }
