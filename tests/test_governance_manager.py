@@ -20,9 +20,9 @@ class ProposalAction(NamedTuple):
 
 
 class VoteTotals(NamedTuple):
-    for_: int
-    against: int
-    abstain: int
+    for_: list
+    against: list
+    abstentions: list
 
 
 def test_create_proposal(governance_manager, voting_power_aggregator, admin):
@@ -110,7 +110,7 @@ def test_vote(governance_manager, voting_power_aggregator, admin):
     )
     tx = governance_manager.createProposal(proposal)
     tx = governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
-    assert tx.events["VoteCast"]["voteTotals"] == (0, 5e18, 0)
+    assert tx.events["VoteCast"]["votingPower"][0] == (mv.address, 5e18)
 
 
 def test_vote_doesnt_double_count_if_vote_is_changed(
@@ -128,13 +128,11 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
 
-    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(
-        for_=0, against=5e18, abstain=0
-    )
+    assert tx.events["VoteCast"]["vote"] == AGAINST_BALLOT
 
     tx = governance_manager.vote(propId, FOR_BALLOT)
     assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(
-        for_=5e18, against=0, abstain=0
+        for_=[(mv.address, 5e18)], against=[(mv.address, 0)], abstentions=[]
     )
 
 

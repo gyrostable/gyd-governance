@@ -15,7 +15,7 @@ VETO_THRESHOLD = 2e17  # 0.2
 
 @pytest.fixture()
 def mock_voting_aggregator(admin):
-    return admin.deploy(MockVotingPowerAggregator, 21e18, 100e18)
+    return admin.deploy(MockVotingPowerAggregator, 21e18, 100e18, 21e16)
 
 
 @pytest.fixture()
@@ -68,7 +68,9 @@ def test_cannot_complete_if_vetoed(emergency_recovery, mock_proxy):
     propId = tx.events["UpgradeProposed"]["proposalId"]
 
     tx = emergency_recovery.veto(propId)
-    assert tx.events["VetoCast"]["castVetoPower"] == 21e18
+    assert tx.events["VetoCast"]["castVetoPower"] == [
+        ("0x0000000000000000000000000000000000000001", 21e18)
+    ]
 
     chain.sleep(TIMELOCK_DURATION + 1)
     chain.mine()
@@ -100,13 +102,21 @@ def test_doesnt_double_count_vetos(
     propId = tx.events["UpgradeProposed"]["proposalId"]
 
     tx = emergency_recovery.veto(propId)
-    assert tx.events["VetoCast"]["castVetoPower"] == 21e18
-    assert tx.events["VetoCast"]["totalVetos"] == 21e18
+    assert tx.events["VetoCast"]["castVetoPower"] == [
+        ("0x0000000000000000000000000000000000000001", 21e18)
+    ]
+    assert tx.events["VetoCast"]["totalVetos"] == [
+        ("0x0000000000000000000000000000000000000001", 21e18)
+    ]
 
     mock_voting_aggregator.setVotingPower(30e18)
     tx = emergency_recovery.veto(propId)
-    assert tx.events["VetoCast"]["castVetoPower"] == 30e18
-    assert tx.events["VetoCast"]["totalVetos"] == 30e18
+    assert tx.events["VetoCast"]["castVetoPower"] == [
+        ("0x0000000000000000000000000000000000000001", 30e18)
+    ]
+    assert tx.events["VetoCast"]["totalVetos"] == [
+        ("0x0000000000000000000000000000000000000001", 30e18)
+    ]
 
 
 def test_cannot_veto_if_out_of_timelock(emergency_recovery, mock_proxy):

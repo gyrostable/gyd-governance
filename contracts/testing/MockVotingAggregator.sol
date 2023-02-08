@@ -7,22 +7,45 @@ import "../../libraries/DataTypes.sol";
 contract MockVotingPowerAggregator is IVotingPowerAggregator {
     uint256 public votingPower;
     uint256 public totalVotingPower;
+    uint256 public weightedPowerPct;
 
-    constructor(uint256 _votingPower, uint256 _totalVotingPower) {
+    constructor(
+        uint256 _votingPower,
+        uint256 _totalVotingPower,
+        uint256 _weightedPowerPct
+    ) {
         votingPower = _votingPower;
         totalVotingPower = _totalVotingPower;
+        weightedPowerPct = _weightedPowerPct;
     }
 
     function setVotingPower(uint256 _votingPower) public {
         votingPower = _votingPower;
     }
 
-    function getVotingPower(address) external view returns (uint256) {
-        return votingPower;
+    function getVotingPower(
+        address
+    ) external view returns (DataTypes.VaultVotingPower[] memory) {
+        DataTypes.VaultVotingPower[]
+            memory vp = new DataTypes.VaultVotingPower[](1);
+        vp[0] = DataTypes.VaultVotingPower({
+            vaultAddress: address(0x1),
+            votingPower: votingPower
+        });
+        return vp;
     }
 
     function getTotalVotingPower() external view returns (uint256) {
         return totalVotingPower;
+    }
+
+    function calculateWeightedPowerPct(
+        DataTypes.VaultVotingPower[] memory vaults
+    ) external view returns (uint256) {
+        if (vaults.length == 0) {
+            return 0;
+        }
+        return weightedPowerPct;
     }
 
     function getVaultWeight(address) external view returns (uint256) {

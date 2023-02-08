@@ -4,9 +4,13 @@ pragma solidity ^0.8.17;
 import "../libraries/DataTypes.sol";
 
 interface IVotingPowerAggregator {
-    function getVotingPower(address account) external view returns (uint256);
+    function getVotingPower(
+        address account
+    ) external view returns (DataTypes.VaultVotingPower[] memory);
 
-    function getTotalVotingPower() external view returns (uint256);
+    function calculateWeightedPowerPct(
+        DataTypes.VaultVotingPower[] calldata vaultVotingPowers
+    ) external view returns (uint256);
 
     function listVaults()
         external
