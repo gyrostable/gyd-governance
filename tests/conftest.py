@@ -119,6 +119,11 @@ def voting_power_aggregator(admin, VotingPowerAggregator):
 
 
 @pytest.fixture(scope="module")
+def time_settable_voting_power_aggregator(admin, TimeSettableVotingPowerAggregator):
+    return admin.deploy(TimeSettableVotingPowerAggregator, admin)
+
+
+@pytest.fixture(scope="module")
 def mock_tierer(admin, MockTierer):
     return admin.deploy(MockTierer, (2e17, 1e17, 1e17, 20, 20, 20))
 

@@ -85,18 +85,22 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         return vaults;
     }
 
+    function blockTimestamp() internal virtual view returns (uint256) {
+        return block.timestamp;
+    }
+
     function getVaultWeight(address vault) external view returns (uint256) {
         DataTypes.VaultWeightConfiguration memory vaultWeight = _vaults[vault];
 
-        if (block.timestamp > scheduleEndsAt) {
+        if (blockTimestamp() > scheduleEndsAt) {
             return vaultWeight.targetWeight;
         }
 
-        if (block.timestamp < scheduleStartsAt) {
+        if (blockTimestamp() < scheduleStartsAt) {
             return vaultWeight.initialWeight;
         }
 
-        uint256 scheduleElapsedPct = (block.timestamp - scheduleStartsAt)
+        uint256 scheduleElapsedPct = (blockTimestamp() - scheduleStartsAt)
             .divDown(scheduleEndsAt - scheduleStartsAt);
 
         uint256 currentWeight;
