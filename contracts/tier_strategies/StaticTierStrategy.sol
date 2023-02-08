@@ -6,7 +6,7 @@ import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
 
 contract StaticTierStrategy is ImmutableOwner, ITierStrategy {
-    DataTypes.Tier private tier;
+    DataTypes.Tier public tier;
 
     constructor(
         address _owner,

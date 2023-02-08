@@ -5,8 +5,8 @@ import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
 
 abstract contract BaseThresholdStrategy is ITierStrategy {
-    DataTypes.Tier internal underThresholdTier;
-    DataTypes.Tier internal overThresholdTier;
+    DataTypes.Tier public underThresholdTier;
+    DataTypes.Tier public overThresholdTier;
 
     constructor(
         DataTypes.Tier memory _underThresholdTier,

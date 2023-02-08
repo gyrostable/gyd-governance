@@ -6,8 +6,8 @@ import "../../libraries/DataTypes.sol";
 import "./BaseThresholdStrategy.sol";
 
 contract SetSystemParamsStrategy is BaseThresholdStrategy {
-    uint64 private thetaBarThreshold;
-    uint64 private outflowMemoryThreshold;
+    uint64 public thetaBarThreshold;
+    uint64 public outflowMemoryThreshold;
 
     constructor(
         DataTypes.Tier memory _underThresholdTier,

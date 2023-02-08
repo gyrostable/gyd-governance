@@ -7,7 +7,7 @@ import "../../interfaces/ITierStrategy.sol";
 import "./BaseThresholdStrategy.sol";
 
 contract SetVaultFeesStrategy is ImmutableOwner, BaseThresholdStrategy {
-    uint256 private threshold;
+    uint256 public threshold;
 
     constructor(
         address _owner,
