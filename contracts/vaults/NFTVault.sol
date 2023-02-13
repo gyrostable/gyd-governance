@@ -5,34 +5,24 @@ import "../../interfaces/IVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 import "./../access/ImmutableOwner.sol";
 import "../../libraries/DataTypes.sol";
-import "../../libraries/Delegations.sol";
-import "../../libraries/BaseVotingPower.sol";
+import "../../libraries/VotingPowerHistory.sol";
 
 abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
-    using BaseVotingPower for DataTypes.BaseVotingPower;
-    using Delegations for Delegations.Delegations;
+    using VotingPowerHistory for VotingPowerHistory.History;
+    using VotingPowerHistory for VotingPowerHistory.Record;
 
-    Delegations.Delegations internal delegations;
-
-    // A user's own voting power, excluding delegations either to or from the user.
-    // This caches voting power and stores voting power mutations.
-    mapping(address => DataTypes.BaseVotingPower) internal ownVotingPowers;
+    VotingPowerHistory.History internal history;
 
     uint256 internal sumVotingPowers;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
     function delegateVote(address _delegate, uint256 _amount) external {
-        delegations.delegateVote(
-            msg.sender,
-            _delegate,
-            _amount,
-            ownVotingPowers[msg.sender].total()
-        );
+        history.delegateVote(msg.sender, _delegate, _amount);
     }
 
     function undelegateVote(address _delegate, uint256 _amount) external {
-        delegations.undelegateVote(msg.sender, _delegate, _amount);
+        history.undelegateVote(msg.sender, _delegate, _amount);
     }
 
     function changeDelegate(
@@ -40,21 +30,12 @@ abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
         address _newDelegate,
         uint256 _amount
     ) external {
-        delegations.undelegateVote(msg.sender, _oldDelegate, _amount);
-        delegations.delegateVote(
-            msg.sender,
-            _newDelegate,
-            _amount,
-            ownVotingPowers[msg.sender].total()
-        );
+        history.undelegateVote(msg.sender, _oldDelegate, _amount);
+        history.delegateVote(msg.sender, _newDelegate, _amount);
     }
 
     function getRawVotingPower(address user) external view returns (uint256) {
-        return
-            uint256(
-                int256(ownVotingPowers[user].total()) +
-                    delegations.netDelegatedVotes(user)
-            );
+        return history.getVotingPower(user, block.timestamp);
     }
 
     function getTotalRawVotingPower() external view returns (uint256) {
@@ -68,11 +49,10 @@ abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
         require(_multiplier >= 1e18, "multiplier cannot be less than 1");
         require(_multiplier <= 20e18, "multiplier cannot be more than 20");
         for (uint i = 0; i < users.length; i++) {
-            DataTypes.BaseVotingPower storage oldVotingPower = ownVotingPowers[
-                users[i]
-            ];
+            VotingPowerHistory.Record memory oldVotingPower = history
+                .currentRecord(users[i]);
             require(
-                oldVotingPower.base >= 1e18,
+                oldVotingPower.baseVotingPower >= 1e18,
                 "all users must have at least 1 NFT"
             );
             require(
@@ -81,8 +61,14 @@ abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
             );
 
             uint256 oldTotal = oldVotingPower.total();
-            oldVotingPower.multiplier = _multiplier;
-            sumVotingPowers += (oldVotingPower.total() - oldTotal);
+            VotingPowerHistory.Record memory newVotingPower = history
+                .updateVotingPower(
+                    users[i],
+                    oldVotingPower.baseVotingPower,
+                    _multiplier,
+                    oldVotingPower.netDelegatedVotes
+                );
+            sumVotingPowers += (newVotingPower.total() - oldTotal);
         }
     }
 }
