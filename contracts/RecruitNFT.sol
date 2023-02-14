@@ -2,12 +2,15 @@
 pragma solidity ^0.8.17;
 
 import "../../../interfaces/IVotingPowersUpdater.sol";
+import "../../libraries/Merkle.sol";
 import "./access/ImmutableOwner.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
+    using Merkle for Merkle.Root;
+
     constructor(
         string memory _name,
         string memory _ticker,
@@ -16,7 +19,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
         bytes32 _merkleRoot
     ) ERC721(_name, _ticker) ImmutableOwner(_owner) EIP712(_name, "1") {
         maxSupply = _maxSupply;
-        merkleRoot = _merkleRoot;
+        merkleRoot = Merkle.Root(_merkleRoot);
     }
 
     IVotingPowersUpdater private vault;
@@ -24,7 +27,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
     uint16 private maxSupply;
     bool private transfersAllowed;
 
-    bytes32 private merkleRoot;
+    Merkle.Root private merkleRoot;
     bytes32 private immutable _TYPE_HASH =
         keccak256("Proof(address to, bytes32[] proof)");
 
@@ -74,7 +77,9 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
         address claimant = ECDSA.recover(hash, signature);
 
         require(claimant == to, "invalid signature");
-        require(_isProofValid(to, proof), "invalid proof");
+
+        bytes32 node = keccak256(abi.encodePacked(owner));
+        require(merkleRoot.isProofValid(node, proof), "invalid proof");
     }
 
     function _encodeProof(
@@ -85,20 +90,6 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
             proofB = bytes.concat(proofB, abi.encode(proof[i]));
         }
         return keccak256(proofB);
-    }
-
-    function _isProofValid(
-        address to,
-        bytes32[] memory proof
-    ) internal view returns (bool) {
-        bytes32 node = keccak256(abi.encodePacked(owner));
-        for (uint256 i = 0; i < proof.length; i++) {
-            (bytes32 left, bytes32 right) = (node, proof[i]);
-            if (left > right) (left, right) = (right, left);
-            node = keccak256(abi.encodePacked(left, right));
-        }
-
-        return node == merkleRoot;
     }
 
     function _beforeTokenTransfer(
