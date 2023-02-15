@@ -1,20 +1,36 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../access/ImmutableOwner.sol";
+import "../access/GovernanceOnly.sol";
 import "../../libraries/DataTypes.sol";
 import "./BaseThresholdStrategy.sol";
 
-contract SetSystemParamsStrategy is BaseThresholdStrategy {
+contract SetSystemParamsStrategy is BaseThresholdStrategy, GovernanceOnly {
     uint64 public thetaBarThreshold;
     uint64 public outflowMemoryThreshold;
 
     constructor(
+        address _governance,
         DataTypes.Tier memory _underThresholdTier,
         DataTypes.Tier memory _overThresholdTier,
         uint64 _thetaBarThreshold,
         uint64 _outflowMemoryThreshold
-    ) BaseThresholdStrategy(_underThresholdTier, _overThresholdTier) {
+    )
+        BaseThresholdStrategy(_underThresholdTier, _overThresholdTier)
+        GovernanceOnly(_governance)
+    {
+        thetaBarThreshold = _thetaBarThreshold;
+        outflowMemoryThreshold = _outflowMemoryThreshold;
+    }
+
+    function setParameters(
+        DataTypes.Tier memory _underThresholdTier,
+        DataTypes.Tier memory _overThresholdTier,
+        uint64 _thetaBarThreshold,
+        uint64 _outflowMemoryThreshold
+    ) external governanceOnly {
+        underThresholdTier = _underThresholdTier;
+        overThresholdTier = _overThresholdTier;
         thetaBarThreshold = _thetaBarThreshold;
         outflowMemoryThreshold = _outflowMemoryThreshold;
     }

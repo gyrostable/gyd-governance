@@ -2,9 +2,10 @@
 pragma solidity ^0.8.17;
 
 import "./BaseThresholdStrategy.sol";
+import "../access/GovernanceOnly.sol";
 import "../../libraries/DataTypes.sol";
 
-contract SimpleThresholdStrategy is BaseThresholdStrategy {
+contract SimpleThresholdStrategy is BaseThresholdStrategy, GovernanceOnly {
     uint256 public threshold;
     uint256 public paramPosition;
 
@@ -12,10 +13,26 @@ contract SimpleThresholdStrategy is BaseThresholdStrategy {
         DataTypes.Tier memory _underThresholdTier,
         DataTypes.Tier memory _overThresholdTier,
         uint256 _threshold,
-        uint256 _paramPosition
-    ) BaseThresholdStrategy(_underThresholdTier, _overThresholdTier) {
+        uint256 _paramPosition,
+        address _governance
+    )
+        BaseThresholdStrategy(_underThresholdTier, _overThresholdTier)
+        GovernanceOnly(_governance)
+    {
         threshold = _threshold;
         paramPosition = _paramPosition;
+    }
+
+    function setParameters(
+        DataTypes.Tier memory _underThresholdTier,
+        DataTypes.Tier memory _overThresholdTier,
+        uint256 _threshold,
+        uint256 _paramPosition
+    ) external governanceOnly {
+        underThresholdTier = _underThresholdTier;
+        overThresholdTier = _overThresholdTier;
+        paramPosition = _paramPosition;
+        threshold = _threshold;
     }
 
     function _isOverThreshold(

@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../access/ImmutableOwner.sol";
+import "../access/GovernanceOnly.sol";
 import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
 import "./BaseThresholdStrategy.sol";
 
-contract SetVaultFeesStrategy is ImmutableOwner, BaseThresholdStrategy {
+contract SetVaultFeesStrategy is GovernanceOnly, BaseThresholdStrategy {
     uint256 public threshold;
 
     constructor(
-        address _owner,
+        address _governance,
         uint256 _threshold,
         DataTypes.Tier memory underTier,
         DataTypes.Tier memory overTier
-    ) BaseThresholdStrategy(underTier, overTier) ImmutableOwner(_owner) {
+    ) BaseThresholdStrategy(underTier, overTier) GovernanceOnly(_governance) {
         threshold = _threshold;
     }
 
@@ -22,7 +22,7 @@ contract SetVaultFeesStrategy is ImmutableOwner, BaseThresholdStrategy {
         uint256 _threshold,
         DataTypes.Tier calldata underTier,
         DataTypes.Tier calldata overTier
-    ) external onlyOwner {
+    ) external governanceOnly {
         threshold = _threshold;
         underThresholdTier = underTier;
         overThresholdTier = overTier;

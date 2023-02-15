@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../access/ImmutableOwner.sol";
+import "../access/GovernanceOnly.sol";
 import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
 
-contract SetAddressStrategy is ITierStrategy, ImmutableOwner {
+contract SetAddressStrategy is ITierStrategy, GovernanceOnly {
     mapping(bytes32 => MapValue) keysToTiers;
     DataTypes.Tier public defaultTier;
 
@@ -15,16 +15,22 @@ contract SetAddressStrategy is ITierStrategy, ImmutableOwner {
     }
 
     constructor(
-        address _owner,
+        address _governance,
         DataTypes.Tier memory _defaultTier
-    ) ImmutableOwner(_owner) {
+    ) GovernanceOnly(_governance) {
+        defaultTier = _defaultTier;
+    }
+
+    function setDefaultTier(
+        DataTypes.Tier memory _defaultTier
+    ) external governanceOnly {
         defaultTier = _defaultTier;
     }
 
     function setValue(
         bytes32 key,
         DataTypes.Tier memory tier
-    ) external onlyOwner {
+    ) external governanceOnly {
         keysToTiers[key] = MapValue({present: true, tier: tier});
     }
 
