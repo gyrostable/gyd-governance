@@ -11,6 +11,7 @@ from tests.conftest import (
     QUORUM_NOT_MET_OUTCOME,
     THRESHOLD_NOT_MET_OUTCOME,
     SUCCESSFUL_OUTCOME,
+    Tier,
 )
 
 
@@ -34,14 +35,14 @@ def test_create_proposal(governance_manager, voting_power_aggregator, admin):
         admin.address,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
 
     aps = governance_manager.listActiveProposals()
     assert len(aps) == 1
 
     createdProposal = aps[0]
     assert tx.events["ProposalCreated"]["id"] == createdProposal[5]
-    assert proposal == createdProposal[-1]
+    assert proposal == createdProposal[-1][0]
 
 
 def test_create_proposal_without_sufficient_voting_power(
@@ -56,7 +57,7 @@ def test_create_proposal_without_sufficient_voting_power(
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
     with reverts("proposer doesn't have enough voting power to propose this action"):
-        governance_manager.createProposal(proposal)
+        governance_manager.createProposal([proposal])
 
 
 def test_vote_on_proposal_which_doesnt_exist(
@@ -75,7 +76,7 @@ def test_vote_on_inactive_proposal(governance_manager, voting_power_aggregator, 
         admin.address,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
 
     proposal_duration = PROPOSAL_LENGTH_DURATION + 1
     chain.sleep(proposal_duration)
@@ -94,7 +95,7 @@ def test_invalid_vote(governance_manager, voting_power_aggregator, admin):
         admin.address,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     with reverts("ballot must be cast FOR, AGAINST, or ABSTAIN"):
         governance_manager.vote(tx.events["ProposalCreated"]["id"], UNDEFINED_BALLOT)
 
@@ -108,7 +109,7 @@ def test_vote(governance_manager, voting_power_aggregator, admin):
         admin.address,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     tx = governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
     assert tx.events["VoteCast"]["votingPower"][0] == (mv.address, 5e18)
 
@@ -124,7 +125,7 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
         admin.address,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
 
@@ -145,7 +146,7 @@ def test_tally(governance_manager, raising_token, voting_power_aggregator, admin
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 
@@ -184,7 +185,7 @@ def test_tally_vote_doesnt_succeed(
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
 
@@ -207,7 +208,7 @@ def test_tally_vote_doesnt_meet_quorum(
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 
@@ -230,7 +231,7 @@ def test_tally_vote_abstentions_contribute_to_quorum(
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, ABSTAIN_BALLOT)
 
@@ -253,7 +254,7 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
 
     # voteThreshold is 1e17, so since each vote has 20 voting power (out of 100 for the
@@ -281,7 +282,7 @@ def test_tally_inactive_proposal(
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 
@@ -307,7 +308,7 @@ def test_tally_inactive_proposal(
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 
@@ -333,7 +334,7 @@ def test_execute_must_be_queued(
         raising_token,
         "0x" + function_signature_to_4byte_selector("totalSupply()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
 
     with reverts("proposal must be queued and ready to execute"):
@@ -351,7 +352,7 @@ def test_uses_override_tier_if_enough_gyd_is_wrapped(
         governance_manager,
         "0x" + function_signature_to_4byte_selector("upgradeTo()").hex(),
     )
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
 
     prop = governance_manager.listActiveProposals()[-1]
     assert prop[3] == 1e17  # vote threshold
@@ -364,7 +365,40 @@ def test_uses_override_tier_if_enough_gyd_is_wrapped(
     wrapped_erc20.updateEMA({"from": admin})
     chain.mine()
 
-    tx = governance_manager.createProposal(proposal)
+    tx = governance_manager.createProposal([proposal])
 
     prop = governance_manager.listActiveProposals()[-1]
     assert prop[3] == 4e17  # vote threshold
+
+
+def test_uses_highest_tier_if_multiple_proposals_made(
+    admin, voting_power_aggregator, governance_manager, mock_tierer
+):
+    mv = admin.deploy(MockVault, 50e18, 100e18)
+    ct = chain.time() - 1000
+    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct, {"from": admin})
+
+    strict_tier = Tier(
+        quorum=1e17,  # 0.1
+        proposal_threshold=1e17,  # 0.1
+        vote_threshold=5e17,  # 0.2
+        time_lock_duration=10,  # 10s
+        proposal_length=10,  # 10s
+        action_level=100,
+    )
+    mock_tierer.setOverride(governance_manager, strict_tier)
+
+    proposals = [
+        ProposalAction(
+            governance_manager,
+            "0x" + function_signature_to_4byte_selector("upgradeTo()").hex(),
+        ),
+        ProposalAction(
+            admin,
+            "0x" + function_signature_to_4byte_selector("upgradeTo()").hex(),
+        ),
+    ]
+    tx = governance_manager.createProposal(proposals)
+
+    prop = governance_manager.listActiveProposals()[-1]
+    assert prop[3] == 5e17  # vote threshold

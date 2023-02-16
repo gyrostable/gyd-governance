@@ -50,11 +50,31 @@ contract GovernanceManager {
     event ProposalCreated(
         uint24 id,
         address proposer,
-        DataTypes.ProposalAction action
+        DataTypes.ProposalAction[] actions
     );
 
-    function createProposal(DataTypes.ProposalAction calldata action) external {
+    function createProposal(
+        DataTypes.ProposalAction[] calldata actions
+    ) external {
+        require(actions.length > 0, "cannot create a proposal with no actions");
+
+        // Determine the tier associated with this proposal by taking the tier of the most impactful
+        // action, determined by the tier's actionLevel parameter.
+        DataTypes.ProposalAction memory action = actions[0];
         DataTypes.Tier memory tier = tierer.getTier(action.target, action.data);
+        if (actions.length > 1) {
+            for (uint256 i = 1; i < actions.length; i++) {
+                DataTypes.Tier memory currentTier = tierer.getTier(
+                    actions[i].target,
+                    actions[i].data
+                );
+                if (currentTier.actionLevel > tier.actionLevel) {
+                    action = actions[i];
+                    tier = currentTier;
+                }
+            }
+        }
+
         // If a sufficiently large amount of GYD is wrapped, this signifies that holders
         // are happy with the system and are against further high-level upgrades.
         // As a result, we should apply a higher tier if the proposed action has big impacts.
@@ -78,22 +98,29 @@ contract GovernanceManager {
         uint64 votingEndsAt = createdAt + tier.proposalLength;
         uint64 executableAt = votingEndsAt + tier.timeLockDuration;
 
-        DataTypes.Proposal memory proposal = DataTypes.Proposal({
-            id: proposalsCount,
-            proposer: msg.sender,
-            createdAt: createdAt,
-            votingEndsAt: votingEndsAt,
-            executableAt: executableAt,
-            status: DataTypes.Status.Active,
-            action: action,
-            quorum: tier.quorum,
-            voteThreshold: tier.voteThreshold
-        });
-        proposalsCount = proposal.id + 1;
-        _activeProposals.add(bytes32(bytes3(proposal.id)));
-        _proposals[proposal.id] = proposal;
+        DataTypes.Proposal storage p = _proposals[proposalsCount];
+        p.id = proposalsCount;
+        p.proposer = msg.sender;
+        p.createdAt = createdAt;
+        p.votingEndsAt = votingEndsAt;
+        p.executableAt = executableAt;
+        p.status = DataTypes.Status.Active;
+        p.quorum = tier.quorum;
+        p.voteThreshold = tier.voteThreshold;
 
-        emit ProposalCreated(proposal.id, proposal.proposer, proposal.action);
+        for (uint i = 0; i < actions.length; i++) {
+            p.actions.push(
+                DataTypes.ProposalAction({
+                    target: actions[i].target,
+                    data: actions[i].data
+                })
+            );
+        }
+
+        proposalsCount = p.id + 1;
+        _activeProposals.add(bytes32(bytes3(p.id)));
+
+        emit ProposalCreated(p.id, p.proposer, actions);
     }
 
     event VoteCast(
@@ -329,8 +356,12 @@ contract GovernanceManager {
             "proposal must be queued and ready to execute"
         );
 
-        DataTypes.ProposalAction memory action = proposal.action;
-        action.target.functionCall(action.data, "proposal execution failed");
+        for (uint256 i = 0; i < proposal.actions.length; i++) {
+            proposal.actions[i].target.functionCall(
+                proposal.actions[i].data,
+                "proposal execution failed"
+            );
+        }
         proposal.status = DataTypes.Status.Executed;
         _timelockedProposals.remove(bytes32(bytes3(proposalId)));
         emit ProposalExecuted(proposalId);

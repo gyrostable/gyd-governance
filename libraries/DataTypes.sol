@@ -26,7 +26,7 @@ library DataTypes {
         uint24 id;
         address proposer;
         Status status;
-        ProposalAction action;
+        ProposalAction[] actions;
     }
 
     struct PendingWithdrawal {
