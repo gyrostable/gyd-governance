@@ -8,21 +8,17 @@ import "../../interfaces/IVault.sol";
 import "../../interfaces/ILockingVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 import "../../libraries/DataTypes.sol";
-import "../../libraries/Delegations.sol";
+import "../../libraries/VotingPowerHistory.sol";
 import "../access/ImmutableOwner.sol";
 
 contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.UintSet;
-    using Delegations for Delegations.Delegations;
+    using VotingPowerHistory for VotingPowerHistory.History;
 
     IERC20 internal lpToken;
     uint256 internal withdrawalWaitDuration;
 
-    // Balances tracks the number of shares locked up that can be used for voting.
-    // i.e. shares queued for withdrawal are not accounted here.
-    mapping(address => uint256) internal balances;
-
-    Delegations.Delegations internal delegations;
+    VotingPowerHistory.History internal history;
 
     // Mapping of a user's address to their pending withdrawal ids.
     mapping(address => EnumerableSet.UintSet) internal userPendingWithdrawalIds;
@@ -53,14 +49,17 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
         require(_amount > 0, "cannot deposit zero _amount");
 
         lpToken.transferFrom(msg.sender, address(this), _amount);
-        balances[msg.sender] += _amount;
+        VotingPowerHistory.Record memory current = history.currentRecord(
+            msg.sender
+        );
+        history.updateVotingPower(
+            msg.sender,
+            current.baseVotingPower + _amount,
+            current.multiplier,
+            current.netDelegatedVotes
+        );
         if (_delegate != address(0) && _delegate != msg.sender) {
-            delegations.delegateVote(
-                msg.sender,
-                _delegate,
-                _amount,
-                balances[msg.sender]
-            );
+            history.delegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply += _amount;
 
@@ -68,16 +67,11 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
     }
 
     function delegateVote(address _delegate, uint256 _amount) external {
-        delegations.delegateVote(
-            msg.sender,
-            _delegate,
-            _amount,
-            balances[msg.sender]
-        );
+        history.delegateVote(msg.sender, _delegate, _amount);
     }
 
     function undelegateVote(address _delegate, uint256 _amount) external {
-        delegations.undelegateVote(msg.sender, _delegate, _amount);
+        history.undelegateVote(msg.sender, _delegate, _amount);
     }
 
     function changeDelegate(
@@ -85,13 +79,8 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
         address _newDelegate,
         uint256 _amount
     ) external {
-        delegations.undelegateVote(msg.sender, _oldDelegate, _amount);
-        delegations.delegateVote(
-            msg.sender,
-            _newDelegate,
-            _amount,
-            balances[msg.sender]
-        );
+        history.undelegateVote(msg.sender, _oldDelegate, _amount);
+        history.delegateVote(msg.sender, _newDelegate, _amount);
     }
 
     function initiateWithdrawal(
@@ -100,10 +89,20 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
     ) external returns (uint256) {
         require(_amount >= 0, "invalid withdrawal amount");
 
-        require(balances[msg.sender] >= _amount, "not enough to undelegate");
-        balances[msg.sender] -= _amount;
+        VotingPowerHistory.Record memory currentVotingPower = history
+            .currentRecord(msg.sender);
+        require(
+            currentVotingPower.baseVotingPower >= _amount,
+            "not enough to undelegate"
+        );
+        history.updateVotingPower(
+            msg.sender,
+            currentVotingPower.baseVotingPower - _amount,
+            currentVotingPower.multiplier,
+            currentVotingPower.netDelegatedVotes
+        );
         if (_delegate != address(0) && _delegate != msg.sender) {
-            delegations.undelegateVote(msg.sender, _delegate, _amount);
+            history.undelegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply -= _amount;
 
@@ -153,10 +152,7 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
     }
 
     function getRawVotingPower(address _user) external view returns (uint256) {
-        return
-            uint256(
-                int256(balances[_user]) + delegations.netDelegatedVotes(_user)
-            );
+        return history.getVotingPower(_user, block.timestamp);
     }
 
     function getTotalRawVotingPower() external view returns (uint256) {

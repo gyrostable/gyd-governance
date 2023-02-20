@@ -64,11 +64,6 @@ library DataTypes {
         uint8 actionLevel;
     }
 
-    struct BaseVotingPower {
-        uint128 multiplier;
-        uint128 base;
-    }
-
     struct EmergencyRecoveryProposal {
         uint64 completesAt;
         Status status;

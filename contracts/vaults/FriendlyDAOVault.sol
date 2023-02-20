@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../access/ImmutableOwner.sol";
-import "../../libraries/Delegations.sol";
+import "../../libraries/VotingPowerHistory.sol";
 
 import "../../interfaces/IVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 
 contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
-    using EnumerableMap for EnumerableMap.AddressToUintMap;
-    using Delegations for Delegations.Delegations;
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using VotingPowerHistory for VotingPowerHistory.History;
 
-    EnumerableMap.AddressToUintMap internal _daoVotingPower;
+    EnumerableSet.AddressSet internal _daos;
     uint256 internal _totalRawVotingPower;
 
-    Delegations.Delegations internal delegations;
+    VotingPowerHistory.History internal history;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
@@ -25,15 +25,25 @@ contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
         uint256 votingPower,
         uint256 totalVotingPower
     ) external onlyOwner {
-        _daoVotingPower.set(dao, votingPower);
+        _daos.add(dao);
+
+        VotingPowerHistory.Record memory current = history.currentRecord(dao);
+        history.updateVotingPower(
+            dao,
+            votingPower,
+            ScaledMath.ONE,
+            current.netDelegatedVotes
+        );
+
         _totalRawVotingPower = totalVotingPower;
 
         uint256 actualTotalPower;
-        uint256 daosCount = _daoVotingPower.length();
+        uint256 daosCount = _daos.length();
         for (uint256 i; i < daosCount; i++) {
-            (, uint256 currentPower) = _daoVotingPower.at(i);
+            uint256 currentPower = history.getVotingPower(dao, block.timestamp);
             actualTotalPower += currentPower;
         }
+
         if (actualTotalPower > totalVotingPower)
             revert Errors.InvalidVotingPowerUpdate(
                 actualTotalPower,
@@ -41,22 +51,12 @@ contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
             );
     }
 
-    function baseTotalFor(address account) internal view returns (uint256) {
-        (, uint256 baseTotal) = _daoVotingPower.tryGet(account);
-        return baseTotal;
-    }
-
     function delegateVote(address _delegate, uint256 _amount) external {
-        delegations.delegateVote(
-            msg.sender,
-            _delegate,
-            _amount,
-            baseTotalFor(msg.sender)
-        );
+        history.delegateVote(msg.sender, _delegate, _amount);
     }
 
     function undelegateVote(address _delegate, uint256 _amount) external {
-        delegations.undelegateVote(msg.sender, _delegate, _amount);
+        history.undelegateVote(msg.sender, _delegate, _amount);
     }
 
     function changeDelegate(
@@ -64,23 +64,14 @@ contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
         address _newDelegate,
         uint256 _amount
     ) external {
-        delegations.undelegateVote(msg.sender, _oldDelegate, _amount);
-        delegations.delegateVote(
-            msg.sender,
-            _newDelegate,
-            _amount,
-            baseTotalFor(msg.sender)
-        );
+        history.undelegateVote(msg.sender, _oldDelegate, _amount);
+        history.delegateVote(msg.sender, _newDelegate, _amount);
     }
 
     function getRawVotingPower(
         address account
     ) external view returns (uint256) {
-        return
-            uint256(
-                int256(baseTotalFor(account)) +
-                    delegations.netDelegatedVotes(account)
-            );
+        return history.getVotingPower(account, block.timestamp);
     }
 
     function getTotalRawVotingPower() external view returns (uint256) {

@@ -2,13 +2,14 @@
 pragma solidity ^0.8.17;
 
 import "./NFTVault.sol";
-import "../../libraries/BaseVotingPower.sol";
+import "../../libraries/VotingPowerHistory.sol";
 import "../../libraries/DataTypes.sol";
 import "../../interfaces/IVotingPowersUpdater.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
-    using BaseVotingPower for DataTypes.BaseVotingPower;
+    using VotingPowerHistory for VotingPowerHistory.History;
+    using VotingPowerHistory for VotingPowerHistory.Record;
 
     address internal immutable underlyingAddress;
 
@@ -26,10 +27,15 @@ contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
         address _user,
         uint128 _addedCount
     ) external onlyUnderlying {
-        DataTypes.BaseVotingPower storage ovp = ownVotingPowers[_user];
+        VotingPowerHistory.Record memory ovp = history.currentRecord(_user);
+
         uint256 oldTotal = ovp.total();
-        ovp.initialize();
-        ovp.base += _addedCount;
-        sumVotingPowers += (ovp.total() - oldTotal);
+        VotingPowerHistory.Record memory nvp = history.updateVotingPower(
+            _user,
+            ovp.baseVotingPower + _addedCount,
+            ovp.multiplier,
+            ovp.netDelegatedVotes
+        );
+        sumVotingPowers += (nvp.total() - oldTotal);
     }
 }

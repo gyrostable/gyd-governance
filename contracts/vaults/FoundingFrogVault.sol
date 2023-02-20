@@ -4,14 +4,14 @@ pragma solidity ^0.8.17;
 import "./NFTVault.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/ScaledMath.sol";
-import "../../libraries/BaseVotingPower.sol";
 import "../../libraries/Merkle.sol";
+import "../../libraries/VotingPowerHistory.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract FoundingFrogVault is NFTVault, EIP712 {
-    using BaseVotingPower for DataTypes.BaseVotingPower;
     using Merkle for Merkle.Root;
+    using VotingPowerHistory for VotingPowerHistory.History;
 
     mapping(address => address) private _claimed;
 
@@ -54,9 +54,15 @@ contract FoundingFrogVault is NFTVault, EIP712 {
 
         _claimed[owner] = msg.sender;
 
-        DataTypes.BaseVotingPower storage ovp = ownVotingPowers[msg.sender];
-        ovp.multiplier = multiplier;
-        ovp.base += uint128(ScaledMath.ONE);
+        VotingPowerHistory.Record memory current = history.currentRecord(
+            msg.sender
+        );
+        history.updateVotingPower(
+            msg.sender,
+            current.baseVotingPower + ScaledMath.ONE,
+            multiplier,
+            current.netDelegatedVotes
+        );
     }
 
     function _encodeProof(
