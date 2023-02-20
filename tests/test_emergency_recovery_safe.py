@@ -25,7 +25,10 @@ def safe(admin, GnosisSafe, GnosisSafeProxy):
 
 @pytest.fixture()
 def signers(accounts):
-    return [accounts.add() for i in range(3)]
+    result = [accounts.add() for i in range(3)]
+    for account in result:
+        accounts[5].transfer(to=account, amount="1 ether")
+    return result
 
 
 def sign_and_execute_transaction(account, safe, address, value, data):

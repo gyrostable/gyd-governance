@@ -89,9 +89,11 @@ def signature(local_account, multiplier, verifying_contract, proof):
     return sm.signature.hex()
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def local_account(accounts):
-    return accounts.add(private_key=ACCOUNT_KEY)
+    local_account = accounts.add(private_key=ACCOUNT_KEY)
+    accounts[5].transfer(to=local_account, amount="1 ether")
+    return local_account
 
 
 @pytest.fixture(scope="session")
