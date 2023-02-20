@@ -6,7 +6,10 @@ compiler:
       runs: 200
     remappings:
     - "@gnosis.pm=node_modules/@gnosis.pm"
-    - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.8.0"
+    - "@openzeppelin=node_modules/@openzeppelin"
 
-dependencies:
-  - OpenZeppelin/openzeppelin-contracts@4.8.0
+networks:
+  development:
+    priority_fee: 1 gwei
+    cmd_settings:
+      evm_version: london
