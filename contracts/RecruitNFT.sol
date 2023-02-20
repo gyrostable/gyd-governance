@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../../../interfaces/IVotingPowersUpdater.sol";
-import "../../libraries/Merkle.sol";
+import "../interfaces/IVotingPowersUpdater.sol";
+import "../libraries/Merkle.sol";
 import "./access/ImmutableOwner.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
