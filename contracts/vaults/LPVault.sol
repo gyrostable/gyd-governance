@@ -10,8 +10,15 @@ import "../../interfaces/IDelegatingVault.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/VotingPowerHistory.sol";
 import "../access/ImmutableOwner.sol";
+import "../LiquidityMining.sol";
 
-contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
+contract LPVault is
+    IVault,
+    ILockingVault,
+    IDelegatingVault,
+    ImmutableOwner,
+    LiquidityMining
+{
     using EnumerableSet for EnumerableSet.UintSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
@@ -27,8 +34,7 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
 
     uint256 internal nextWithdrawalId;
 
-    // Total supply of shares locked in the vault, regardless of whether they
-    // are queued for withdrawal or not.
+    // Total supply of shares locked in the vault that are not queued for withdrawal
     uint256 public totalSupply;
 
     constructor(
@@ -62,6 +68,7 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
             history.delegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply += _amount;
+        _stake(msg.sender, _amount);
 
         emit Deposit(msg.sender, _delegate, _amount);
     }
@@ -105,6 +112,7 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
             history.undelegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply -= _amount;
+        _unstake(msg.sender, _amount);
 
         DataTypes.PendingWithdrawal memory withdrawal = DataTypes
             .PendingWithdrawal({
@@ -169,5 +177,18 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
             pending[i] = pendingWithdrawals[ids.at(i)];
         }
         return pending;
+    }
+
+    function rewardsEmissionRate() public view override returns (uint256) {
+        // TODO: decide on actual value
+        return uint256(100_000e18) / 365 days;
+    }
+
+    function _mintRewards(
+        address beneficiary,
+        uint256 amount
+    ) internal override returns (uint256) {
+        // TODO: decide on how to handle rewards
+        return amount;
     }
 }

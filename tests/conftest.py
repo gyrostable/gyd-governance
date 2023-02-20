@@ -102,6 +102,16 @@ def admin(accounts):
 
 
 @pytest.fixture(scope="session")
+def alice(accounts):
+    return accounts[1]
+
+
+@pytest.fixture(scope="session")
+def bob(accounts):
+    return accounts[2]
+
+
+@pytest.fixture(scope="session")
 def dummy_dao_addresses():
     return [
         "0xa7588b0d49cB5B9e7447aaBe6299F2EaB83Cf55A",
