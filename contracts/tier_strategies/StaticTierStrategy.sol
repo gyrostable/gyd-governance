@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../access/ImmutableOwner.sol";
+import "../access/GovernanceOnly.sol";
 import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
 
-contract StaticTierStrategy is ImmutableOwner, ITierStrategy {
-    DataTypes.Tier private tier;
+contract StaticTierStrategy is ITierStrategy, GovernanceOnly {
+    DataTypes.Tier public tier;
 
     constructor(
-        address _owner,
+        address _governance,
         DataTypes.Tier memory _tier
-    ) ImmutableOwner(_owner) {
+    ) GovernanceOnly(_governance) {
+        tier = _tier;
+    }
+
+    function setTier(DataTypes.Tier memory _tier) external governanceOnly {
         tier = _tier;
     }
 

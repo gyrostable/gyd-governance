@@ -245,3 +245,27 @@ def upgradeability_tier_strategy(admin):
             action_level=20,
         ),
     )
+
+
+@pytest.fixture
+def under_tier():
+    return Tier(
+        quorum=2e17,
+        vote_threshold=2e17,
+        proposal_threshold=2e17,
+        time_lock_duration=20,
+        proposal_length=20,
+        action_level=10,
+    )
+
+
+@pytest.fixture
+def over_tier():
+    return Tier(
+        quorum=5e17,
+        vote_threshold=2e17,
+        proposal_threshold=2e17,
+        time_lock_duration=20,
+        proposal_length=20,
+        action_level=10,
+    )

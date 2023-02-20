@@ -3,7 +3,7 @@ from brownie import reverts
 from tests.conftest import Tier
 
 
-def test_returns_params_if_initialized(static_tier_strategy):
+def test_static_tier_strategy(static_tier_strategy, under_tier):
     params = Tier(
         quorum=1e17,
         vote_threshold=2e17,
@@ -15,3 +15,8 @@ def test_returns_params_if_initialized(static_tier_strategy):
     selector = function_signature_to_4byte_selector("totalSupply()")
     got_params = static_tier_strategy.getTier(selector)
     assert got_params == params
+
+    static_tier_strategy.setTier(under_tier)
+
+    got_params = static_tier_strategy.getTier(selector)
+    assert got_params == under_tier
