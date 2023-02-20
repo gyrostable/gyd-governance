@@ -62,16 +62,14 @@ contract GovernanceManager {
         // action, determined by the tier's actionLevel parameter.
         DataTypes.ProposalAction memory action = actions[0];
         DataTypes.Tier memory tier = tierer.getTier(action.target, action.data);
-        if (actions.length > 1) {
-            for (uint256 i = 1; i < actions.length; i++) {
-                DataTypes.Tier memory currentTier = tierer.getTier(
-                    actions[i].target,
-                    actions[i].data
-                );
-                if (currentTier.actionLevel > tier.actionLevel) {
-                    action = actions[i];
-                    tier = currentTier;
-                }
+        for (uint256 i = 1; i < actions.length; i++) {
+            DataTypes.Tier memory currentTier = tierer.getTier(
+                actions[i].target,
+                actions[i].data
+            );
+            if (currentTier.actionLevel > tier.actionLevel) {
+                action = actions[i];
+                tier = currentTier;
             }
         }
 
@@ -108,13 +106,8 @@ contract GovernanceManager {
         p.quorum = tier.quorum;
         p.voteThreshold = tier.voteThreshold;
 
-        for (uint i = 0; i < actions.length; i++) {
-            p.actions.push(
-                DataTypes.ProposalAction({
-                    target: actions[i].target,
-                    data: actions[i].data
-                })
-            );
+        for (uint256 i = 0; i < actions.length; i++) {
+            p.actions.push(actions[i]);
         }
 
         proposalsCount = p.id + 1;
