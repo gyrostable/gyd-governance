@@ -91,41 +91,34 @@ library VotingPowerHistory {
         Record[] memory records,
         uint256 at
     ) internal view returns (bool found, Record memory) {
-        if (records.length == 0) {
-            return (false, zeroRecord());
-        } else if (records.length == 1) {
-            Record memory rec = records[0];
-            return rec.at <= at ? (true, rec) : (false, zeroRecord());
-        } else {
-            uint256 midIndex = records.length / 2;
-            Record memory lowerBound = records[midIndex - 1];
-            Record memory upperBound = records[midIndex];
-            if (lowerBound.at <= at && at < upperBound.at) {
-                return (true, lowerBound);
-            } else if (upperBound.at <= at) {
-                Record[] memory recs = subarrayOf(
-                    records,
-                    midIndex,
-                    records.length
-                );
-                return binarySearch(recs, at);
-            } else {
-                Record[] memory recs = subarrayOf(records, 0, midIndex);
-                return binarySearch(recs, at);
-            }
-        }
+        return _binarySearch(records, at, 0, records.length);
     }
 
-    function subarrayOf(
+    function _binarySearch(
         Record[] memory records,
+        uint256 at,
         uint256 startIdx,
         uint256 endIdx
-    ) internal pure returns (Record[] memory) {
-        Record[] memory recs = new Record[](endIdx - startIdx);
-        for (uint256 i = startIdx; i < endIdx; i++) {
-            recs[i - startIdx] = records[i];
+    ) internal view returns (bool found, Record memory) {
+        if (startIdx >= endIdx) {
+            return (false, zeroRecord());
         }
-        return recs;
+
+        if (endIdx - startIdx == 1) {
+            Record memory rec = records[startIdx];
+            return rec.at <= at ? (true, rec) : (false, zeroRecord());
+        }
+
+        uint256 midIdx = (endIdx + startIdx) / 2;
+        Record memory lowerBound = records[midIdx - 1];
+        Record memory upperBound = records[midIdx];
+        if (lowerBound.at <= at && at < upperBound.at) {
+            return (true, lowerBound);
+        } else if (upperBound.at <= at) {
+            return _binarySearch(records, at, midIdx, endIdx);
+        } else {
+            return _binarySearch(records, at, startIdx, midIdx);
+        }
     }
 
     function delegateVote(
