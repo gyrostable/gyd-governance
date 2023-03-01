@@ -33,7 +33,7 @@ abstract contract LiquidityMining is ILiquidityMining {
 
     function claimableRewards(
         address beneficiary
-    ) external view returns (uint256) {
+    ) external view virtual returns (uint256) {
         uint256 totalStakedIntegral = _totalStakedIntegral;
         if (totalStaked > 0) {
             totalStakedIntegral += (rewardsEmissionRate() *
@@ -62,7 +62,7 @@ abstract contract LiquidityMining is ILiquidityMining {
         _lastCheckpointTime = block.timestamp;
     }
 
-    function userCheckpoint(address account) public {
+    function userCheckpoint(address account) public virtual {
         globalCheckpoint();
         uint256 totalStakedIntegral = _totalStakedIntegral;
         _perUserShare[account] += stakedBalanceOf(account).mulDown(
