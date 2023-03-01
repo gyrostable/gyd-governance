@@ -11,6 +11,8 @@ abstract contract LiquidityMining is ILiquidityMining {
 
     uint256 internal _totalStakedIntegral;
     uint256 internal _lastCheckpointTime;
+    /// @dev This contract only tracks this variable, we don't use it; but it may be convenient for inheriting contracts.
+    uint256 internal _totalUnclaimedRewards;
     mapping(address => uint256) internal _perUserStakedIntegral;
     mapping(address => uint256) internal _perUserShare;
     mapping(address => uint256) internal _perUserStaked;
@@ -25,6 +27,7 @@ abstract contract LiquidityMining is ILiquidityMining {
         if (amount == 0) return 0;
         delete _perUserShare[msg.sender];
         emit Claim(msg.sender, amount);
+        _totalUnclaimedRewards -= amount;
         return _mintRewards(msg.sender, amount);
     }
 
@@ -52,8 +55,9 @@ abstract contract LiquidityMining is ILiquidityMining {
         uint256 elapsedTime = block.timestamp - _lastCheckpointTime;
         uint256 totalStaked_ = totalStaked;
         if (totalStaked_ > 0) {
-            _totalStakedIntegral += (rewardsEmissionRate() * elapsedTime)
-                .divDown(totalStaked_);
+            uint256 newRewards = rewardsEmissionRate() * elapsedTime;
+            _totalStakedIntegral += newRewards.divDown(totalStaked_);
+            _totalUnclaimedRewards += newRewards;
         }
         _lastCheckpointTime = block.timestamp;
     }
