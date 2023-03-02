@@ -2,23 +2,33 @@
 pragma solidity ^0.8.17;
 
 import "../interfaces/ILiquidityMining.sol";
-import "../libraries/ScaledMath.sol";
+import "../libraries/FixedPoint.sol";
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract LiquidityMining is ILiquidityMining {
-    using ScaledMath for uint256;
+    using FixedPoint for uint256;
+    using SafeERC20 for IERC20;
 
     uint256 public override totalStaked;
 
     uint256 internal _totalStakedIntegral;
     uint256 internal _lastCheckpointTime;
-    /// @dev This contract only tracks this variable, we don't use it; but it may be convenient for inheriting contracts.
+    /// @dev This contract only tracks these, we don't use it; but it may be convenient for inheriting contracts.
     uint256 internal _totalUnclaimedRewards;
     mapping(address => uint256) internal _perUserStakedIntegral;
     mapping(address => uint256) internal _perUserShare;
     mapping(address => uint256) internal _perUserStaked;
 
-    constructor() {
+    uint256 internal _rewardsEmissionRate;
+    uint256 public override rewardsEmissionEndTime;
+
+    IERC20 public immutable rewardToken;
+
+    constructor(address _rewardToken) {
         _lastCheckpointTime = block.timestamp;
+        rewardToken = IERC20(_rewardToken);
     }
 
     function claimRewards() external returns (uint256) {
@@ -31,13 +41,11 @@ abstract contract LiquidityMining is ILiquidityMining {
         return _mintRewards(msg.sender, amount);
     }
 
-    function claimableRewards(
-        address beneficiary
-    ) external view virtual returns (uint256) {
+    function claimableRewards(address beneficiary) external view virtual returns (uint256) {
         uint256 totalStakedIntegral = _totalStakedIntegral;
         if (totalStaked > 0) {
-            totalStakedIntegral += (rewardsEmissionRate() *
-                (block.timestamp - _lastCheckpointTime)).divDown(totalStaked);
+            totalStakedIntegral += (rewardsEmissionRate() * (block.timestamp - _lastCheckpointTime))
+                .divDown(totalStaked);
         }
 
         return
@@ -89,10 +97,39 @@ abstract contract LiquidityMining is ILiquidityMining {
         emit Unstake(account, amount);
     }
 
-    function rewardsEmissionRate() public view virtual returns (uint256);
+    /// @dev Helper function for the inheriting contract. Authorization should be performed by the inheriting contract.
+    function _startMining(
+        address rewardsFrom,
+        uint256 amount,
+        uint256 endTime
+    ) internal {
+        globalCheckpoint();
+        rewardToken.safeTransferFrom(rewardsFrom, address(this), amount);
+        _rewardsEmissionRate = amount / (endTime - block.timestamp);
+        rewardsEmissionEndTime = endTime;
+        emit StartMining(amount, endTime);
+    }
 
-    function _mintRewards(
-        address beneficiary,
-        uint256 amount
-    ) internal virtual returns (uint256);
+    /// @dev same as `_startLiquidityMining` but for stopping.
+    function _stopMining(address reimbursementTo) internal {
+        globalCheckpoint();
+        uint256 reimbursementAmount = rewardToken.balanceOf(address(this)) - _totalUnclaimedRewards;
+        rewardToken.safeTransfer(reimbursementTo, reimbursementAmount);
+        rewardsEmissionEndTime = 0;
+        emit StopMining();
+    }
+
+    function _mintRewards(address beneficiary, uint256 amount) internal returns (uint256) {
+        rewardToken.safeTransfer(beneficiary, amount);
+        return amount;
+    }
+
+    function rewardsEmissionRate() public view override returns (uint256) {
+        return block.timestamp <= rewardsEmissionEndTime ? _rewardsEmissionRate : 0;
+    }
+
+    /// @dev These functions would typically be overloaded by the calling contract to perform its own authorization and
+    /// then call the underscore versions.
+    function startMining(address rewardsFrom, uint256 amount, uint256 endTime) external virtual;
+    function stopMining(address reimbursementTo) external virtual;
 }

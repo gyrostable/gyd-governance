@@ -2,16 +2,12 @@
 pragma solidity ^0.8.17;
 
 import "../LiquidityMining.sol";
-import "./ERC20Mintable.sol";
 
 contract SampleLiquidityMining is LiquidityMining {
-    ERC20Mintable public rewardToken;
     IERC20 public depositToken;
 
-    constructor(IERC20 _depositToken) LiquidityMining() {
+    constructor(IERC20 _depositToken, IERC20 _rewardsToken) LiquidityMining(_rewardsToken) {
         depositToken = _depositToken;
-        rewardToken = new ERC20Mintable();
-        _lastCheckpointTime = block.timestamp;
     }
 
     function deposit(uint256 amount) external {
@@ -24,16 +20,10 @@ contract SampleLiquidityMining is LiquidityMining {
         depositToken.transfer(msg.sender, amount);
     }
 
-    /// @dev 1M tokens per year
-    function rewardsEmissionRate() public pure override returns (uint256) {
-        return uint256(1_000_000e18) / 365 days;
+    function startMining(address rewardsFrom, uint256 amount, uint256 endTime) external {
+        _startMining(rewardsFrom, amount, endTime);
     }
-
-    function _mintRewards(
-        address account,
-        uint256 amount
-    ) internal override returns (uint256) {
-        rewardToken.mint(account, amount);
-        return amount;
+    function stopMining(address reimbursementTo) external {
+        _stopMining(reimbursementTo);
     }
 }

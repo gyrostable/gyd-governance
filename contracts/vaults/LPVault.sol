@@ -40,10 +40,18 @@ contract LPVault is
     constructor(
         address _owner,
         address _lpToken,
+        address _rewardsToken,
         uint256 _withdrawalWaitDuration
-    ) ImmutableOwner(_owner) {
+    ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
         lpToken = IERC20(_lpToken);
         withdrawalWaitDuration = _withdrawalWaitDuration;
+    }
+
+    function startMining(address rewardsFrom, uint256 amount, uint256 endTime) external override onlyOwner {
+        _startMining(rewardsFrom, amount, endTime);
+    }
+    function stopMining(address reimbursementTo) external override onlyOwner {
+        _stopMining(reimbursementTo);
     }
 
     function setWithdrawalWaitDuration(uint256 _duration) external onlyOwner {
