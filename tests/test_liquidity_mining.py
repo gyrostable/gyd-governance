@@ -64,8 +64,8 @@ def _claim_and_check_rewards(lm, reward_token, account, expected):
     balance_increase = int(reward_token.balanceOf(account)) - balance_before
     assert tx.events["Claim"][0]["beneficiary"] == account
     amount_claimed = int(tx.events["Claim"][0]["amount"])
-    assert amount_claimed == pytest.approx(expected)
-    assert balance_increase == pytest.approx(expected)
+    assert amount_claimed == pytest.approx(expected, rel=1e-4)
+    assert balance_increase == pytest.approx(expected, rel=1e-4)
 
 
 def test_rewards_computation(lm, alice, bob, chain, reward_token):

@@ -7,6 +7,9 @@ import "../libraries/FixedPoint.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/// @dev Base contract for liquidity mining.
+/// `startMining` and `stopMining` would typically be implemented by the subcontract to perform
+/// its own authorization and then call the underscore versions
 abstract contract LiquidityMining is ILiquidityMining {
     using FixedPoint for uint256;
     using SafeERC20 for IERC20;
@@ -136,14 +139,4 @@ abstract contract LiquidityMining is ILiquidityMining {
                 ? _rewardsEmissionRate
                 : 0;
     }
-
-    /// @dev These functions would typically be overloaded by the calling contract to perform its own authorization and
-    /// then call the underscore versions.
-    function startMining(
-        address rewardsFrom,
-        uint256 amount,
-        uint256 endTime
-    ) external virtual;
-
-    function stopMining(address reimbursementTo) external virtual;
 }
