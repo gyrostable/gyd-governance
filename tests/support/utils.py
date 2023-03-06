@@ -1,5 +1,4 @@
-import math
-from decimal import Decimal
+from decimal import Decimal, ROUND_FLOOR
 from typing import Iterable, List, NamedTuple, Union, overload
 
 DecimalLike = Union[int, str, Decimal]
@@ -48,4 +47,4 @@ def scale(x, decimals=18):
 
 
 def scale_scalar(x: DecimalLike, decimals: int = 18) -> Decimal:
-    return math.floor(to_decimal(x) * 10**decimals)
+    return (to_decimal(x) * 10**decimals).quantize(0, rounding=ROUND_FLOOR)

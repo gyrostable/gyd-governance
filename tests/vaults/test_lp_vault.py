@@ -8,8 +8,9 @@ DURATION_SECONDS = 60 * 60
 
 
 @pytest.fixture
-def lp_vault(token, admin):
-    return admin.deploy(LPVault, admin, token, DURATION_SECONDS)
+def lp_vault(token, admin, ERC20Mintable):
+    reward_token = admin.deploy(ERC20Mintable)
+    return admin.deploy(LPVault, admin, token, reward_token, DURATION_SECONDS)
 
 
 def test_deposit(admin, token, lp_vault):

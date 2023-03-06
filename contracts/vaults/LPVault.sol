@@ -10,8 +10,15 @@ import "../../interfaces/IDelegatingVault.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/VotingPowerHistory.sol";
 import "../access/ImmutableOwner.sol";
+import "../LiquidityMining.sol";
 
-contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
+contract LPVault is
+    IVault,
+    ILockingVault,
+    IDelegatingVault,
+    ImmutableOwner,
+    LiquidityMining
+{
     using EnumerableSet for EnumerableSet.UintSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
@@ -27,17 +34,29 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
 
     uint256 internal nextWithdrawalId;
 
-    // Total supply of shares locked in the vault, regardless of whether they
-    // are queued for withdrawal or not.
+    // Total supply of shares locked in the vault that are not queued for withdrawal
     uint256 public totalSupply;
 
     constructor(
         address _owner,
         address _lpToken,
+        address _rewardsToken,
         uint256 _withdrawalWaitDuration
-    ) ImmutableOwner(_owner) {
+    ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
         lpToken = IERC20(_lpToken);
         withdrawalWaitDuration = _withdrawalWaitDuration;
+    }
+
+    function startMining(
+        address rewardsFrom,
+        uint256 amount,
+        uint256 endTime
+    ) external override onlyOwner {
+        _startMining(rewardsFrom, amount, endTime);
+    }
+
+    function stopMining(address reimbursementTo) external override onlyOwner {
+        _stopMining(reimbursementTo);
     }
 
     function setWithdrawalWaitDuration(uint256 _duration) external onlyOwner {
@@ -62,6 +81,7 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
             history.delegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply += _amount;
+        _stake(msg.sender, _amount);
 
         emit Deposit(msg.sender, _delegate, _amount);
     }
@@ -105,6 +125,7 @@ contract LPVault is IVault, ILockingVault, IDelegatingVault, ImmutableOwner {
             history.undelegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply -= _amount;
+        _unstake(msg.sender, _amount);
 
         DataTypes.PendingWithdrawal memory withdrawal = DataTypes
             .PendingWithdrawal({
