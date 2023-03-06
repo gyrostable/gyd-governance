@@ -47,9 +47,14 @@ contract LPVault is
         withdrawalWaitDuration = _withdrawalWaitDuration;
     }
 
-    function startMining(address rewardsFrom, uint256 amount, uint256 endTime) external override onlyOwner {
+    function startMining(
+        address rewardsFrom,
+        uint256 amount,
+        uint256 endTime
+    ) external override onlyOwner {
         _startMining(rewardsFrom, amount, endTime);
     }
+
     function stopMining(address reimbursementTo) external override onlyOwner {
         _stopMining(reimbursementTo);
     }

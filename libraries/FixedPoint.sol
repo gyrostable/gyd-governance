@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Gyro-1.0
 // for information on licensing please see the README in the GitHub repository <https://github.com/gyrostable/core-protocol>.
 
-
 pragma solidity ^0.8.4;
 
 import "./LogExpMath.sol";
@@ -137,7 +136,10 @@ library FixedPoint {
      * Computes a**b where a is a scaled fixed-point number and b is an integer
      * The computation is performed in O(log n)
      */
-    function intPowDown(uint256 base, uint256 exp) internal pure returns (uint256) {
+    function intPowDown(
+        uint256 base,
+        uint256 exp
+    ) internal pure returns (uint256) {
         uint256 result = FixedPoint.ONE;
         while (exp > 0) {
             if (exp % 2 == 1) {

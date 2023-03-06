@@ -6,7 +6,10 @@ import "../LiquidityMining.sol";
 contract SampleLiquidityMining is LiquidityMining {
     IERC20 public depositToken;
 
-    constructor(address _depositToken, address _rewardsToken) LiquidityMining(_rewardsToken) {
+    constructor(
+        address _depositToken,
+        address _rewardsToken
+    ) LiquidityMining(_rewardsToken) {
         depositToken = IERC20(_depositToken);
     }
 
@@ -20,9 +23,14 @@ contract SampleLiquidityMining is LiquidityMining {
         depositToken.transfer(msg.sender, amount);
     }
 
-    function startMining(address rewardsFrom, uint256 amount, uint256 endTime) external override {
+    function startMining(
+        address rewardsFrom,
+        uint256 amount,
+        uint256 endTime
+    ) external override {
         _startMining(rewardsFrom, amount, endTime);
     }
+
     function stopMining(address reimbursementTo) external override {
         _stopMining(reimbursementTo);
     }

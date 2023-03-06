@@ -41,11 +41,13 @@ abstract contract LiquidityMining is ILiquidityMining {
         return _mintRewards(msg.sender, amount);
     }
 
-    function claimableRewards(address beneficiary) external view virtual returns (uint256) {
+    function claimableRewards(
+        address beneficiary
+    ) external view virtual returns (uint256) {
         uint256 totalStakedIntegral = _totalStakedIntegral;
         if (totalStaked > 0) {
-            totalStakedIntegral += (rewardsEmissionRate() * (block.timestamp - _lastCheckpointTime))
-                .divDown(totalStaked);
+            totalStakedIntegral += (rewardsEmissionRate() *
+                (block.timestamp - _lastCheckpointTime)).divDown(totalStaked);
         }
 
         return
@@ -113,23 +115,35 @@ abstract contract LiquidityMining is ILiquidityMining {
     /// @dev same as `_startLiquidityMining` but for stopping.
     function _stopMining(address reimbursementTo) internal {
         globalCheckpoint();
-        uint256 reimbursementAmount = rewardToken.balanceOf(address(this)) - _totalUnclaimedRewards;
+        uint256 reimbursementAmount = rewardToken.balanceOf(address(this)) -
+            _totalUnclaimedRewards;
         rewardToken.safeTransfer(reimbursementTo, reimbursementAmount);
         rewardsEmissionEndTime = 0;
         emit StopMining();
     }
 
-    function _mintRewards(address beneficiary, uint256 amount) internal virtual returns (uint256) {
+    function _mintRewards(
+        address beneficiary,
+        uint256 amount
+    ) internal virtual returns (uint256) {
         rewardToken.safeTransfer(beneficiary, amount);
         return amount;
     }
 
     function rewardsEmissionRate() public view override returns (uint256) {
-        return block.timestamp <= rewardsEmissionEndTime ? _rewardsEmissionRate : 0;
+        return
+            block.timestamp <= rewardsEmissionEndTime
+                ? _rewardsEmissionRate
+                : 0;
     }
 
     /// @dev These functions would typically be overloaded by the calling contract to perform its own authorization and
     /// then call the underscore versions.
-    function startMining(address rewardsFrom, uint256 amount, uint256 endTime) external virtual;
+    function startMining(
+        address rewardsFrom,
+        uint256 amount,
+        uint256 endTime
+    ) external virtual;
+
     function stopMining(address reimbursementTo) external virtual;
 }
