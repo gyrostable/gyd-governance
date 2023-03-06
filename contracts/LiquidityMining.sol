@@ -119,7 +119,7 @@ abstract contract LiquidityMining is ILiquidityMining {
         emit StopMining();
     }
 
-    function _mintRewards(address beneficiary, uint256 amount) internal returns (uint256) {
+    function _mintRewards(address beneficiary, uint256 amount) internal virtual returns (uint256) {
         rewardToken.safeTransfer(beneficiary, amount);
         return amount;
     }

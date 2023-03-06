@@ -186,17 +186,4 @@ contract LPVault is
         }
         return pending;
     }
-
-    function rewardsEmissionRate() public view override returns (uint256) {
-        // TODO: decide on actual value
-        return uint256(100_000e18) / 365 days;
-    }
-
-    function _mintRewards(
-        address beneficiary,
-        uint256 amount
-    ) internal override returns (uint256) {
-        // TODO: decide on how to handle rewards
-        return amount;
-    }
 }
