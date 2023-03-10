@@ -6,7 +6,7 @@ The Gyroscope governance system is designed to bring many different stakeholder 
 Voting power is split between a number of different voting vaults, which allocate voting power to different stakeholder groups.
 Furthermore, the quorum, time delay, and other parameters are set depending on the impact of the proposed changes.
 
-### Voting power computation
+# Voting power computation
 
 The voting power of a user is computed by the `VotingPowerAggregator` contract.
 This contract loops over all the vaults of the system and sums up the voting power of the user in each vault weighted with the vault's weight.
@@ -23,7 +23,7 @@ The following vaults are currently implemented:
 
 The weights of different voting vaults should sum to 1 (representing 100% of total voting power) and change over time according to a schedule set in `VotingPowerAggregator`. A schedule starts from initial weights at the starting time and arrives at final weights at the ending time with weights changing linearly over time. A new schedule can be set by governance by calling `VotingPowerAggregator.setSchedule`.
 
-### Action tiering
+# Action tiering
 
 Every function that can be called through governance is assigned a tier.
 A tier contains the following information:
@@ -46,7 +46,7 @@ The following strategies are implemented:
 - `SetAddressStrategy`: Has a different tier per address argument. This is used for the `GyroConfig.setAddress` that has the power to replace parts of the system. 
 
 
-### Proposal lifecycle
+# Proposal lifecycle
 
 1. Proposal creation: A proposal, which is a list of calls to execute, is created by a participant using `GovernanceManager.createProposal`
     1. The tier (containing quorum and other metadata, see `DataTypes.Tier`) is set to the highest tier of any of the calls to execute
@@ -61,7 +61,7 @@ The following strategies are implemented:
 4. Proposal execution: a proposal can be executed by anyone using `GovernanceManager.executeProposal` once the time lock for the tallied proposal has passed
 
 
-### Emergency recovery
+# Emergency recovery
 
 An emergency recovery mechanism for the governance contract is included as a fallback in case something goes wrong with the governance contracts and they are no longer usable (e.g, if they are bricked because of a smart contract bug or incorrect parameterization change). The emergency recovery mechanism is composed of a backup multisig combined with an optimistic approval mechanism and various safeguards as implemented in `EmergencyRecovery`.
 
@@ -72,11 +72,11 @@ The emergency recovery mechanism has the following properties:
 - Emergency recovery has a sunset built in, which can optionally be extended by governance
 
 
-### Governance checks and balances
+# Governance checks and balances
 
 On top of the basic voting structure, the governance system includes several checks and balances and safety mechanisms.
 
-# Power of GYD users to limit upgradeability
+### Power of GYD users to limit upgradeability
 
 A special form of optimistic approval is used to give end users of the protocol (GYD stablecoin holders) power over governance regarding how upgradeable the protocol should be. This takes the form of an alternative 'wrapped' form of GYD that can affect governance settings.
 
@@ -84,7 +84,7 @@ As implemented in `WrappedERC20WithEMA`, at any time, a user can choose between 
 
 The main idea is to let the user market decide when the system should be more upgradeable and when core infrastructure should be considered more settled based on the market choice of whether to adopt GYD or wGYD.
 
-# Reserve stewardship incentives
+### Reserve stewardship incentives
 
 An important ability of governance is to be a good steward of the GYD reserve structure, adapting it as the DeFi space changes. This requires safeguards against governance misincentives. This mechanism imposes conditions on cash flows being realized by governance to help keep incentives of governance aligned with the best interest of the longterm system.
 
@@ -98,7 +98,7 @@ At the end of the time period, governance can call `completeInitiative`, which v
 
 The end result is intended to be a structure in which incentive rewards are only given to governance after their stewardship has proven successful over a long time period.
 
-# GYD recovery module
+### GYD recovery module
 
 This module is a tool available to governance to incentivize a backstop to the protocol. It is implemented in `GydRecovery` in the `Protocol` repository as it requires integration with the protocol code.
 
@@ -109,7 +109,7 @@ If the reserve ratio falls below a trigger ratio, a burn of GYD in the recovery 
 The GYD recovery module is set up with liquidity mining infrastructure. Governance can choose to allocate incentive assets in the form of GYFI tokens to the recovery module and can start or stop the mining of these incentives by participants who have staked GYD in the module.
 
 
-## Running the tests
+# Running the tests
 
 The environment can be setup using the following steps
 
