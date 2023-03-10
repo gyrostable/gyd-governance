@@ -21,6 +21,8 @@ The following vaults are currently implemented:
 4. `LPVault`: The `LPVault` allows a user to lock an LP token to earn voting power. There can be as many `LPVault` in existence as we decide to support LP tokens. An LP vault could be incentivised through a liquidity mining scheme implemented in its parent `LiquidityMining` contract
 5. `AggregateLPVault`: This aggregates the voting power across all the registered `LPVault`s. The `LPVault`s are weighted through governance.
 
+The weights of different voting vaults should sum to 1 (representing 100% of total voting power) and change over time according to a schedule set in `VotingPowerAggregator`. A schedule starts from initial weights at the starting time and arrives at final weights at the ending time with weights changing linearly over time. A new schedule can be set by governance by calling `VotingPowerAggregator.setSchedule`.
+
 ### Action tiering
 
 Every function that can be called through governance is assigned a tier.
@@ -57,6 +59,54 @@ The following strategies are implemented:
    1. If the quorum is reached and the vote threshold is reached, the proposal is queued for execution
    2. If not, the proposal is marked as rejected
 4. Proposal execution: a proposal can be executed by anyone using `GovernanceManager.executeProposal` once the time lock for the tallied proposal has passed
+
+
+### Emergency recovery
+
+An emergency recovery mechanism for the governance contract is included as a fallback in case something goes wrong with the governance contracts and they are no longer usable (e.g, if they are bricked because of a smart contract bug or incorrect parameterization change). The emergency recovery mechanism is composed of a backup multisig combined with an optimistic approval mechanism and various safeguards as implemented in `EmergencyRecovery`.
+
+The emergency recovery mechanism has the following properties:
+- Multisig signers are assigned by governance and can be changed at any time
+- The multisig can initiate an upgrade to the governance contract subject to a timelock
+- (Optimistic approval) during the timelock, governance can vote to override the upgrade
+- Emergency recovery has a sunset built in, which can optionally be extended by governance
+
+
+### Governance checks and balances
+
+On top of the basic voting structure, the governance system includes several checks and balances and safety mechanisms.
+
+# Power of GYD users to limit upgradeability
+
+A special form of optimistic approval is used to give end users of the protocol (GYD stablecoin holders) power over governance regarding how upgradeable the protocol should be. This takes the form of an alternative 'wrapped' form of GYD that can affect governance settings.
+
+As implemented in `WrappedERC20WithEMA`, at any time, a user can choose between holding GYD or the wrapped wGYD and can freely convert between them. Choosing to hold wGYD signifies a vote for more limited upgradeability of the protocol. When a user converts between GYD and wGYD, a moving average is updated in the wGYD contract. When the moving average exceeds a threshold in addition to the total wGYD supply exceeding another threshold, upgradeability of core Gyroscope contracts through governance becomes more difficult. This takes the form of increased difficulty in action tiering.
+
+The main idea is to let the user market decide when the system should be more upgradeable and when core infrastructure should be considered more settled based on the market choice of whether to adopt GYD or wGYD.
+
+# Reserve stewardship incentives
+
+An important ability of governance is to be a good steward of the GYD reserve structure, adapting it as the DeFi space changes. This requires safeguards against governance misincentives. This mechanism imposes conditions on cash flows being realized by governance to help keep incentives of governance aligned with the best interest of the longterm system.
+
+This mechanism is implemented in `ReserveStewardshipIncentives` in the `Protocol` repository as it requires integration with the protocol code.
+
+Governance can initiate an incentive initiative by calling `startInitiative`. To start an initiative, it is required that the system has excessive health properties (e.g., that the reserve ratio is above an excess threshold). Specifying an initiative includes specifying a `rewardPercentage`.
+
+Once an initiative is active, several health properties of the system are tracked over a long period of time, as performed via `_checkpoint`. This includes tracking the average GYD supply and the number of days that reserve health violations are observed over this time period.
+
+At the end of the time period, governance can call `completeInitiative`, which verifies whether health properties were achieved over the term of the initiative and, if so, calculates an incentive reward based on `rewardPercentage` and the average GYD supply over the term. The size of the reward is limited by a condition on the health of the system that would follow any reward. If `rewardPercentage` is too high considering the end health of the system, the reward calculation also imposes a penalty, reducing the size of the end reward.
+
+The end result is intended to be a structure in which incentive rewards are only given to governance after their stewardship has proven successful over a long time period.
+
+# GYD recovery module
+
+This module is a tool available to governance to incentivize a backstop to the protocol. It is implemented in `GydRecovery` in the `Protocol` repository as it requires integration with the protocol code.
+
+Any user can deposit GYD to the recovery module to backstop the system. A user can initiate a withdrawal of their staked GYD subject to an unstaking period. The contract tracks an adjusted form of balances that accounts for any recovery operations that are performed.
+
+If the reserve ratio falls below a trigger ratio, a burn of GYD in the recovery module is performed. The amount of the burn is the amount, if possible, to bring the system back to a target reserve ratio. A partial burn is when not all GYD in the module is burned and is performed by modifying the `adjustmentFactor` affecting adjusted balances. A full burn is when all GYD in the module is burned and is handled separately.
+
+The GYD recovery module is set up with liquidity mining infrastructure. Governance can choose to allocate incentive assets in the form of GYFI tokens to the recovery module and can start or stop the mining of these incentives by participants who have staked GYD in the module.
 
 
 ## Running the tests
