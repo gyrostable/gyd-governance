@@ -15,7 +15,7 @@ In most vaults, the voting power can be delegated, which decreases the voting po
 
 The following vaults are currently implemented:
 
-1. `FoundingFrogVault`: Every owner of a Gyro founding frog (NFT distributed on Kovan) starts with a voting power of the same weight. To claim the voting power, a user must submit a Merkle proof that it owns a founding frog by signing a message. The Merkle proof is generated from a snapshot of founding frog holders. Governance can later decide to increase the voting power of some users by calling `NFTVault.updateMultiplier`
+1. `FoundingFrogVault`: Every owner of a Gyro founding frog (NFT distributed on Ethereum) starts with a prescribed voting power. To claim the voting power, a user must submit a Merkle proof that it owns a founding frog by signing a message. The Merkle proof is generated from a snapshot of founding frog holders. Governance can later decide to increase the voting power of some users by calling `NFTVault.updateMultiplier`
 2. `RecruitNFTVault`: This vault is similar to the `FoundingFrogVault` but the voting power is assigned when minting a `RecruitNFT`
 3. `FriendlyDAOVault`: This vault allows governance to arbitrarily assign voting power to any address by calling `FriendlyDAOVault.updateDAOAndTotalWeight`. In practice, this will be used to give voting power to other DAOs that are part of the Gyroscope ecosystem.
 4. `LPVault`: The `LPVault` allows a user to lock an LP token to earn voting power. There can be as many `LPVault` in existence as we decide to support LP tokens. An LP vault could be incentivised through a liquidity mining scheme implemented in its parent `LiquidityMining` contract
@@ -40,7 +40,7 @@ The following strategies are implemented:
 - `StaticTierStrategy`: always returns the same tier regardless of the arguments
 - `SimpleThresholdStrategy`: returns a tier based on whether one of the parameters is above a given threshold
 - `SetVaultFeesStrategy`: Same as `SimpleThresholdStrategy` but compares two arguments to the threshold
-- `SetSystemParamsStrategy`: Similar to `SimpleThresholdStrategy` but compares a more several fields of a `struct` to multiple thresholds
+- `SetSystemParamsStrategy`: Similar to `SimpleThresholdStrategy` but compares a several fields of a `struct` to multiple thresholds
 - `SetAddressStrategy`: Has a different tier per address argument. This is used for the `GyroConfig.setAddress` that has the power to replace parts of the system. 
 
 
