@@ -100,7 +100,7 @@ $$
 
 Here, $\tau$ is a constant (i.e., a parameter to the contract) that is usually interpreted as the width of a time window. Observe that, if the spacing of the $x_i$ time series was regular, then all the $K_i$ would be equal, but in our case, this does not hold. The definition of $K_i$ is motivated by the continuous form of the EMA from signal processing, see [here](https://stackoverflow.com/a/1027808/266614).
 
-Note that we only track the EMA based on data from the *previously updated block*, not the current block. This is to prevent manipulation of the EMA by, e.g., using a flash loan. The values $x_i$ and $t_i$ in the above formulas therefore refer to the most recently-observed values that are not from the current block; the current-block values are not used to update the current-block EMA, but will only be used in the next block.
+Note that we only track the EMA at the *previously updated block*, not the current block. This is to prevent manipulation of the EMA by, e.g., using a flash loan. The values $x_i$ and $t_i$ in the above formulas therefore refer to the most recently-observed values that are not from the current block; the current-block values are not used to update the current-block EMA, but will only be used in the next block.
 
 The variables in `_updateEMA()` match the variables from the formulas above as follows:
 
