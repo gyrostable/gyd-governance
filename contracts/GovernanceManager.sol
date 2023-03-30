@@ -184,41 +184,18 @@ contract GovernanceManager {
         DataTypes.VaultVotingPower[] storage existingVoteVaults,
         DataTypes.VaultVotingPower[] memory vaults
     ) internal {
-        if (existingVoteVaults.length > vaults.length) {
-            for (uint256 i = 0; i < vaults.length; i++) {
-                existingVoteVaults[i] = DataTypes.VaultVotingPower({
-                    vaultAddress: vaults[i].vaultAddress,
-                    votingPower: vaults[i].votingPower
-                });
-            }
-
-            for (
-                uint256 i = vaults.length - 1;
-                i < existingVoteVaults.length;
-                i++
-            ) {
+        bool hasNewEntries = existingVoteVaults.length < vaults.length;
+        (uint256 minLength, uint256 maxLength) = hasNewEntries
+            ? (existingVoteVaults.length, vaults.length)
+            : (vaults.length, existingVoteVaults.length);
+        for (uint256 i = 0; i < minLength; i++) {
+            existingVoteVaults[i] = vaults[i];
+        }
+        for (uint256 i = minLength; i < maxLength; i++) {
+            if (hasNewEntries) {
+                existingVoteVaults.push(vaults[i]);
+            } else {
                 delete existingVoteVaults[i];
-            }
-        } else {
-            for (uint256 i = 0; i < existingVoteVaults.length; i++) {
-                existingVoteVaults[i] = DataTypes.VaultVotingPower({
-                    vaultAddress: vaults[i].vaultAddress,
-                    votingPower: vaults[i].votingPower
-                });
-            }
-
-            uint256 startIdx = 0;
-            if (existingVoteVaults.length > 0) {
-                startIdx = existingVoteVaults.length;
-            }
-
-            for (uint256 i = startIdx; i < vaults.length; i++) {
-                existingVoteVaults.push(
-                    DataTypes.VaultVotingPower({
-                        vaultAddress: vaults[i].vaultAddress,
-                        votingPower: vaults[i].votingPower
-                    })
-                );
             }
         }
     }
