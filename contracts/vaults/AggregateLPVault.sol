@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "../../interfaces/IVault.sol";
 import "../../libraries/ScaledMath.sol";
 import "../access/ImmutableOwner.sol";
+import "./BaseVault.sol";
 
-contract AggregateLPVault is IVault, ImmutableOwner {
+contract AggregateLPVault is BaseVault, ImmutableOwner {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using ScaledMath for uint256;
 
@@ -15,7 +16,11 @@ contract AggregateLPVault is IVault, ImmutableOwner {
 
     uint256 internal threshold;
 
-    constructor(address _owner, uint256 _threshold) ImmutableOwner(_owner) {
+    constructor(
+        address _votingPowerAggregator,
+        address _owner,
+        uint256 _threshold
+    ) BaseVault(_votingPowerAggregator) ImmutableOwner(_owner) {
         threshold = _threshold;
     }
 
@@ -51,19 +56,22 @@ contract AggregateLPVault is IVault, ImmutableOwner {
         threshold = _threshold;
     }
 
-    function getRawVotingPower(address _user) external view returns (uint256) {
+    function getRawVotingPower(
+        address _user,
+        uint256 timestamp
+    ) public view override returns (uint256) {
         uint256 rawVotingPower = 0;
         for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
             (address vault, uint256 price) = vaultsToWeights.at(i);
-            rawVotingPower += IVault(vault).getRawVotingPower(_user).mulDown(
-                price
-            );
+            rawVotingPower += IVault(vault)
+                .getRawVotingPower(_user, timestamp)
+                .mulDown(price);
         }
 
         return rawVotingPower;
     }
 
-    function getTotalRawVotingPower() external view returns (uint256) {
+    function getTotalRawVotingPower() public view override returns (uint256) {
         uint256 totalRawVotingPower = 0;
         for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
             (address vault, uint256 price) = vaultsToWeights.at(i);

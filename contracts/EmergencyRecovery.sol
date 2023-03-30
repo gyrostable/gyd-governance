@@ -68,6 +68,7 @@ contract EmergencyRecovery is GovernanceOnly {
         );
 
         uint32 propId = currentProposalCount;
+        proposals[propId].createdAt = uint64(block.timestamp);
         proposals[propId].completesAt =
             uint64(block.timestamp) +
             timelockDuration;
@@ -104,7 +105,8 @@ contract EmergencyRecovery is GovernanceOnly {
         );
 
         uint256 vetoedPct = votingAggregator.calculateWeightedPowerPct(
-            _toVotingPowers(prop.vetos)
+            _toVotingPowers(prop.vetos),
+            prop.createdAt
         );
         bool isVetoed = vetoedPct > vetoThreshold;
         if (isVetoed) {
@@ -147,7 +149,7 @@ contract EmergencyRecovery is GovernanceOnly {
         }
 
         DataTypes.VaultVotingPower[] memory newVetoPower = votingAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(msg.sender, prop.createdAt);
         for (uint256 i = 0; i < newVetoPower.length; i++) {
             DataTypes.VaultVotingPower memory vault = newVetoPower[i];
             (, uint256 currentVetoTotal) = prop.vetos.tryGet(

@@ -66,6 +66,7 @@ library DataTypes {
     }
 
     struct EmergencyRecoveryProposal {
+        uint64 createdAt;
         uint64 completesAt;
         Status status;
         bytes payload;

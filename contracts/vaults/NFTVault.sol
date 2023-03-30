@@ -6,8 +6,9 @@ import "../../interfaces/IDelegatingVault.sol";
 import "./../access/ImmutableOwner.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/VotingPowerHistory.sol";
+import "./BaseVault.sol";
 
-abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
+abstract contract NFTVault is BaseVault, IDelegatingVault, ImmutableOwner {
     using VotingPowerHistory for VotingPowerHistory.History;
     using VotingPowerHistory for VotingPowerHistory.Record;
 
@@ -15,7 +16,10 @@ abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
 
     uint256 internal sumVotingPowers;
 
-    constructor(address _owner) ImmutableOwner(_owner) {}
+    constructor(
+        address _votingPowerAggregator,
+        address _owner
+    ) BaseVault(_votingPowerAggregator) ImmutableOwner(_owner) {}
 
     function delegateVote(address _delegate, uint256 _amount) external {
         history.delegateVote(msg.sender, _delegate, _amount);
@@ -34,11 +38,14 @@ abstract contract NFTVault is IVault, IDelegatingVault, ImmutableOwner {
         history.delegateVote(msg.sender, _newDelegate, _amount);
     }
 
-    function getRawVotingPower(address user) external view returns (uint256) {
-        return history.getVotingPower(user, block.timestamp);
+    function getRawVotingPower(
+        address user,
+        uint256 timestamp
+    ) public view override returns (uint256) {
+        return history.getVotingPower(user, timestamp);
     }
 
-    function getTotalRawVotingPower() external view returns (uint256) {
+    function getTotalRawVotingPower() public view override returns (uint256) {
         return sumVotingPowers;
     }
 

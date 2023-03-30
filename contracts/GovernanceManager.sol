@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
 
+import "../interfaces/IVault.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
 import "../interfaces/ITierStrategy.sol";
@@ -84,9 +85,9 @@ contract GovernanceManager {
         }
 
         DataTypes.VaultVotingPower[] memory rawPower = votingPowerAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(msg.sender, block.timestamp);
         uint256 votingPowerPct = votingPowerAggregator
-            .calculateWeightedPowerPct(rawPower);
+            .calculateWeightedPowerPct(rawPower, block.timestamp);
         require(
             votingPowerPct > tier.proposalThreshold,
             "proposer doesn't have enough voting power to propose this action"
@@ -109,6 +110,8 @@ contract GovernanceManager {
         for (uint256 i = 0; i < actions.length; i++) {
             p.actions.push(actions[i]);
         }
+
+        votingPowerAggregator.snapshotTotalVotingPower();
 
         proposalsCount = p.id + 1;
         _activeProposals.add(bytes32(bytes3(p.id)));
@@ -139,7 +142,7 @@ contract GovernanceManager {
         );
 
         DataTypes.VaultVotingPower[] memory uvp = votingPowerAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(msg.sender, proposal.createdAt);
 
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
         // First, zero out the effect of any vote already cast by the voter.
@@ -257,15 +260,18 @@ contract GovernanceManager {
         );
 
         uint256 forTotalPct = votingPowerAggregator.calculateWeightedPowerPct(
-            _toVotingPowers(_totals[proposalId][DataTypes.Ballot.FOR])
+            _toVotingPowers(_totals[proposalId][DataTypes.Ballot.FOR]),
+            proposal.createdAt
         );
         uint256 againstTotalPct = votingPowerAggregator
             .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.AGAINST])
+                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.AGAINST]),
+                proposal.createdAt
             );
         uint256 abstentionsTotalPct = votingPowerAggregator
             .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.ABSTAIN])
+                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.ABSTAIN]),
+                proposal.createdAt
             );
 
         uint256 combinedPct = forTotalPct +

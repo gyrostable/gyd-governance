@@ -121,8 +121,8 @@ def dummy_dao_addresses():
 
 
 @pytest.fixture(scope="module")
-def friendly_dao_vault(admin, FriendlyDAOVault):
-    return admin.deploy(FriendlyDAOVault, admin)
+def friendly_dao_vault(admin, FriendlyDAOVault, voting_power_aggregator):
+    return admin.deploy(FriendlyDAOVault, voting_power_aggregator, admin)
 
 
 @pytest.fixture(scope="module")
@@ -154,13 +154,15 @@ def governance_manager(
     upgradeability_tier_strategy,
     wrapped_erc20,
 ):
-    return admin.deploy(
+    governance_manager = admin.deploy(
         GovernanceManager,
         voting_power_aggregator,
         mock_tierer,
         (10, 10e16, upgradeability_tier_strategy),
         wrapped_erc20,
     )
+    voting_power_aggregator.grantSnapshotRights(governance_manager)
+    return governance_manager
 
 
 @pytest.fixture(scope="module")
@@ -179,9 +181,10 @@ def recruit_nft(admin):
 
 
 @pytest.fixture
-def nft_vault(recruit_nft, admin):
+def nft_vault(recruit_nft, admin, voting_power_aggregator):
     nft_vault = admin.deploy(
         RecruitNFTVault,
+        voting_power_aggregator,
         admin,
         recruit_nft,
     )
@@ -194,8 +197,10 @@ def nft_vault(recruit_nft, admin):
 
 
 @pytest.fixture
-def frog_vault(admin):
-    frog_vault = admin.deploy(FoundingFrogVault, admin, 5e18, ROOT)
+def frog_vault(admin, voting_power_aggregator):
+    frog_vault = admin.deploy(
+        FoundingFrogVault, voting_power_aggregator, admin, 5e18, ROOT
+    )
     return frog_vault
 
 

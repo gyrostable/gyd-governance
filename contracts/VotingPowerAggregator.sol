@@ -15,6 +15,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    EnumerableSet.AddressSet internal _authorizedToSnapshot;
     EnumerableSet.AddressSet internal _vaultAddresses;
     mapping(address => DataTypes.VaultWeightConfiguration) internal _vaults;
 
@@ -23,8 +24,23 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
+    function snapshotTotalVotingPower() external {
+        if (!_authorizedToSnapshot.contains(msg.sender))
+            revert Errors.NotAuthorized(msg.sender, address(this));
+
+        uint256 len = _vaultAddresses.length();
+        for (uint256 i = 0; i < len; i++) {
+            IVault(_vaultAddresses.at(i)).snapshotTotalRawVotingPower();
+        }
+    }
+
+    function grantSnapshotRights(address account) external onlyOwner {
+        _authorizedToSnapshot.add(account);
+    }
+
     function getVotingPower(
-        address account
+        address account,
+        uint256 timestamp
     ) external view returns (DataTypes.VaultVotingPower[] memory) {
         uint256 vaultsCount = _vaultAddresses.length();
         DataTypes.VaultVotingPower[]
@@ -33,7 +49,10 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
             );
         for (uint256 i; i < vaultsCount; i++) {
             IVault vault = IVault(_vaultAddresses.at(i));
-            uint256 userRawVotingPower = vault.getRawVotingPower(account);
+            uint256 userRawVotingPower = vault.getRawVotingPower(
+                account,
+                timestamp
+            );
             userVotingPower[i] = DataTypes.VaultVotingPower({
                 vaultAddress: _vaultAddresses.at(i),
                 votingPower: userRawVotingPower
@@ -44,7 +63,8 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     }
 
     function calculateWeightedPowerPct(
-        DataTypes.VaultVotingPower[] calldata vaultVotingPowers
+        DataTypes.VaultVotingPower[] calldata vaultVotingPowers,
+        uint256 timestamp
     ) external view returns (uint256) {
         uint256 votingPowerPct;
 
@@ -53,7 +73,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
             uint256 vaultWeight = this.getVaultWeight(vaultVP.vaultAddress);
             if (vaultWeight != 0) {
                 uint256 tvp = IVault(vaultVP.vaultAddress)
-                    .getTotalRawVotingPower();
+                    .getTotalRawVotingPower(timestamp);
                 votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(
                     vaultWeight
                 );

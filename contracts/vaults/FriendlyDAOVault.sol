@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../access/ImmutableOwner.sol";
 import "../../libraries/VotingPowerHistory.sol";
 
-import "../../interfaces/IVault.sol";
+import "./BaseVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 
-contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
+contract FriendlyDAOVault is BaseVault, IDelegatingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.AddressSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
@@ -18,7 +18,10 @@ contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
 
     VotingPowerHistory.History internal history;
 
-    constructor(address _owner) ImmutableOwner(_owner) {}
+    constructor(
+        address _votingPowerAggregator,
+        address _owner
+    ) BaseVault(_votingPowerAggregator) ImmutableOwner(_owner) {}
 
     function updateDAOAndTotalWeight(
         address dao,
@@ -69,12 +72,13 @@ contract FriendlyDAOVault is IVault, IDelegatingVault, ImmutableOwner {
     }
 
     function getRawVotingPower(
-        address account
-    ) external view returns (uint256) {
-        return history.getVotingPower(account, block.timestamp);
+        address account,
+        uint256 timestamp
+    ) public view override returns (uint256) {
+        return history.getVotingPower(account, timestamp);
     }
 
-    function getTotalRawVotingPower() external view returns (uint256) {
+    function getTotalRawVotingPower() public view override returns (uint256) {
         return _totalRawVotingPower;
     }
 }

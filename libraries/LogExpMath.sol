@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.17;
 // Copied from:
 // https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/solidity-utils/contracts/math/LogExpMath.sol
-pragma solidity ^0.8.17;
 
 import "./BalancerErrors.sol";
 

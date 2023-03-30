@@ -34,7 +34,7 @@ class VoteTotals(NamedTuple):
 
 
 def test_create_proposal(MockVault, governance_manager, voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 5e18, 10e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 5e18, 10e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -54,7 +54,7 @@ def test_create_proposal(MockVault, governance_manager, voting_power_aggregator,
 def test_create_proposal_without_sufficient_voting_power(
     MockVault, governance_manager, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 0, 10e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 0, 10e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -73,7 +73,7 @@ def test_vote_on_proposal_which_doesnt_exist(
 def test_vote_on_inactive_proposal(
     MockVault, governance_manager, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 5e18, 10e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 5e18, 10e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -89,7 +89,7 @@ def test_vote_on_inactive_proposal(
 
 
 def test_invalid_vote(MockVault, governance_manager, voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 5e18, 10e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 5e18, 10e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -100,7 +100,7 @@ def test_invalid_vote(MockVault, governance_manager, voting_power_aggregator, ad
 
 
 def test_vote(MockVault, governance_manager, voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 5e18, 10e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 5e18, 10e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -113,7 +113,7 @@ def test_vote(MockVault, governance_manager, voting_power_aggregator, admin):
 def test_vote_doesnt_double_count_if_vote_is_changed(
     MockVault, governance_manager, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 5e18, 10e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 5e18, 10e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -133,7 +133,7 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
 def test_tally(
     MockVault, governance_manager, raising_token, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -169,7 +169,7 @@ def test_tally(
 def test_tally_vote_doesnt_succeed(
     MockVault, governance_manager, raising_token, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -189,7 +189,7 @@ def test_tally_vote_doesnt_succeed(
 def test_tally_vote_doesnt_meet_quorum(
     MockVault, governance_manager, raising_token, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 11e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 11e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -209,7 +209,7 @@ def test_tally_vote_doesnt_meet_quorum(
 def test_tally_vote_abstentions_contribute_to_quorum(
     MockVault, governance_manager, raising_token, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -234,7 +234,7 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
     admin,
     accounts,
 ):
-    mv = admin.deploy(MockVault, 20e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 20e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -259,7 +259,7 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
 def test_tally_inactive_proposal(
     MockVault, governance_manager, raising_token, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -282,7 +282,7 @@ def test_tally_inactive_proposal(
 def test_tally_ongoing_proposal(
     MockVault, governance_manager, raising_token, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -305,7 +305,7 @@ def test_tally_proposal_doesnt_exist(
 def test_execute_must_be_queued(
     MockVault, governance_manager, raising_token, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -320,7 +320,7 @@ def test_execute_must_be_queued(
 def test_uses_override_tier_if_enough_gyd_is_wrapped(
     MockVault, admin, voting_power_aggregator, governance_manager, wrapped_erc20, token
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 
@@ -347,7 +347,7 @@ def test_uses_override_tier_if_enough_gyd_is_wrapped(
 def test_uses_highest_tier_if_multiple_proposals_made(
     MockVault, admin, voting_power_aggregator, governance_manager, mock_tierer
 ):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
 

@@ -4,16 +4,16 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "../../interfaces/IVault.sol";
 import "../../interfaces/ILockingVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/VotingPowerHistory.sol";
 import "../access/ImmutableOwner.sol";
 import "../LiquidityMining.sol";
+import "./BaseVault.sol";
 
 contract LPVault is
-    IVault,
+    BaseVault,
     ILockingVault,
     IDelegatingVault,
     ImmutableOwner,
@@ -38,11 +38,16 @@ contract LPVault is
     uint256 public totalSupply;
 
     constructor(
+        address _votingPowerAggregator,
         address _owner,
         address _lpToken,
         address _rewardsToken,
         uint256 _withdrawalWaitDuration
-    ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
+    )
+        BaseVault(_votingPowerAggregator)
+        ImmutableOwner(_owner)
+        LiquidityMining(_rewardsToken)
+    {
         lpToken = IERC20(_lpToken);
         withdrawalWaitDuration = _withdrawalWaitDuration;
     }
@@ -176,11 +181,14 @@ contract LPVault is
         emit WithdrawalCompleted(pending.to, pending.amount);
     }
 
-    function getRawVotingPower(address _user) external view returns (uint256) {
-        return history.getVotingPower(_user, block.timestamp);
+    function getRawVotingPower(
+        address _user,
+        uint256 timestamp
+    ) public view override returns (uint256) {
+        return history.getVotingPower(_user, timestamp);
     }
 
-    function getTotalRawVotingPower() external view returns (uint256) {
+    function getTotalRawVotingPower() public view override returns (uint256) {
         return totalSupply;
     }
 
