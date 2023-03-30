@@ -18,6 +18,41 @@ def test_set_schedule(voting_power_aggregator, admin):
     assert sorted(vaults, key=lambda x: x[0]) == expectedVaults
 
 
+def test_set_schedule_multiple_times(voting_power_aggregator, admin):
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
+    mv3 = admin.deploy(MockVault, 5, 10)
+
+    ct = chain.time() - 1000
+    voting_power_aggregator.setSchedule(
+        [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct, {"from": admin}
+    )
+
+    vaults = voting_power_aggregator.listVaults()
+    expectedVaults = sorted(
+        [(mv.address, 5e17, 5e17, 5e17), (mv2.address, 5e17, 5e17, 5e17)],
+        key=lambda x: x[0],
+    )
+    assert sorted(vaults, key=lambda x: x[0]) == expectedVaults
+
+    voting_power_aggregator.setSchedule(
+        [(mv, 5e17, 5e17), (mv2, 3e17, 3e17), (mv3, 2e17, 2e17)],
+        ct,
+        ct,
+        {"from": admin},
+    )
+    vaults = voting_power_aggregator.listVaults()
+    expectedVaults = sorted(
+        [
+            (mv.address, 5e17, 5e17, 5e17),
+            (mv2.address, 3e17, 3e17, 3e17),
+            (mv3.address, 2e17, 2e17, 2e17),
+        ],
+        key=lambda x: x[0],
+    )
+    assert sorted(vaults, key=lambda x: x[0]) == expectedVaults
+
+
 def test_set_schedule_raises_if_vaults_dont_add_up_to_1(voting_power_aggregator, admin):
     mv = admin.deploy(MockVault, 5, 10)
     mv2 = admin.deploy(MockVault, 5, 10)

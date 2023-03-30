@@ -175,7 +175,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     function _removeAllVaults() internal {
         uint256 length = _vaultAddresses.length();
         for (uint256 i; i < length; i++) {
-            address vaultAddress = _vaultAddresses.at(i);
+            address vaultAddress = _vaultAddresses.at(0);
             _vaultAddresses.remove(vaultAddress);
             delete _vaults[vaultAddress];
         }
