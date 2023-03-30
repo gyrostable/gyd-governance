@@ -29,6 +29,10 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
         address _underlying,
         uint256 _windowWidth
     ) ERC20("WrappedGYD", "wGYD") GovernanceOnly(governance) {
+        require(
+            _windowWidth >= ScaledMath.ONE,
+            "window width must be scaled to 18 decimals"
+        );
         underlying = IERC20(_underlying);
         windowWidth = _windowWidth;
 
