@@ -29,7 +29,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
 
     Merkle.Root private merkleRoot;
     bytes32 private immutable _TYPE_HASH =
-        keccak256("Proof(address to, bytes32[] proof)");
+        keccak256("Proof(address to,bytes32[] proof)");
 
     mapping(address => bool) private _claimed;
 
@@ -66,7 +66,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
         address to,
         bytes32[] calldata proof,
         bytes calldata signature
-    ) public {
+    ) internal view {
         if (msg.sender == owner) {
             return;
         }
@@ -78,7 +78,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
 
         require(claimant == to, "invalid signature");
 
-        bytes32 node = keccak256(abi.encodePacked(owner));
+        bytes32 node = keccak256(abi.encodePacked(to));
         require(merkleRoot.isProofValid(node, proof), "invalid proof");
     }
 
