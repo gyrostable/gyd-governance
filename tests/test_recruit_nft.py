@@ -19,10 +19,12 @@ def test_recruit_nft_is_mintable_by_owner(admin, accounts, recruit_nft, nft_vaul
 
 
 def test_recruit_nft_supply_cap(admin, accounts, recruit_nft, nft_vault):
-    # this brings the total of NFTs minted to 9, while the cap is 10.
-    for i in range(4):
+    # this brings the total of NFTs minted to the max supply
+    for _ in range(recruit_nft.maxSupply() - recruit_nft.totalSupply()):
         a = accounts.add()
         recruit_nft.mint(a, [], b"", {"from": admin})
+
+    assert recruit_nft.totalSupply() == recruit_nft.maxSupply()
 
     a = accounts.add()
     with reverts("mint error: supply cap would be exceeded"):

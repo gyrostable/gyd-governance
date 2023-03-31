@@ -24,7 +24,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
 
     IVotingPowersUpdater private vault;
     uint16 private tokenId;
-    uint16 private maxSupply;
+    uint16 public maxSupply;
     bool private transfersAllowed;
 
     Merkle.Root private merkleRoot;
@@ -49,16 +49,16 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
         _requireValidProof(to, proof, signature);
 
         require(!_claimed[to], "user has already claimed NFT");
+        require(
+            tokenId < maxSupply,
+            "mint error: supply cap would be exceeded"
+        );
 
         _mint(to, tokenId);
         tokenId++;
 
         _claimed[to] = true;
 
-        require(
-            tokenId < maxSupply,
-            "mint error: supply cap would be exceeded"
-        );
         vault.updateBaseVotingPower(to, 1e18);
     }
 
