@@ -2,6 +2,8 @@
 pragma solidity ^0.8.17;
 
 interface ILockingVault {
+    function deposit(uint256 _amount) external;
+
     function deposit(uint256 _amount, address _delegate) external;
 
     event Deposit(address from, address delegate, uint256 amount);
