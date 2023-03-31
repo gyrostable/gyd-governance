@@ -195,7 +195,10 @@ contract GovernanceManager {
             if (hasNewEntries) {
                 existingVoteVaults.push(vaults[i]);
             } else {
-                delete existingVoteVaults[i];
+                // this will remove from the end but we only care about removing elements
+                // from existingVoteVaults[minLength:maxLength], so the order in which we
+                // remove them does not matter
+                existingVoteVaults.pop();
             }
         }
     }
