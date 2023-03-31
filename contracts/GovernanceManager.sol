@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
@@ -13,16 +14,18 @@ import "../interfaces/ITierer.sol";
 import "../interfaces/ITierStrategy.sol";
 import "../interfaces/IWrappedERC20WithEMA.sol";
 
-contract GovernanceManager {
+contract GovernanceManager is Initializable {
     using Address for address;
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
 
-    uint24 public proposalsCount;
-    IWrappedERC20WithEMA internal wGYD;
+    IVotingPowerAggregator public immutable votingPowerAggregator;
+    ITierer public immutable tierer;
+    IWrappedERC20WithEMA public immutable wGYD;
+    DataTypes.LimitUpgradeabilityParameters public limitUpgradeabilityParams;
 
-    DataTypes.LimitUpgradeabilityParameters limitUpgradeabilityParams;
+    uint24 public proposalsCount;
 
     EnumerableSet.Bytes32Set internal _activeProposals;
     EnumerableSet.Bytes32Set internal _timelockedProposals;
@@ -32,19 +35,20 @@ contract GovernanceManager {
     mapping(uint24 => mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap))
         internal _totals;
 
-    IVotingPowerAggregator public votingPowerAggregator;
-    ITierer public tierer;
-
     constructor(
         IVotingPowerAggregator _votingPowerAggregator,
         ITierer _tierer,
-        DataTypes.LimitUpgradeabilityParameters memory _params,
         IWrappedERC20WithEMA _wGYD
     ) {
         votingPowerAggregator = _votingPowerAggregator;
         tierer = _tierer;
-        limitUpgradeabilityParams = _params;
         wGYD = _wGYD;
+    }
+
+    function initialize(
+        DataTypes.LimitUpgradeabilityParameters memory _params
+    ) external initializer {
+        limitUpgradeabilityParams = _params;
     }
 
     event ProposalCreated(

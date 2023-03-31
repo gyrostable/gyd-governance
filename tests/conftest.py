@@ -126,13 +126,21 @@ def friendly_dao_vault(admin, FriendlyDAOVault):
 
 
 @pytest.fixture(scope="module")
-def voting_power_aggregator(admin, VotingPowerAggregator):
-    return admin.deploy(VotingPowerAggregator, admin)
+def voting_power_aggregator(admin, chain, MockVault, VotingPowerAggregator):
+    mv = admin.deploy(MockVault, 5, 10)
+    ct = chain.time() - 1000
+    initial_schedule = ([(mv, 10**18, 10**18)], ct, ct + 1)
+    return admin.deploy(VotingPowerAggregator, admin, initial_schedule)
 
 
 @pytest.fixture(scope="module")
-def time_settable_voting_power_aggregator(admin, TimeSettableVotingPowerAggregator):
-    return admin.deploy(TimeSettableVotingPowerAggregator, admin)
+def time_settable_voting_power_aggregator(
+    admin, MockVault, chain, TimeSettableVotingPowerAggregator
+):
+    mv = admin.deploy(MockVault, 5, 10)
+    ct = chain.time() - 1000
+    initial_schedule = ([(mv, 10**18, 10**18)], ct, ct + 1)
+    return admin.deploy(TimeSettableVotingPowerAggregator, admin, initial_schedule)
 
 
 @pytest.fixture(scope="module")
@@ -154,13 +162,14 @@ def governance_manager(
     upgradeability_tier_strategy,
     wrapped_erc20,
 ):
-    return admin.deploy(
+    manager = admin.deploy(
         GovernanceManager,
         voting_power_aggregator,
         mock_tierer,
-        (10, 10e16, upgradeability_tier_strategy),
         wrapped_erc20,
     )
+    manager.initialize((10, 10e16, upgradeability_tier_strategy))
+    return manager
 
 
 @pytest.fixture(scope="module")

@@ -22,6 +22,30 @@ def test_set_and_get_strategy(admin, token, tier_config, static_tier_strategy):
     assert tier_config.getStrategy(token, selector) == static_tier_strategy
 
 
+def test_batch_set_strategy(
+    admin,
+    token,
+    tier_config,
+    static_tier_strategy,
+    upgradeability_tier_strategy,
+    governance_manager,
+):
+    selector = function_signature_to_4byte_selector("totalSupply()")
+    selector2 = function_signature_to_4byte_selector("upgrade(address)")
+    tier_config.batchSetStrategy(
+        [
+            (token, selector, static_tier_strategy),
+            (governance_manager, selector2, upgradeability_tier_strategy),
+        ]
+    )
+
+    assert tier_config.getStrategy(token, selector) == static_tier_strategy
+    assert (
+        tier_config.getStrategy(governance_manager, selector2)
+        == upgradeability_tier_strategy
+    )
+
+
 def test_get_tier(admin, token, tier_config, static_tier_strategy):
     params = Tier(
         quorum=1e17,  # 0.1

@@ -61,9 +61,7 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
     }
 
     function setSchedule(
-        DataTypes.VaultWeightConfiguration[] memory,
-        uint256,
-        uint256
+        DataTypes.VaultWeightSchedule calldata schedule
     ) external {
         revert("not implemented");
     }

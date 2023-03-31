@@ -38,6 +38,12 @@ library DataTypes {
         address delegate;
     }
 
+    struct VaultWeightSchedule {
+        VaultWeightConfiguration[] vaults;
+        uint256 startsAt;
+        uint256 endsAt;
+    }
+
     struct VaultWeightConfiguration {
         address vaultAddress;
         uint256 initialWeight;

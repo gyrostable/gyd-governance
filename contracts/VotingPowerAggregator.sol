@@ -21,7 +21,12 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     uint256 public scheduleStartsAt;
     uint256 public scheduleEndsAt;
 
-    constructor(address _owner) ImmutableOwner(_owner) {}
+    constructor(
+        address _owner,
+        DataTypes.VaultWeightSchedule memory initialSchedule
+    ) ImmutableOwner(_owner) {
+        _setSchedule(initialSchedule);
+    }
 
     function getVotingPower(
         address account
@@ -133,25 +138,31 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     }
 
     function setSchedule(
-        DataTypes.VaultWeightConfiguration[] calldata vaults,
-        uint256 _scheduleStartsAt,
-        uint256 _scheduleEndsAt
+        DataTypes.VaultWeightSchedule calldata schedule
     ) external onlyOwner {
+        _setSchedule(schedule);
+    }
+
+    function _setSchedule(
+        DataTypes.VaultWeightSchedule memory schedule
+    ) internal {
         require(
-            _scheduleEndsAt > _scheduleStartsAt,
+            schedule.endsAt > schedule.startsAt,
             "schedule must end after it begins"
         );
 
-        scheduleStartsAt = _scheduleStartsAt;
-        scheduleEndsAt = _scheduleEndsAt;
+        scheduleStartsAt = schedule.startsAt;
+        scheduleEndsAt = schedule.endsAt;
 
         _removeAllVaults();
 
         uint256 totalInitialWeight;
         uint256 totalTargetWeight;
 
-        for (uint256 i; i < vaults.length; i++) {
-            DataTypes.VaultWeightConfiguration calldata vault = vaults[i];
+        for (uint256 i; i < schedule.vaults.length; i++) {
+            DataTypes.VaultWeightConfiguration memory vault = schedule.vaults[
+                i
+            ];
             _addVault(vault);
             totalInitialWeight += vault.initialWeight;
             totalTargetWeight += vault.targetWeight;
@@ -165,7 +176,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     }
 
     function _addVault(
-        DataTypes.VaultWeightConfiguration calldata vault
+        DataTypes.VaultWeightConfiguration memory vault
     ) internal {
         if (!_vaultAddresses.add(vault.vaultAddress))
             revert Errors.DuplicatedVault(vault.vaultAddress);

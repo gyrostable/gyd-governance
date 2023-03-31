@@ -8,12 +8,12 @@ def test_set_schedule_with_wrong_start_end(voting_power_aggregator, admin):
     ct = chain.time() - 1000
     with reverts("schedule must end after it begins"):
         voting_power_aggregator.setSchedule(
-            [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct, {"from": admin}
+            ([(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct), {"from": admin}
         )
 
     with reverts("schedule must end after it begins"):
         voting_power_aggregator.setSchedule(
-            [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct - 1, {"from": admin}
+            ([(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct - 1), {"from": admin}
         )
 
 
@@ -23,7 +23,7 @@ def test_set_schedule(voting_power_aggregator, admin):
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(
-        [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct + 1, {"from": admin}
+        ([(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct + 1), {"from": admin}
     )
 
     vaults = voting_power_aggregator.listVaults()
@@ -41,7 +41,7 @@ def test_set_schedule_multiple_times(voting_power_aggregator, admin):
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(
-        [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct + 1, {"from": admin}
+        ([(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct + 1), {"from": admin}
     )
 
     vaults = voting_power_aggregator.listVaults()
@@ -52,9 +52,7 @@ def test_set_schedule_multiple_times(voting_power_aggregator, admin):
     assert sorted(vaults, key=lambda x: x[0]) == expectedVaults
 
     voting_power_aggregator.setSchedule(
-        [(mv, 5e17, 5e17), (mv2, 3e17, 3e17), (mv3, 2e17, 2e17)],
-        ct,
-        ct + 1,
+        ([(mv, 5e17, 5e17), (mv2, 3e17, 3e17), (mv3, 2e17, 2e17)], ct, ct + 1),
         {"from": admin},
     )
     vaults = voting_power_aggregator.listVaults()
@@ -76,7 +74,7 @@ def test_set_schedule_raises_if_vaults_dont_add_up_to_1(voting_power_aggregator,
     with reverts():
         ct = chain.time() - 1000
         voting_power_aggregator.setSchedule(
-            [(mv, 3e17, 3e17), (mv2, 5e17, 5e17)], ct, ct, {"from": admin}
+            ([(mv, 3e17, 3e17), (mv2, 5e17, 5e17)], ct, ct), {"from": admin}
         )
 
 
@@ -87,9 +85,7 @@ def test_set_schedule_raises_if_duplicate_vaults(voting_power_aggregator, admin)
     with reverts():
         ct = chain.time() - 1000
         voting_power_aggregator.setSchedule(
-            [(mv, 3e17, 3e17), (mv, 2e17, 2e17), (mv2, 5e17, 5e17)],
-            ct,
-            ct,
+            ([(mv, 3e17, 3e17), (mv, 2e17, 2e17), (mv2, 5e17, 5e17)], ct, ct),
             {"from": admin},
         )
 
@@ -101,9 +97,7 @@ def test_get_vault_weight(voting_power_aggregator, admin):
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(
-        [(mv, 2e17, 2e17), (mv2, 5e17, 5e17), (mv3, 3e17, 3e17)],
-        ct,
-        ct + 1,
+        ([(mv, 2e17, 2e17), (mv2, 5e17, 5e17), (mv3, 3e17, 3e17)], ct, ct + 1),
         {"from": admin},
     )
 
@@ -122,7 +116,7 @@ def test_get_vault_weight_on_schedule(time_settable_voting_power_aggregator, adm
     vpa.setCurrentTime(ct1)
 
     ct2 = ct1 + 1000
-    vpa.setSchedule([(mv, 2e17, 3e17), (mv2, 8e17, 7e17)], ct1, ct2, {"from": admin})
+    vpa.setSchedule(([(mv, 2e17, 3e17), (mv2, 8e17, 7e17)], ct1, ct2), {"from": admin})
 
     assert vpa.getVaultWeight(mv) == 2e17
     assert vpa.getVaultWeight(mv2) == 8e17
@@ -151,7 +145,7 @@ def test_get_vault_weight_schedule_starts_in_future(
 
     ct1 = chain.time() + 1000
     ct2 = ct1 + 1000
-    vpa.setSchedule([(mv, 2e17, 3e17), (mv2, 8e17, 7e17)], ct1, ct2, {"from": admin})
+    vpa.setSchedule(([(mv, 2e17, 3e17), (mv2, 8e17, 7e17)], ct1, ct2), {"from": admin})
 
     assert vpa.getVaultWeight(mv) == 2e17
     assert vpa.getVaultWeight(mv2) == 8e17

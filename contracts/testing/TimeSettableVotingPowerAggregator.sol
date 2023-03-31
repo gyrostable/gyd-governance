@@ -6,7 +6,10 @@ import "../VotingPowerAggregator.sol";
 contract TimeSettableVotingPowerAggregator is VotingPowerAggregator {
     uint256 public currentTime;
 
-    constructor(address _owner) VotingPowerAggregator(_owner) {
+    constructor(
+        address _owner,
+        DataTypes.VaultWeightSchedule memory initialSchedule
+    ) VotingPowerAggregator(_owner, initialSchedule) {
         currentTime = block.timestamp;
     }
 

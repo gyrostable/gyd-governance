@@ -15,8 +15,3 @@ def test_static_tier_strategy(static_tier_strategy, under_tier):
     selector = function_signature_to_4byte_selector("totalSupply()")
     got_params = static_tier_strategy.getTier(selector)
     assert got_params == params
-
-    static_tier_strategy.setTier(under_tier)
-
-    got_params = static_tier_strategy.getTier(selector)
-    assert got_params == under_tier

@@ -36,7 +36,9 @@ class VoteTotals(NamedTuple):
 def test_create_proposal(MockVault, governance_manager, voting_power_aggregator, admin):
     mv = admin.deploy(MockVault, 5e18, 10e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -56,7 +58,9 @@ def test_create_proposal_without_sufficient_voting_power(
 ):
     mv = admin.deploy(MockVault, 0, 10e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     with reverts("proposer doesn't have enough voting power to propose this action"):
@@ -75,7 +79,9 @@ def test_vote_on_inactive_proposal(
 ):
     mv = admin.deploy(MockVault, 5e18, 10e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -91,7 +97,9 @@ def test_vote_on_inactive_proposal(
 def test_invalid_vote(MockVault, governance_manager, voting_power_aggregator, admin):
     mv = admin.deploy(MockVault, 5e18, 10e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -102,7 +110,9 @@ def test_invalid_vote(MockVault, governance_manager, voting_power_aggregator, ad
 def test_vote(MockVault, governance_manager, voting_power_aggregator, admin):
     mv = admin.deploy(MockVault, 5e18, 10e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -115,7 +125,9 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
 ):
     mv = admin.deploy(MockVault, 5e18, 10e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -135,7 +147,9 @@ def test_tally(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -171,7 +185,9 @@ def test_tally_vote_doesnt_succeed(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -191,7 +207,9 @@ def test_tally_vote_doesnt_meet_quorum(
 ):
     mv = admin.deploy(MockVault, 11e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -211,7 +229,9 @@ def test_tally_vote_abstentions_contribute_to_quorum(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -236,7 +256,9 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
 ):
     mv = admin.deploy(MockVault, 20e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -261,7 +283,9 @@ def test_tally_inactive_proposal(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -284,7 +308,9 @@ def test_tally_ongoing_proposal(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -307,7 +333,9 @@ def test_execute_must_be_queued(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -322,7 +350,9 @@ def test_uses_override_tier_if_enough_gyd_is_wrapped(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     proposal = ProposalAction.nullary_function(governance_manager, "upgradeTo()")
     tx = governance_manager.createProposal([proposal])
@@ -349,7 +379,9 @@ def test_uses_highest_tier_if_multiple_proposals_made(
 ):
     mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
+    voting_power_aggregator.setSchedule(
+        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
+    )
 
     strict_tier = Tier(
         quorum=int(1e17),  # 0.1
