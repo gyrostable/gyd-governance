@@ -138,7 +138,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         uint256 _scheduleEndsAt
     ) external onlyOwner {
         require(
-            _scheduleEndsAt >= _scheduleStartsAt,
+            _scheduleEndsAt > _scheduleStartsAt,
             "schedule must end after it begins"
         );
 
