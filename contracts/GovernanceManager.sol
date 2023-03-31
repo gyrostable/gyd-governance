@@ -206,10 +206,16 @@ contract GovernanceManager {
         }
     }
 
+    function getVoteTotals(
+        uint24 proposalId
+    ) external view returns (DataTypes.VoteTotals memory) {
+        return _toVoteTotals(_totals[proposalId]);
+    }
+
     function _toVoteTotals(
         mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap)
             storage totals
-    ) internal returns (DataTypes.VoteTotals memory) {
+    ) internal view returns (DataTypes.VoteTotals memory) {
         EnumerableMap.AddressToUintMap storage forVotingPower = totals[
             DataTypes.Ballot.FOR
         ];
@@ -259,20 +265,11 @@ contract GovernanceManager {
             "voting is ongoing for this proposal"
         );
 
-        uint256 forTotalPct = votingPowerAggregator.calculateWeightedPowerPct(
-            _toVotingPowers(_totals[proposalId][DataTypes.Ballot.FOR]),
-            proposal.createdAt
-        );
-        uint256 againstTotalPct = votingPowerAggregator
-            .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.AGAINST]),
-                proposal.createdAt
-            );
-        uint256 abstentionsTotalPct = votingPowerAggregator
-            .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.ABSTAIN]),
-                proposal.createdAt
-            );
+        (
+            uint256 forTotalPct,
+            uint256 againstTotalPct,
+            uint256 abstentionsTotalPct
+        ) = _getCurrentPercentages(proposal);
 
         uint256 combinedPct = forTotalPct +
             againstTotalPct +
@@ -303,6 +300,33 @@ contract GovernanceManager {
         }
         _activeProposals.remove(bytes32(bytes3(proposalId)));
         emit ProposalTallied(proposalId, proposal.status, outcome);
+    }
+
+    function getCurrentPercentages(
+        uint24 proposalId
+    ) external view returns (uint256 for_, uint256 against, uint256 abstain) {
+        DataTypes.Proposal storage proposal = _proposals[proposalId];
+        require(proposal.createdAt != 0, "proposal does not exist");
+        return _getCurrentPercentages(proposal);
+    }
+
+    function _getCurrentPercentages(
+        DataTypes.Proposal storage proposal
+    ) internal view returns (uint256 for_, uint256 against, uint256 abstain) {
+        for_ = _getBallotPercentage(proposal, DataTypes.Ballot.FOR);
+        against = _getBallotPercentage(proposal, DataTypes.Ballot.AGAINST);
+        abstain = _getBallotPercentage(proposal, DataTypes.Ballot.ABSTAIN);
+    }
+
+    function _getBallotPercentage(
+        DataTypes.Proposal storage proposal,
+        DataTypes.Ballot ballot
+    ) internal view returns (uint256) {
+        return
+            votingPowerAggregator.calculateWeightedPowerPct(
+                _toVotingPowers(_totals[proposal.id][ballot]),
+                proposal.createdAt
+            );
     }
 
     function _toVotingPowers(
