@@ -35,8 +35,8 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         bytes calldata signature
     ) external {
         require(
-            multiplier >= 1e18,
-            "multiplier must be greater or equal than 1e18"
+            multiplier >= 1e18 && multiplier <= 20e18,
+            "multiplier must be greater or equal than 1e18 and lower or equal than 20e18"
         );
 
         bytes32 hash = _hashTypedDataV4(
