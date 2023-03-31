@@ -63,7 +63,11 @@ contract LPVault is
         withdrawalWaitDuration = _duration;
     }
 
-    function deposit(uint256 _amount, address _delegate) external {
+    function deposit(uint256 _amount) external {
+        deposit(_amount, msg.sender);
+    }
+
+    function deposit(uint256 _amount, address _delegate) public {
         require(_delegate != address(0), "no delegation to 0");
         require(_amount > 0, "cannot deposit zero _amount");
 

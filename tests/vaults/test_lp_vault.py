@@ -23,7 +23,7 @@ def test_deposit(admin, token, lp_vault):
         lp_vault.deposit(0, "0x0000000000000000000000000000000000000000")
 
     token.approve(lp_vault, 10)
-    lp_vault.deposit(10, admin)
+    lp_vault.deposit(10)
     assert lp_vault.getRawVotingPower(admin) == lp_vault.getTotalRawVotingPower() == 10
 
     assert token.balanceOf(admin) == INITIAL_BALANCE - 10
