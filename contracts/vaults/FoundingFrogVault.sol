@@ -29,7 +29,7 @@ contract FoundingFrogVault is NFTVault, EIP712 {
     }
 
     function claimNFT(
-        address owner,
+        address nftOwner,
         uint128 multiplier,
         bytes32[] calldata proof,
         bytes calldata signature
@@ -41,18 +41,23 @@ contract FoundingFrogVault is NFTVault, EIP712 {
 
         bytes32 hash = _hashTypedDataV4(
             keccak256(
-                abi.encode(_TYPE_HASH, owner, multiplier, _encodeProof(proof))
+                abi.encode(
+                    _TYPE_HASH,
+                    nftOwner,
+                    multiplier,
+                    _encodeProof(proof)
+                )
             )
         );
         address claimant = ECDSA.recover(hash, signature);
-        require(claimant == owner, "invalid signature");
+        require(claimant == nftOwner, "invalid signature");
 
-        require(_claimed[owner] == address(0), "NFT already claimed");
+        require(_claimed[nftOwner] == address(0), "NFT already claimed");
 
-        bytes32 node = keccak256(abi.encodePacked(owner, multiplier));
+        bytes32 node = keccak256(abi.encodePacked(nftOwner, multiplier));
         require(merkleRoot.isProofValid(node, proof), "invalid proof");
 
-        _claimed[owner] = msg.sender;
+        _claimed[nftOwner] = msg.sender;
 
         VotingPowerHistory.Record memory current = history.currentRecord(
             msg.sender
