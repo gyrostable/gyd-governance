@@ -66,12 +66,13 @@ contract SafeManagementModule is GovernanceOnly {
             OwnerManager.swapOwner,
             (prevOwner, oldOwner, newOwner)
         );
-        safe.execTransactionFromModule(
+        bool result = safe.execTransactionFromModule(
             address(safe),
             0,
             data,
             Enum.Operation.Call
         );
+        require(result, "safe call failed");
     }
 
     function removeOwner(
@@ -91,12 +92,13 @@ contract SafeManagementModule is GovernanceOnly {
             OwnerManager.removeOwner,
             (prevOwner, oldOwner, _threshold)
         );
-        safe.execTransactionFromModule(
+        bool result = safe.execTransactionFromModule(
             address(safe),
             0,
             data,
             Enum.Operation.Call
         );
+        require(result, "safe call failed");
     }
 
     function addOwnerWithThreshold(
@@ -114,12 +116,13 @@ contract SafeManagementModule is GovernanceOnly {
             OwnerManager.addOwnerWithThreshold,
             (owner, _threshold)
         );
-        safe.execTransactionFromModule(
+        bool result = safe.execTransactionFromModule(
             address(safe),
             0,
             data,
             Enum.Operation.Call
         );
+        require(result, "safe call failed");
     }
 
     function changeThreshold(uint256 threshold) external governanceOnly {
@@ -127,32 +130,35 @@ contract SafeManagementModule is GovernanceOnly {
             OwnerManager.changeThreshold,
             threshold
         );
-        safe.execTransactionFromModule(
+        bool result = safe.execTransactionFromModule(
             address(safe),
             0,
             data,
             Enum.Operation.Call
         );
+        require(result, "safe call failed");
     }
 
     function setGuard(address guard) external governanceOnly {
         bytes memory data = abi.encodeCall(GuardManager.setGuard, guard);
-        safe.execTransactionFromModule(
+        bool result = safe.execTransactionFromModule(
             address(safe),
             0,
             data,
             Enum.Operation.Call
         );
+        require(result, "safe call failed");
     }
 
     function enableModule(address module) external governanceOnly {
         bytes memory data = abi.encodeCall(ModuleManager.enableModule, module);
-        safe.execTransactionFromModule(
+        bool result = safe.execTransactionFromModule(
             address(safe),
             0,
             data,
             Enum.Operation.Call
         );
+        require(result, "safe call failed");
     }
 
     function disableModule(
@@ -163,11 +169,12 @@ contract SafeManagementModule is GovernanceOnly {
             ModuleManager.disableModule,
             (prevModule, module)
         );
-        safe.execTransactionFromModule(
+        bool result = safe.execTransactionFromModule(
             address(safe),
             0,
             data,
             Enum.Operation.Call
         );
+        require(result, "safe call failed");
     }
 }
