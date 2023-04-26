@@ -59,7 +59,7 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
         assembly {
             out := and(
                 mload(add(_calldata, 32)),
-                0xFFFFFFFFF0000000000000000000000000000000000000000000000000000000
+                0xFFFFFFFF00000000000000000000000000000000000000000000000000000000
             )
         }
     }
