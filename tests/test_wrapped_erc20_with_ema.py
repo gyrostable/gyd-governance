@@ -43,3 +43,12 @@ def test_ema(admin, wrapped_erc20, token):
         ema = wrapped_erc20.wrappedPctEMA()
         assert previousEMA < ema <= 20e16
         previousEMA = ema
+
+    chain.mine(blocks=100)
+    wrapped_erc20.updateEMA({"from": admin})
+    ema = wrapped_erc20.wrappedPctEMA()
+    assert previousEMA < ema <= 20e16
+    chain.mine()
+    wrapped_erc20.updateEMA({"from": admin})
+    ema = wrapped_erc20.wrappedPctEMA()
+    assert previousEMA < ema <= 20e16
