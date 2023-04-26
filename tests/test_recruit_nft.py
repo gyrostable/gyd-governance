@@ -70,6 +70,23 @@ def test_recruit_nft_is_mintable_by_allowlisted_address(
     recruit_nft.setGovernanceVault(nft_vault.address)
 
     sig = signature(local_account, PROOF, recruit_nft.address)
-    recruit_nft.mint(local_account, PROOF, sig, {"from": admin})
+    recruit_nft.mint(local_account, PROOF, sig, {"from": local_account})
 
     assert recruit_nft.balanceOf(local_account) == 1
+
+
+def test_recruit_nft_is_mintable_only_once(
+    admin, alice, bob, local_account, RecruitNFT, RecruitNFTVault
+):
+    recruit_nft = admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin, 10, ROOT)
+    nft_vault = admin.deploy(RecruitNFTVault, admin, recruit_nft)
+    recruit_nft.setGovernanceVault(nft_vault.address)
+
+    sig = signature(local_account, PROOF, recruit_nft.address)
+    recruit_nft.mint(local_account, PROOF, sig, {"from": local_account})
+
+    with reverts("user has already claimed NFT"):
+        recruit_nft.mint(local_account, PROOF, sig, {"from": alice})
+
+    with reverts("user has already claimed NFT"):
+        recruit_nft.mint(local_account, PROOF, sig, {"from": bob})
