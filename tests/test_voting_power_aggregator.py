@@ -1,18 +1,69 @@
 from brownie import reverts, MockVault, chain
 
 
+def test_set_schedule_with_wrong_start_end(voting_power_aggregator, admin):
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
+
+    ct = chain.time() - 1000
+    with reverts("schedule must end after it begins"):
+        voting_power_aggregator.setSchedule(
+            [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct, {"from": admin}
+        )
+
+    with reverts("schedule must end after it begins"):
+        voting_power_aggregator.setSchedule(
+            [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct - 1, {"from": admin}
+        )
+
+
 def test_set_schedule(voting_power_aggregator, admin):
     mv = admin.deploy(MockVault, 5, 10)
     mv2 = admin.deploy(MockVault, 5, 10)
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(
-        [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct, {"from": admin}
+        [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct + 1, {"from": admin}
     )
 
     vaults = voting_power_aggregator.listVaults()
     expectedVaults = sorted(
         [(mv.address, 5e17, 5e17, 5e17), (mv2.address, 5e17, 5e17, 5e17)],
+        key=lambda x: x[0],
+    )
+    assert sorted(vaults, key=lambda x: x[0]) == expectedVaults
+
+
+def test_set_schedule_multiple_times(voting_power_aggregator, admin):
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
+    mv3 = admin.deploy(MockVault, 5, 10)
+
+    ct = chain.time() - 1000
+    voting_power_aggregator.setSchedule(
+        [(mv, 5e17, 5e17), (mv2, 5e17, 5e17)], ct, ct + 1, {"from": admin}
+    )
+
+    vaults = voting_power_aggregator.listVaults()
+    expectedVaults = sorted(
+        [(mv.address, 5e17, 5e17, 5e17), (mv2.address, 5e17, 5e17, 5e17)],
+        key=lambda x: x[0],
+    )
+    assert sorted(vaults, key=lambda x: x[0]) == expectedVaults
+
+    voting_power_aggregator.setSchedule(
+        [(mv, 5e17, 5e17), (mv2, 3e17, 3e17), (mv3, 2e17, 2e17)],
+        ct,
+        ct + 1,
+        {"from": admin},
+    )
+    vaults = voting_power_aggregator.listVaults()
+    expectedVaults = sorted(
+        [
+            (mv.address, 5e17, 5e17, 5e17),
+            (mv2.address, 3e17, 3e17, 3e17),
+            (mv3.address, 2e17, 2e17, 2e17),
+        ],
         key=lambda x: x[0],
     )
     assert sorted(vaults, key=lambda x: x[0]) == expectedVaults
@@ -52,7 +103,7 @@ def test_get_vault_weight(voting_power_aggregator, admin):
     voting_power_aggregator.setSchedule(
         [(mv, 2e17, 2e17), (mv2, 5e17, 5e17), (mv3, 3e17, 3e17)],
         ct,
-        ct,
+        ct + 1,
         {"from": admin},
     )
 
