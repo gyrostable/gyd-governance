@@ -2,8 +2,8 @@ from brownie import reverts, MockVault, chain
 
 
 def test_set_schedule_with_wrong_start_end(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
 
     ct = chain.time() - 1000
     with reverts("schedule must end after it begins"):
@@ -35,9 +35,9 @@ def test_set_schedule(voting_power_aggregator, admin):
 
 
 def test_set_schedule_multiple_times(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
-    mv3 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv3 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(

@@ -311,6 +311,8 @@ def test_voting_power_snapshot(
 
     # create proposal and vote
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    chain.sleep(1)
+    chain.mine()
     tx = governance_manager.createProposal([proposal], {"from": accounts[1]})
     proposal_id = tx.events["ProposalCreated"]["id"]
     chain.sleep(1)  # make sure timestamp has changed

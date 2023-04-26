@@ -6,8 +6,8 @@ import "../../libraries/Errors.sol";
 
 abstract contract BaseVault is IVault {
     /// @dev 0 is a valid value for the total voting power
-    /// Therefore, the first 31 bytes represent the voting power
-    /// and the last byte represents whether the snapshot exists or not
+    /// Therefore, the first 255 bits represent the voting power
+    /// and the last bit represents whether the snapshot exists or not
     mapping(uint256 => uint256) internal _snapshots;
 
     address public immutable votingPowerAggregator;

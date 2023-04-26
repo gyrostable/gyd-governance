@@ -85,7 +85,7 @@ contract GovernanceManager {
         }
 
         DataTypes.VaultVotingPower[] memory rawPower = votingPowerAggregator
-            .getVotingPower(msg.sender, block.timestamp);
+            .getVotingPower(msg.sender, block.timestamp - 1);
         uint256 votingPowerPct = votingPowerAggregator
             .calculateWeightedPowerPct(rawPower, block.timestamp);
         require(

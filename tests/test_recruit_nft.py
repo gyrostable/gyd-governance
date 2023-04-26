@@ -78,10 +78,18 @@ def test_recruit_nft_is_mintable_by_allowlisted_address(
 
 
 def test_recruit_nft_is_mintable_only_once(
-    admin, alice, bob, local_account, RecruitNFT, RecruitNFTVault
+    admin,
+    alice,
+    bob,
+    local_account,
+    RecruitNFT,
+    RecruitNFTVault,
+    voting_power_aggregator,
 ):
     recruit_nft = admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin, 10, ROOT)
-    nft_vault = admin.deploy(RecruitNFTVault, admin, recruit_nft)
+    nft_vault = admin.deploy(
+        RecruitNFTVault, voting_power_aggregator, admin, recruit_nft
+    )
     recruit_nft.setGovernanceVault(nft_vault.address)
 
     sig = signature(local_account, PROOF, recruit_nft.address)
