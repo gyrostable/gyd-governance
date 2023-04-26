@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "./access/ImmutableOwner.sol";
 
+import "../libraries/VaultsSnapshot.sol";
 import "../libraries/Errors.sol";
 import "../libraries/ScaledMath.sol";
 
@@ -14,24 +15,39 @@ import "../interfaces/IVault.sol";
 contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using VaultsSnapshot for VaultsSnapshot.Snapshot;
 
     EnumerableSet.AddressSet internal _authorizedToSnapshot;
     EnumerableSet.AddressSet internal _vaultAddresses;
     mapping(address => DataTypes.VaultWeightConfiguration) internal _vaults;
+    mapping(uint256 => VaultsSnapshot.Snapshot) internal _vaultSnapshots;
 
     uint256 public scheduleStartsAt;
     uint256 public scheduleEndsAt;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
-    function snapshotTotalVotingPower() external {
+    function snapshotVaults() external {
         if (!_authorizedToSnapshot.contains(msg.sender))
             revert Errors.NotAuthorized(msg.sender, address(this));
 
         uint256 len = _vaultAddresses.length();
         for (uint256 i = 0; i < len; i++) {
-            IVault(_vaultAddresses.at(i)).snapshotTotalRawVotingPower();
+            _vaultSnapshots[block.timestamp].add(
+                _makeVaultSnapshot(_vaultAddresses.at(i))
+            );
         }
+    }
+
+    function _makeVaultSnapshot(
+        address vaultAddress
+    ) internal view returns (DataTypes.VaultSnapshot memory) {
+        return
+            DataTypes.VaultSnapshot({
+                vaultAddress: vaultAddress,
+                weight: getVaultWeight(vaultAddress),
+                totalVotingPower: IVault(vaultAddress).getTotalRawVotingPower()
+            });
     }
 
     function grantSnapshotRights(address account) external onlyOwner {
@@ -42,19 +58,27 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         address account,
         uint256 timestamp
     ) external view returns (DataTypes.VaultVotingPower[] memory) {
-        uint256 vaultsCount = _vaultAddresses.length();
+        return getVotingPower(account, timestamp, true);
+    }
+
+    function getVotingPower(
+        address account,
+        uint256 timestamp,
+        bool useVaultsSnapshot
+    ) public view returns (DataTypes.VaultVotingPower[] memory) {
+        address[] memory vaults = _getVaults(timestamp, useVaultsSnapshot);
         DataTypes.VaultVotingPower[]
             memory userVotingPower = new DataTypes.VaultVotingPower[](
-                vaultsCount
+                vaults.length
             );
-        for (uint256 i; i < vaultsCount; i++) {
-            IVault vault = IVault(_vaultAddresses.at(i));
+        for (uint256 i; i < vaults.length; i++) {
+            IVault vault = IVault(vaults[i]);
             uint256 userRawVotingPower = vault.getRawVotingPower(
                 account,
                 timestamp
             );
             userVotingPower[i] = DataTypes.VaultVotingPower({
-                vaultAddress: _vaultAddresses.at(i),
+                vaultAddress: address(vault),
                 votingPower: userRawVotingPower
             });
         }
@@ -70,13 +94,25 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
 
         for (uint256 i; i < vaultVotingPowers.length; i++) {
             DataTypes.VaultVotingPower memory vaultVP = vaultVotingPowers[i];
-            uint256 vaultWeight = this.getVaultWeight(vaultVP.vaultAddress);
-            if (vaultWeight != 0) {
-                uint256 tvp = IVault(vaultVP.vaultAddress)
-                    .getTotalRawVotingPower(timestamp);
-                votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(
-                    vaultWeight
-                );
+            if (timestamp == block.timestamp) {
+                uint256 vaultWeight = getVaultWeight(vaultVP.vaultAddress);
+                if (vaultWeight > 0) {
+                    uint256 tvp = IVault(vaultVP.vaultAddress)
+                        .getTotalRawVotingPower();
+                    votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(
+                        vaultWeight
+                    );
+                }
+            } else {
+                DataTypes.VaultSnapshot memory snapshot = _vaultSnapshots[
+                    timestamp
+                ].get(vaultVP.vaultAddress);
+                if (snapshot.weight > 0) {
+                    votingPowerPct += vaultVP
+                        .votingPower
+                        .divDown(snapshot.totalVotingPower)
+                        .mulDown(snapshot.weight);
+                }
             }
         }
 
@@ -101,7 +137,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
             vaults[i].initialWeight = conf.initialWeight;
             vaults[i].targetWeight = conf.targetWeight;
 
-            uint256 vaultWeight = this.getVaultWeight(conf.vaultAddress);
+            uint256 vaultWeight = getVaultWeight(conf.vaultAddress);
             vaults[i].currentWeight = vaultWeight;
 
             totalWeight += vaultWeight;
@@ -121,7 +157,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         return block.timestamp;
     }
 
-    function getVaultWeight(address vault) external view returns (uint256) {
+    function getVaultWeight(address vault) public view returns (uint256) {
         DataTypes.VaultWeightConfiguration memory vaultWeight = _vaults[vault];
 
         if (blockTimestamp() > scheduleEndsAt) {
@@ -190,6 +226,21 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         if (!_vaultAddresses.add(vault.vaultAddress))
             revert Errors.DuplicatedVault(vault.vaultAddress);
         _vaults[vault.vaultAddress] = vault;
+    }
+
+    function _getVaults(
+        uint256 timestamp,
+        bool useSnapshot
+    ) internal view returns (address[] memory) {
+        if (useSnapshot) {
+            address[] memory vaults = _vaultSnapshots[timestamp]
+                .vaults
+                .values();
+            if (vaults.length == 0)
+                revert Errors.NoSnapshotAtTimestamp(timestamp);
+            return vaults;
+        }
+        return _vaultAddresses.values();
     }
 
     function _removeAllVaults() internal {

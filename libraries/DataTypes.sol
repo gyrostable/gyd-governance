@@ -91,6 +91,12 @@ library DataTypes {
         VaultVotingPower[] abstentions;
     }
 
+    struct VaultSnapshot {
+        address vaultAddress;
+        uint256 weight;
+        uint256 totalVotingPower;
+    }
+
     enum ProposalOutcome {
         UNDEFINED,
         QUORUM_NOT_MET,

@@ -36,7 +36,7 @@ class VoteTotals(NamedTuple):
 
 @pytest.fixture(autouse=True)
 def initialized_mock_vault(MockVault, voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 50e18, 100e18)
+    mv = admin.deploy(MockVault, 50e18, 100e18)
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule([(mv, 1e18, 1e18)], ct, ct + 1, {"from": admin})
     return mv

@@ -8,10 +8,9 @@ INITIAL_THRESHOLD = 2000
 
 
 @pytest.fixture
-def mock_vault(admin, voting_power_aggregator):
+def mock_vault(admin):
     return admin.deploy(
         MockVault,
-        voting_power_aggregator,
         INITIAL_RAW_VOTING_POWER,
         INITIAL_TOTAL_RAW_VOTING_POWER,
     )
@@ -19,16 +18,12 @@ def mock_vault(admin, voting_power_aggregator):
 
 @pytest.fixture()
 def aggregate_lp_vault(admin, mock_vault, voting_power_aggregator):
-    return admin.deploy(
-        AggregateLPVault, voting_power_aggregator, admin, INITIAL_THRESHOLD
-    )
+    return admin.deploy(AggregateLPVault, admin, INITIAL_THRESHOLD)
 
 
-def test_aggregate_lp_vault_scaled_threshold(
-    admin, mock_vault, voting_power_aggregator, aggregate_lp_vault
-):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 10, 100)
-    mv2 = admin.deploy(MockVault, voting_power_aggregator, 0, 100)
+def test_aggregate_lp_vault_scaled_threshold(admin, mock_vault, aggregate_lp_vault):
+    mv = admin.deploy(MockVault, 10, 100)
+    mv2 = admin.deploy(MockVault, 0, 100)
 
     aggregate_lp_vault.setVaultWeights(
         [

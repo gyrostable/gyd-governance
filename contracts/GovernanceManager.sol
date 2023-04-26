@@ -85,7 +85,7 @@ contract GovernanceManager {
         }
 
         DataTypes.VaultVotingPower[] memory rawPower = votingPowerAggregator
-            .getVotingPower(msg.sender, block.timestamp - 1);
+            .getVotingPower(msg.sender, block.timestamp - 1, false);
         uint256 votingPowerPct = votingPowerAggregator
             .calculateWeightedPowerPct(rawPower, block.timestamp);
         require(
@@ -111,7 +111,7 @@ contract GovernanceManager {
             p.actions.push(actions[i]);
         }
 
-        votingPowerAggregator.snapshotTotalVotingPower();
+        votingPowerAggregator.snapshotVaults();
 
         proposalsCount = p.id + 1;
         _activeProposals.add(bytes32(bytes3(p.id)));
@@ -145,6 +145,7 @@ contract GovernanceManager {
             .getVotingPower(msg.sender, proposal.createdAt);
 
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
+        bool isNewVote = existingVote.ballot == DataTypes.Ballot.UNDEFINED;
         // First, zero out the effect of any vote already cast by the voter.
         for (uint256 i = 0; i < existingVote.vaults.length; i++) {
             DataTypes.VaultVotingPower memory vvp = existingVote.vaults[i];
@@ -160,7 +161,10 @@ contract GovernanceManager {
         // Then update the record of this user's vote to the latest ballot and voting power
         existingVote.ballot = ballot;
         // Copy over the voting power
-        _copyToStorage(existingVote.vaults, uvp);
+        for (uint256 i = 0; i < uvp.length; i++) {
+            if (isNewVote) existingVote.vaults.push(uvp[i]);
+            else existingVote.vaults[i] = uvp[i];
+        }
 
         // And, finally update running total
         for (uint256 i = 0; i < uvp.length; i++) {
@@ -181,29 +185,6 @@ contract GovernanceManager {
             uvp,
             _toVoteTotals(_totals[proposalId])
         );
-    }
-
-    function _copyToStorage(
-        DataTypes.VaultVotingPower[] storage existingVoteVaults,
-        DataTypes.VaultVotingPower[] memory vaults
-    ) internal {
-        bool hasNewEntries = existingVoteVaults.length < vaults.length;
-        (uint256 minLength, uint256 maxLength) = hasNewEntries
-            ? (existingVoteVaults.length, vaults.length)
-            : (vaults.length, existingVoteVaults.length);
-        for (uint256 i = 0; i < minLength; i++) {
-            existingVoteVaults[i] = vaults[i];
-        }
-        for (uint256 i = minLength; i < maxLength; i++) {
-            if (hasNewEntries) {
-                existingVoteVaults.push(vaults[i]);
-            } else {
-                // this will remove from the end but we only care about removing elements
-                // from existingVoteVaults[minLength:maxLength], so the order in which we
-                // remove them does not matter
-                existingVoteVaults.pop();
-            }
-        }
     }
 
     function getVoteTotals(

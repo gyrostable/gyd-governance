@@ -13,11 +13,7 @@ contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
 
     address internal immutable underlyingAddress;
 
-    constructor(
-        address _votingPowerAggregator,
-        address _owner,
-        address _underlyingAddress
-    ) NFTVault(_votingPowerAggregator, _owner) {
+    constructor(address _owner, address _underlyingAddress) NFTVault(_owner) {
         underlyingAddress = _underlyingAddress;
         sumVotingPowers = IERC721Enumerable(_underlyingAddress).totalSupply();
     }

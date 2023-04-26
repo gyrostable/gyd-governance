@@ -16,11 +16,7 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
 
     uint256 internal threshold;
 
-    constructor(
-        address _votingPowerAggregator,
-        address _owner,
-        uint256 _threshold
-    ) BaseVault(_votingPowerAggregator) ImmutableOwner(_owner) {
+    constructor(address _owner, uint256 _threshold) ImmutableOwner(_owner) {
         threshold = _threshold;
     }
 

@@ -2,8 +2,8 @@ from brownie import reverts, MockVault, chain
 
 
 def test_set_schedule_with_wrong_start_end(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
 
     ct = chain.time() - 1000
     with reverts("schedule must end after it begins"):
@@ -18,8 +18,8 @@ def test_set_schedule_with_wrong_start_end(voting_power_aggregator, admin):
 
 
 def test_set_schedule(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(
@@ -35,9 +35,9 @@ def test_set_schedule(voting_power_aggregator, admin):
 
 
 def test_set_schedule_multiple_times(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv3 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
+    mv3 = admin.deploy(MockVault, 5, 10)
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(
@@ -70,8 +70,8 @@ def test_set_schedule_multiple_times(voting_power_aggregator, admin):
 
 
 def test_set_schedule_raises_if_vaults_dont_add_up_to_1(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
 
     with reverts():
         ct = chain.time() - 1000
@@ -81,8 +81,8 @@ def test_set_schedule_raises_if_vaults_dont_add_up_to_1(voting_power_aggregator,
 
 
 def test_set_schedule_raises_if_duplicate_vaults(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
 
     with reverts():
         ct = chain.time() - 1000
@@ -95,9 +95,9 @@ def test_set_schedule_raises_if_duplicate_vaults(voting_power_aggregator, admin)
 
 
 def test_get_vault_weight(voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv2 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
-    mv3 = admin.deploy(MockVault, voting_power_aggregator, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
+    mv3 = admin.deploy(MockVault, 5, 10)
 
     ct = chain.time() - 1000
     voting_power_aggregator.setSchedule(
@@ -115,8 +115,8 @@ def test_get_vault_weight(voting_power_aggregator, admin):
 def test_get_vault_weight_on_schedule(time_settable_voting_power_aggregator, admin):
     vpa = time_settable_voting_power_aggregator
 
-    mv = admin.deploy(MockVault, vpa, 5, 10)
-    mv2 = admin.deploy(MockVault, vpa, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
 
     ct1 = chain.time()
     vpa.setCurrentTime(ct1)
@@ -143,8 +143,8 @@ def test_get_vault_weight_schedule_starts_in_future(
 ):
     vpa = time_settable_voting_power_aggregator
 
-    mv = admin.deploy(MockVault, vpa, 5, 10)
-    mv2 = admin.deploy(MockVault, vpa, 5, 10)
+    mv = admin.deploy(MockVault, 5, 10)
+    mv2 = admin.deploy(MockVault, 5, 10)
 
     ct = chain.time()
     vpa.setCurrentTime(ct)

@@ -16,10 +16,7 @@ abstract contract NFTVault is BaseVault, IDelegatingVault, ImmutableOwner {
 
     uint256 internal sumVotingPowers;
 
-    constructor(
-        address _votingPowerAggregator,
-        address _owner
-    ) BaseVault(_votingPowerAggregator) ImmutableOwner(_owner) {}
+    constructor(address _owner) ImmutableOwner(_owner) {}
 
     function delegateVote(address _delegate, uint256 _amount) external {
         history.delegateVote(msg.sender, _delegate, _amount);

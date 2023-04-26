@@ -10,10 +10,4 @@ interface IVault {
     ) external view returns (uint256);
 
     function getTotalRawVotingPower() external view returns (uint256);
-
-    function getTotalRawVotingPower(
-        uint256 timestamp
-    ) external view returns (uint256);
-
-    function snapshotTotalRawVotingPower() external;
 }

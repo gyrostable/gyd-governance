@@ -14,11 +14,7 @@ contract MockVault is BaseVault, IDelegatingVault {
 
     VotingPowerHistory.History internal history;
 
-    constructor(
-        address _votingPowerAggregator,
-        uint256 _rawVotingPower,
-        uint256 _totalRawVotingPower
-    ) BaseVault(_votingPowerAggregator) {
+    constructor(uint256 _rawVotingPower, uint256 _totalRawVotingPower) {
         rawVotingPower = _rawVotingPower;
         totalRawVotingPower = _totalRawVotingPower;
     }

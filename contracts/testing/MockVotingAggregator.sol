@@ -19,7 +19,7 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
         weightedPowerPct = _weightedPowerPct;
     }
 
-    function snapshotTotalVotingPower() external override {}
+    function snapshotVaults() external override {}
 
     function setVotingPower(uint256 _votingPower) public {
         votingPower = _votingPower;
@@ -27,8 +27,9 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
 
     function getVotingPower(
         address,
-        uint256 /* timestamp */
-    ) external view returns (DataTypes.VaultVotingPower[] memory) {
+        uint256 /* timestamp */,
+        bool /* useSnapshot */
+    ) public view returns (DataTypes.VaultVotingPower[] memory) {
         DataTypes.VaultVotingPower[]
             memory vp = new DataTypes.VaultVotingPower[](1);
         vp[0] = DataTypes.VaultVotingPower({
@@ -36,6 +37,13 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
             votingPower: votingPower
         });
         return vp;
+    }
+
+    function getVotingPower(
+        address account,
+        uint256 timestamp
+    ) external view returns (DataTypes.VaultVotingPower[] memory) {
+        return getVotingPower(account, timestamp, true);
     }
 
     function getTotalVotingPower() external view returns (uint256) {

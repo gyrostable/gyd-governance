@@ -20,14 +20,10 @@ contract FoundingFrogVault is NFTVault, EIP712 {
     Merkle.Root private merkleRoot;
 
     constructor(
-        address _votingPowerAggregator,
         address _owner,
         uint256 _sumVotingPowers,
         bytes32 _merkleRoot
-    )
-        EIP712("FoundingFrogVault", "1")
-        NFTVault(_votingPowerAggregator, _owner)
-    {
+    ) EIP712("FoundingFrogVault", "1") NFTVault(_owner) {
         sumVotingPowers = _sumVotingPowers;
         merkleRoot = Merkle.Root(_merkleRoot);
     }

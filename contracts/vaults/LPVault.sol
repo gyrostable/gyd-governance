@@ -38,16 +38,11 @@ contract LPVault is
     uint256 public totalSupply;
 
     constructor(
-        address _votingPowerAggregator,
         address _owner,
         address _lpToken,
         address _rewardsToken,
         uint256 _withdrawalWaitDuration
-    )
-        BaseVault(_votingPowerAggregator)
-        ImmutableOwner(_owner)
-        LiquidityMining(_rewardsToken)
-    {
+    ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
         lpToken = IERC20(_lpToken);
         withdrawalWaitDuration = _withdrawalWaitDuration;
     }

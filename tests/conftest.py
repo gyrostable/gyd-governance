@@ -121,8 +121,8 @@ def dummy_dao_addresses():
 
 
 @pytest.fixture(scope="module")
-def friendly_dao_vault(admin, FriendlyDAOVault, voting_power_aggregator):
-    return admin.deploy(FriendlyDAOVault, voting_power_aggregator, admin)
+def friendly_dao_vault(admin, FriendlyDAOVault):
+    return admin.deploy(FriendlyDAOVault, admin)
 
 
 @pytest.fixture(scope="module")
@@ -181,10 +181,9 @@ def recruit_nft(admin):
 
 
 @pytest.fixture
-def nft_vault(recruit_nft, admin, voting_power_aggregator):
+def nft_vault(recruit_nft, admin):
     nft_vault = admin.deploy(
         RecruitNFTVault,
-        voting_power_aggregator,
         admin,
         recruit_nft,
     )
@@ -197,10 +196,8 @@ def nft_vault(recruit_nft, admin, voting_power_aggregator):
 
 
 @pytest.fixture
-def frog_vault(admin, voting_power_aggregator):
-    frog_vault = admin.deploy(
-        FoundingFrogVault, voting_power_aggregator, admin, 5e18, ROOT
-    )
+def frog_vault(admin):
+    frog_vault = admin.deploy(FoundingFrogVault, admin, 5e18, ROOT)
     return frog_vault
 
 

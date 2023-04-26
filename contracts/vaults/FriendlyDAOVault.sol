@@ -18,10 +18,7 @@ contract FriendlyDAOVault is BaseVault, IDelegatingVault, ImmutableOwner {
 
     VotingPowerHistory.History internal history;
 
-    constructor(
-        address _votingPowerAggregator,
-        address _owner
-    ) BaseVault(_votingPowerAggregator) ImmutableOwner(_owner) {}
+    constructor(address _owner) ImmutableOwner(_owner) {}
 
     function updateDAOAndTotalWeight(
         address dao,
