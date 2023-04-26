@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 library DataTypes {
     enum Status {
+        Undefined,
         Active,
         Rejected,
         Queued,
