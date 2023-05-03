@@ -72,6 +72,7 @@ library DataTypes {
     }
 
     struct EmergencyRecoveryProposal {
+        uint64 createdAt;
         uint64 completesAt;
         Status status;
         bytes payload;
@@ -94,6 +95,12 @@ library DataTypes {
         VaultVotingPower[] _for;
         VaultVotingPower[] against;
         VaultVotingPower[] abstentions;
+    }
+
+    struct VaultSnapshot {
+        address vaultAddress;
+        uint256 weight;
+        uint256 totalVotingPower;
     }
 
     enum ProposalOutcome {

@@ -76,7 +76,12 @@ def test_recruit_nft_is_mintable_by_allowlisted_address(
 
 
 def test_recruit_nft_is_mintable_only_once(
-    admin, alice, bob, local_account, RecruitNFT, RecruitNFTVault
+    admin,
+    alice,
+    bob,
+    local_account,
+    RecruitNFT,
+    RecruitNFTVault,
 ):
     recruit_nft = admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin, 10, ROOT)
     nft_vault = admin.deploy(RecruitNFTVault, admin, recruit_nft)

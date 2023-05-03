@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
 
+import "../interfaces/IVault.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
 import "../interfaces/ITierStrategy.sol";
@@ -88,9 +89,9 @@ contract GovernanceManager is Initializable {
         }
 
         DataTypes.VaultVotingPower[] memory rawPower = votingPowerAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(msg.sender, block.timestamp - 1, false);
         uint256 votingPowerPct = votingPowerAggregator
-            .calculateWeightedPowerPct(rawPower);
+            .calculateWeightedPowerPct(rawPower, block.timestamp);
         require(
             votingPowerPct > tier.proposalThreshold,
             "proposer doesn't have enough voting power to propose this action"
@@ -113,6 +114,8 @@ contract GovernanceManager is Initializable {
         for (uint256 i = 0; i < actions.length; i++) {
             p.actions.push(actions[i]);
         }
+
+        votingPowerAggregator.snapshotVaults();
 
         proposalsCount = p.id + 1;
         _activeProposals.add(bytes32(bytes3(p.id)));
@@ -143,9 +146,10 @@ contract GovernanceManager is Initializable {
         );
 
         DataTypes.VaultVotingPower[] memory uvp = votingPowerAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(msg.sender, proposal.createdAt);
 
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
+        bool isNewVote = existingVote.ballot == DataTypes.Ballot.UNDEFINED;
         // First, zero out the effect of any vote already cast by the voter.
         for (uint256 i = 0; i < existingVote.vaults.length; i++) {
             DataTypes.VaultVotingPower memory vvp = existingVote.vaults[i];
@@ -161,7 +165,10 @@ contract GovernanceManager is Initializable {
         // Then update the record of this user's vote to the latest ballot and voting power
         existingVote.ballot = ballot;
         // Copy over the voting power
-        _copyToStorage(existingVote.vaults, uvp);
+        for (uint256 i = 0; i < uvp.length; i++) {
+            if (isNewVote) existingVote.vaults.push(uvp[i]);
+            else existingVote.vaults[i] = uvp[i];
+        }
 
         // And, finally update running total
         for (uint256 i = 0; i < uvp.length; i++) {
@@ -184,33 +191,16 @@ contract GovernanceManager is Initializable {
         );
     }
 
-    function _copyToStorage(
-        DataTypes.VaultVotingPower[] storage existingVoteVaults,
-        DataTypes.VaultVotingPower[] memory vaults
-    ) internal {
-        bool hasNewEntries = existingVoteVaults.length < vaults.length;
-        (uint256 minLength, uint256 maxLength) = hasNewEntries
-            ? (existingVoteVaults.length, vaults.length)
-            : (vaults.length, existingVoteVaults.length);
-        for (uint256 i = 0; i < minLength; i++) {
-            existingVoteVaults[i] = vaults[i];
-        }
-        for (uint256 i = minLength; i < maxLength; i++) {
-            if (hasNewEntries) {
-                existingVoteVaults.push(vaults[i]);
-            } else {
-                // this will remove from the end but we only care about removing elements
-                // from existingVoteVaults[minLength:maxLength], so the order in which we
-                // remove them does not matter
-                existingVoteVaults.pop();
-            }
-        }
+    function getVoteTotals(
+        uint24 proposalId
+    ) external view returns (DataTypes.VoteTotals memory) {
+        return _toVoteTotals(_totals[proposalId]);
     }
 
     function _toVoteTotals(
         mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap)
             storage totals
-    ) internal returns (DataTypes.VoteTotals memory) {
+    ) internal view returns (DataTypes.VoteTotals memory) {
         EnumerableMap.AddressToUintMap storage forVotingPower = totals[
             DataTypes.Ballot.FOR
         ];
@@ -260,17 +250,11 @@ contract GovernanceManager is Initializable {
             "voting is ongoing for this proposal"
         );
 
-        uint256 forTotalPct = votingPowerAggregator.calculateWeightedPowerPct(
-            _toVotingPowers(_totals[proposalId][DataTypes.Ballot.FOR])
-        );
-        uint256 againstTotalPct = votingPowerAggregator
-            .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.AGAINST])
-            );
-        uint256 abstentionsTotalPct = votingPowerAggregator
-            .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.ABSTAIN])
-            );
+        (
+            uint256 forTotalPct,
+            uint256 againstTotalPct,
+            uint256 abstentionsTotalPct
+        ) = _getCurrentPercentages(proposal);
 
         uint256 combinedPct = forTotalPct +
             againstTotalPct +
@@ -301,6 +285,33 @@ contract GovernanceManager is Initializable {
         }
         _activeProposals.remove(bytes32(bytes3(proposalId)));
         emit ProposalTallied(proposalId, proposal.status, outcome);
+    }
+
+    function getCurrentPercentages(
+        uint24 proposalId
+    ) external view returns (uint256 for_, uint256 against, uint256 abstain) {
+        DataTypes.Proposal storage proposal = _proposals[proposalId];
+        require(proposal.createdAt != 0, "proposal does not exist");
+        return _getCurrentPercentages(proposal);
+    }
+
+    function _getCurrentPercentages(
+        DataTypes.Proposal storage proposal
+    ) internal view returns (uint256 for_, uint256 against, uint256 abstain) {
+        for_ = _getBallotPercentage(proposal, DataTypes.Ballot.FOR);
+        against = _getBallotPercentage(proposal, DataTypes.Ballot.AGAINST);
+        abstain = _getBallotPercentage(proposal, DataTypes.Ballot.ABSTAIN);
+    }
+
+    function _getBallotPercentage(
+        DataTypes.Proposal storage proposal,
+        DataTypes.Ballot ballot
+    ) internal view returns (uint256) {
+        return
+            votingPowerAggregator.calculateWeightedPowerPct(
+                _toVotingPowers(_totals[proposal.id][ballot]),
+                proposal.createdAt
+            );
     }
 
     function _toVotingPowers(

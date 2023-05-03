@@ -169,6 +169,7 @@ def governance_manager(
         wrapped_erc20,
     )
     manager.initialize((10, 10e16, upgradeability_tier_strategy))
+    voting_power_aggregator.grantSnapshotRights(manager)
     return manager
 
 
