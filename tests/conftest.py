@@ -126,11 +126,19 @@ def friendly_dao_vault(admin, FriendlyDAOVault):
 
 
 @pytest.fixture(scope="module")
-def voting_power_aggregator(admin, chain, MockVault, VotingPowerAggregator):
-    mv = admin.deploy(MockVault, 5, 10)
+def mock_vault(MockVault, admin):
+    return admin.deploy(MockVault, 50e18, 100e18)
+
+
+@pytest.fixture(scope="module")
+def voting_power_aggregator(
+    admin, chain, mock_vault, VotingPowerAggregator, governance_manager_proxy
+):
     ct = chain.time() - 1000
-    initial_schedule = ([(mv, 10**18, 10**18)], ct, ct + 1)
-    return admin.deploy(VotingPowerAggregator, admin, initial_schedule)
+    initial_schedule = ([(mock_vault, 10**18, 10**18)], ct, ct + 1)
+    return admin.deploy(
+        VotingPowerAggregator, governance_manager_proxy, initial_schedule
+    )
 
 
 @pytest.fixture(scope="module")
@@ -154,23 +162,50 @@ def wrapped_erc20(admin, WrappedERC20WithEMA, token):
 
 
 @pytest.fixture(scope="module")
-def governance_manager(
+def governance_manager_impl(
     admin,
-    GovernanceManager,
+    TestingGovernanceManager,
     voting_power_aggregator,
     mock_tierer,
-    upgradeability_tier_strategy,
     wrapped_erc20,
 ):
-    manager = admin.deploy(
-        GovernanceManager,
+    return admin.deploy(
+        TestingGovernanceManager,
         voting_power_aggregator,
         mock_tierer,
         wrapped_erc20,
     )
-    manager.initialize((10, 10e16, upgradeability_tier_strategy))
-    voting_power_aggregator.grantSnapshotRights(manager)
-    return manager
+
+
+@pytest.fixture(scope="module")
+def proxy_admin(admin, ProxyAdmin):
+    return admin.deploy(ProxyAdmin)
+
+
+@pytest.fixture(scope="module")
+def governance_manager_proxy(GovernanceManagerProxy, EmptyContract, admin, proxy_admin):
+    empty_contract = admin.deploy(EmptyContract)
+    return admin.deploy(GovernanceManagerProxy, empty_contract, proxy_admin, b"")
+
+
+@pytest.fixture(scope="module")
+def governance_manager(
+    admin,
+    governance_manager_impl,
+    governance_manager_proxy,
+    proxy_admin,
+    upgradeability_tier_strategy,
+    TestingGovernanceManager,
+    GovernanceManagerProxy,
+):
+    init_data = governance_manager_impl.initialize.encode_input(
+        (10, 10**16, upgradeability_tier_strategy)
+    )
+    proxy_admin.upgradeAndCall(
+        governance_manager_proxy, governance_manager_impl, init_data, {"from": admin}
+    )
+    GovernanceManagerProxy.remove(governance_manager_proxy)
+    return TestingGovernanceManager.at(governance_manager_proxy.address, owner=admin)
 
 
 @pytest.fixture(scope="module")

@@ -17,7 +17,6 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     using EnumerableSet for EnumerableSet.AddressSet;
     using VaultsSnapshot for VaultsSnapshot.Snapshot;
 
-    EnumerableSet.AddressSet internal _authorizedToSnapshot;
     EnumerableSet.AddressSet internal _vaultAddresses;
     mapping(address => DataTypes.VaultWeightConfiguration) internal _vaults;
     mapping(uint256 => VaultsSnapshot.Snapshot) internal _vaultSnapshots;
@@ -32,10 +31,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         _setSchedule(initialSchedule);
     }
 
-    function snapshotVaults() external {
-        if (!_authorizedToSnapshot.contains(msg.sender))
-            revert Errors.NotAuthorized(msg.sender, address(this));
-
+    function snapshotVaults() external onlyOwner {
         uint256 len = _vaultAddresses.length();
         for (uint256 i = 0; i < len; i++) {
             _vaultSnapshots[block.timestamp].add(
@@ -53,10 +49,6 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
                 weight: getVaultWeight(vaultAddress),
                 totalVotingPower: IVault(vaultAddress).getTotalRawVotingPower()
             });
-    }
-
-    function grantSnapshotRights(address account) external onlyOwner {
-        _authorizedToSnapshot.add(account);
     }
 
     function getVotingPower(

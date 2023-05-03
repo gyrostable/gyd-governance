@@ -34,16 +34,6 @@ class VoteTotals(NamedTuple):
     abstentions: list
 
 
-@pytest.fixture(autouse=True)
-def initialized_mock_vault(MockVault, voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 50e18, 100e18)
-    ct = chain.time() - 1000
-    voting_power_aggregator.setSchedule(
-        ([(mv, 1e18, 1e18)], ct, ct + 1), {"from": admin}
-    )
-    return mv
-
-
 def test_create_proposal(governance_manager, admin):
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
@@ -59,9 +49,9 @@ def test_create_proposal(governance_manager, admin):
 
 
 def test_create_proposal_without_sufficient_voting_power(
-    governance_manager, admin, initialized_mock_vault
+    governance_manager, admin, mock_vault
 ):
-    initialized_mock_vault.setRawVotingPower(0)
+    mock_vault.setRawVotingPower(0)
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     with reverts("proposer doesn't have enough voting power to propose this action"):
         governance_manager.createProposal([proposal])
@@ -91,8 +81,8 @@ def test_invalid_vote(governance_manager, admin):
         governance_manager.vote(tx.events["ProposalCreated"]["id"], UNDEFINED_BALLOT)
 
 
-def test_vote(initialized_mock_vault, governance_manager, admin):
-    mv = initialized_mock_vault
+def test_vote(mock_vault, governance_manager, admin):
+    mv = mock_vault
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     tx = governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
@@ -100,9 +90,9 @@ def test_vote(initialized_mock_vault, governance_manager, admin):
 
 
 def test_vote_doesnt_double_count_if_vote_is_changed(
-    initialized_mock_vault, governance_manager, admin
+    mock_vault, governance_manager, admin
 ):
-    mv = initialized_mock_vault
+    mv = mock_vault
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
@@ -160,10 +150,8 @@ def test_tally_vote_doesnt_succeed(governance_manager, raising_token):
     assert tx.events["ProposalTallied"]["outcome"] == THRESHOLD_NOT_MET_OUTCOME
 
 
-def test_tally_vote_doesnt_meet_quorum(
-    governance_manager, raising_token, initialized_mock_vault
-):
-    initialized_mock_vault.setRawVotingPower(11e18)
+def test_tally_vote_doesnt_meet_quorum(governance_manager, raising_token, mock_vault):
+    mock_vault.setRawVotingPower(11e18)
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
@@ -302,14 +290,12 @@ def test_uses_highest_tier_if_multiple_proposals_made(
     assert prop[3] == 5e17  # vote threshold
 
 
-def test_voting_power_snapshot(
-    governance_manager, accounts, initialized_mock_vault, admin
-):
-    initialized_mock_vault.setRawVotingPower(0)  # default to 0
+def test_voting_power_snapshot(governance_manager, accounts, mock_vault, admin):
+    mock_vault.setRawVotingPower(0)  # default to 0
 
     # give 20e18 of voting power to account[2] and delegate all of it to acccount[1]
-    initialized_mock_vault.updateVotingPower(accounts[2], 20e18)
-    initialized_mock_vault.delegateVote(accounts[1], 20e18, {"from": accounts[2]})
+    mock_vault.updateVotingPower(accounts[2], 20e18)
+    mock_vault.delegateVote(accounts[1], 20e18, {"from": accounts[2]})
 
     # create proposal and vote
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
@@ -318,12 +304,12 @@ def test_voting_power_snapshot(
     tx = governance_manager.createProposal([proposal], {"from": accounts[1]})
     proposal_id = tx.events["ProposalCreated"]["id"]
     chain.sleep(1)  # make sure timestamp has changed
-    initialized_mock_vault.updateVotingPower(accounts[1], 30e18)
+    mock_vault.updateVotingPower(accounts[1], 30e18)
     governance_manager.vote(proposal_id, AGAINST_BALLOT, {"from": accounts[1]})
 
     # ensure that the total voting power is snapshotted correctly with # 20% of votes against
     assert governance_manager.getCurrentPercentages(proposal_id)[1] == 0.2e18
-    initialized_mock_vault.setTotalRawVotingPower(150e18)
+    mock_vault.setTotalRawVotingPower(150e18)
     assert governance_manager.getCurrentPercentages(proposal_id)[1] == 0.2e18
 
     # ensure vote is recorded correctly
@@ -331,14 +317,12 @@ def test_voting_power_snapshot(
     assert totals["against"][0][1] == 20e18
 
     # ensure that delegating and voting from another address doesn't change the vote
-    initialized_mock_vault.changeDelegate(
-        accounts[1], accounts[3], 20e18, {"from": accounts[2]}
-    )
+    mock_vault.changeDelegate(accounts[1], accounts[3], 20e18, {"from": accounts[2]})
     governance_manager.vote(proposal_id, FOR_BALLOT, {"from": accounts[3]})
     assert governance_manager.getVoteTotals(proposal_id)["against"][0][1] == 20e18
 
     # ensure that undelegating and voting from user's address doesn't change the vote
-    initialized_mock_vault.undelegateVote(accounts[3], 20e18, {"from": accounts[2]})
+    mock_vault.undelegateVote(accounts[3], 20e18, {"from": accounts[2]})
     governance_manager.vote(proposal_id, AGAINST_BALLOT, {"from": accounts[2]})
     assert governance_manager.getVoteTotals(proposal_id)["against"][0][1] == 20e18
 
