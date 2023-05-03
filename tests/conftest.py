@@ -112,6 +112,11 @@ def bob(accounts):
 
 
 @pytest.fixture(scope="session")
+def charlie(accounts):
+    return accounts[3]
+
+
+@pytest.fixture(scope="session")
 def dummy_dao_addresses():
     return [
         "0xa7588b0d49cB5B9e7447aaBe6299F2EaB83Cf55A",
@@ -126,8 +131,13 @@ def friendly_dao_vault(admin, FriendlyDAOVault):
 
 
 @pytest.fixture(scope="module")
-def mock_vault(MockVault, admin):
-    return admin.deploy(MockVault, 50e18, 100e18)
+def mock_vault(MockVault, admin, alice, chain):
+    mock_vault = admin.deploy(MockVault)
+    mock_vault.updateVotingPower(alice, 50e18)
+    mock_vault.updateVotingPower(admin, 50e18)
+    chain.sleep(1)
+    chain.mine()
+    return mock_vault
 
 
 @pytest.fixture(scope="module")
@@ -145,7 +155,7 @@ def voting_power_aggregator(
 def time_settable_voting_power_aggregator(
     admin, MockVault, chain, TimeSettableVotingPowerAggregator
 ):
-    mv = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
     ct = chain.time() - 1000
     initial_schedule = ([(mv, 10**18, 10**18)], ct, ct + 1)
     return admin.deploy(TimeSettableVotingPowerAggregator, admin, initial_schedule)

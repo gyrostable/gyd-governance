@@ -1,35 +1,35 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+
 import "./DataTypes.sol";
+import "./ScaledMath.sol";
 
 library VaultsSnapshot {
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
+    using ScaledMath for uint256;
 
-    struct Snapshot {
-        EnumerableSet.AddressSet vaults;
-        mapping(address => DataTypes.VaultSnapshot) snapshots;
+    function getBallotPercentage(
+        DataTypes.VaultSnapshot[] memory snapshots,
+        EnumerableMap.AddressToUintMap storage vaultPowers
+    ) internal view returns (uint256 votingPowerPct) {
+        for (uint256 i; i < snapshots.length; i++) {
+            DataTypes.VaultSnapshot memory snapshot = snapshots[i];
+            (, uint256 ballotPower) = vaultPowers.tryGet(snapshot.vaultAddress);
+            votingPowerPct += ballotPower
+                .divDown(snapshot.totalVotingPower)
+                .mulDown(snapshot.weight);
+        }
     }
 
-    function add(
-        Snapshot storage self,
-        DataTypes.VaultSnapshot memory vault
+    /// @dev this simply appends, so the storage must be clean
+    function persist(
+        DataTypes.VaultSnapshot[] memory snasphots,
+        DataTypes.VaultSnapshot[] storage cleanStorage
     ) internal {
-        self.vaults.add(vault.vaultAddress);
-        self.snapshots[vault.vaultAddress] = vault;
-    }
-
-    function get(
-        Snapshot storage self,
-        address vaultAddress
-    ) internal view returns (DataTypes.VaultSnapshot memory) {
-        return self.snapshots[vaultAddress];
-    }
-
-    function listVaults(
-        Snapshot storage self
-    ) internal view returns (address[] memory) {
-        return self.vaults.values();
+        for (uint256 i; i < snasphots.length; i++) {
+            cleanStorage.push(snasphots[i]);
+        }
     }
 }

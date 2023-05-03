@@ -19,7 +19,18 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
         weightedPowerPct = _weightedPowerPct;
     }
 
-    function snapshotVaults() external override {}
+    function createVaultsSnapshot()
+        external
+        view
+        returns (DataTypes.VaultSnapshot[] memory snasphots)
+    {
+        snasphots = new DataTypes.VaultSnapshot[](1);
+        snasphots[0] = DataTypes.VaultSnapshot({
+            vaultAddress: address(0x1),
+            weight: 1e18,
+            totalVotingPower: totalVotingPower
+        });
+    }
 
     function setVotingPower(uint256 _votingPower) public {
         votingPower = _votingPower;
@@ -28,7 +39,7 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
     function getVotingPower(
         address,
         uint256 /* timestamp */,
-        bool /* useSnapshot */
+        address[] memory /* useSnapshot */
     ) public view returns (DataTypes.VaultVotingPower[] memory) {
         DataTypes.VaultVotingPower[]
             memory vp = new DataTypes.VaultVotingPower[](1);
@@ -43,7 +54,7 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
         address account,
         uint256 timestamp
     ) external view returns (DataTypes.VaultVotingPower[] memory) {
-        return getVotingPower(account, timestamp, true);
+        return getVotingPower(account, timestamp, new address[](0));
     }
 
     function getTotalVotingPower() external view returns (uint256) {
@@ -51,8 +62,7 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
     }
 
     function calculateWeightedPowerPct(
-        DataTypes.VaultVotingPower[] memory vaults,
-        uint256 /* timestamp */
+        DataTypes.VaultVotingPower[] memory vaults
     ) external view returns (uint256) {
         if (vaults.length == 0) {
             return 0;
@@ -60,20 +70,20 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
         return weightedPowerPct;
     }
 
-    function getVaultWeight(address) external view returns (uint256) {
+    function getVaultWeight(address) external pure returns (uint256) {
         revert("not implemented");
     }
 
     function listVaults()
         external
-        view
+        pure
         returns (DataTypes.VaultWeight[] memory)
     {
         revert("not implemented");
     }
 
     function setSchedule(
-        DataTypes.VaultWeightSchedule calldata schedule
+        DataTypes.VaultWeightSchedule calldata // schedule
     ) external {
         revert("not implemented");
     }

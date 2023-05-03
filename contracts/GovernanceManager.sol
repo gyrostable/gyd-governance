@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
+import "../libraries/VaultsSnapshot.sol";
 
 import "../interfaces/IVault.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
@@ -20,6 +21,7 @@ contract GovernanceManager is Initializable {
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
+    using VaultsSnapshot for DataTypes.VaultSnapshot[];
 
     IVotingPowerAggregator public immutable votingPowerAggregator;
     ITierer public immutable tierer;
@@ -31,6 +33,7 @@ contract GovernanceManager is Initializable {
     EnumerableSet.Bytes32Set internal _activeProposals;
     EnumerableSet.Bytes32Set internal _timelockedProposals;
     mapping(uint24 => DataTypes.Proposal) internal _proposals;
+    mapping(uint24 => DataTypes.VaultSnapshot[]) internal _vaultSnapshots;
 
     mapping(address => mapping(uint24 => DataTypes.Vote)) internal _votes;
     mapping(uint24 => mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap))
@@ -89,9 +92,9 @@ contract GovernanceManager is Initializable {
         }
 
         DataTypes.VaultVotingPower[] memory rawPower = votingPowerAggregator
-            .getVotingPower(msg.sender, block.timestamp - 1, false);
+            .getVotingPower(msg.sender, block.timestamp - 1);
         uint256 votingPowerPct = votingPowerAggregator
-            .calculateWeightedPowerPct(rawPower, block.timestamp);
+            .calculateWeightedPowerPct(rawPower);
         require(
             votingPowerPct > tier.proposalThreshold,
             "proposer doesn't have enough voting power to propose this action"
@@ -115,7 +118,9 @@ contract GovernanceManager is Initializable {
             p.actions.push(actions[i]);
         }
 
-        votingPowerAggregator.snapshotVaults();
+        votingPowerAggregator.createVaultsSnapshot().persist(
+            _vaultSnapshots[p.id]
+        );
 
         proposalsCount = p.id + 1;
         _activeProposals.add(bytes32(bytes3(p.id)));
@@ -145,42 +150,45 @@ contract GovernanceManager is Initializable {
             "ballot must be cast FOR, AGAINST, or ABSTAIN"
         );
 
+        DataTypes.VaultSnapshot[] memory vaultSnapshots = _vaultSnapshots[
+            proposalId
+        ];
+
         DataTypes.VaultVotingPower[] memory uvp = votingPowerAggregator
-            .getVotingPower(msg.sender, proposal.createdAt);
+            .getVotingPower(
+                msg.sender,
+                proposal.createdAt,
+                _vaultAddresses(vaultSnapshots)
+            );
 
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
+
         bool isNewVote = existingVote.ballot == DataTypes.Ballot.UNDEFINED;
-        // First, zero out the effect of any vote already cast by the voter.
-        for (uint256 i = 0; i < existingVote.vaults.length; i++) {
-            DataTypes.VaultVotingPower memory vvp = existingVote.vaults[i];
-            (, uint256 val) = _totals[proposalId][existingVote.ballot].tryGet(
+        for (uint256 i = 0; i < uvp.length; i++) {
+            DataTypes.VaultVotingPower memory vvp = uvp[i];
+
+            // cancel out the previous vote if it was cast
+            if (!isNewVote) {
+                (, uint256 prevBallotTotal) = _totals[proposalId][
+                    existingVote.ballot
+                ].tryGet(vvp.vaultAddress);
+                _totals[proposalId][existingVote.ballot].set(
+                    vvp.vaultAddress,
+                    prevBallotTotal - vvp.votingPower
+                );
+            }
+
+            (, uint256 newBallotTotal) = _totals[proposalId][ballot].tryGet(
                 vvp.vaultAddress
             );
-            _totals[proposalId][existingVote.ballot].set(
+            _totals[proposalId][ballot].set(
                 vvp.vaultAddress,
-                val - vvp.votingPower
+                newBallotTotal + vvp.votingPower
             );
         }
 
         // Then update the record of this user's vote to the latest ballot and voting power
         existingVote.ballot = ballot;
-        // Copy over the voting power
-        for (uint256 i = 0; i < uvp.length; i++) {
-            if (isNewVote) existingVote.vaults.push(uvp[i]);
-            else existingVote.vaults[i] = uvp[i];
-        }
-
-        // And, finally update running total
-        for (uint256 i = 0; i < uvp.length; i++) {
-            DataTypes.VaultVotingPower memory vvp = uvp[i];
-            (, uint256 val) = _totals[proposalId][existingVote.ballot].tryGet(
-                vvp.vaultAddress
-            );
-            _totals[proposalId][existingVote.ballot].set(
-                vvp.vaultAddress,
-                val + vvp.votingPower
-            );
-        }
 
         emit VoteCast(
             proposalId,
@@ -298,20 +306,18 @@ contract GovernanceManager is Initializable {
     function _getCurrentPercentages(
         DataTypes.Proposal storage proposal
     ) internal view returns (uint256 for_, uint256 against, uint256 abstain) {
-        for_ = _getBallotPercentage(proposal, DataTypes.Ballot.FOR);
-        against = _getBallotPercentage(proposal, DataTypes.Ballot.AGAINST);
-        abstain = _getBallotPercentage(proposal, DataTypes.Ballot.ABSTAIN);
-    }
-
-    function _getBallotPercentage(
-        DataTypes.Proposal storage proposal,
-        DataTypes.Ballot ballot
-    ) internal view returns (uint256) {
-        return
-            votingPowerAggregator.calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposal.id][ballot]),
-                proposal.createdAt
-            );
+        DataTypes.VaultSnapshot[] memory snapshot = _vaultSnapshots[
+            proposal.id
+        ];
+        mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap)
+            storage propTotals = _totals[proposal.id];
+        for_ = snapshot.getBallotPercentage(propTotals[DataTypes.Ballot.FOR]);
+        against = snapshot.getBallotPercentage(
+            propTotals[DataTypes.Ballot.AGAINST]
+        );
+        abstain = snapshot.getBallotPercentage(
+            propTotals[DataTypes.Ballot.ABSTAIN]
+        );
     }
 
     function _toVotingPowers(
@@ -380,5 +386,16 @@ contract GovernanceManager is Initializable {
             proposals[i] = _proposals[uint24(bytes3(ids[i]))];
         }
         return proposals;
+    }
+
+    function _vaultAddresses(
+        DataTypes.VaultSnapshot[] memory vaultSnapshots
+    ) internal pure returns (address[] memory) {
+        uint256 len = vaultSnapshots.length;
+        address[] memory vaultAddresses = new address[](len);
+        for (uint256 i = 0; i < len; i++) {
+            vaultAddresses[i] = vaultSnapshots[i].vaultAddress;
+        }
+        return vaultAddresses;
     }
 }

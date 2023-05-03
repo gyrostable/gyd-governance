@@ -88,7 +88,8 @@ library DataTypes {
 
     struct Vote {
         Ballot ballot;
-        VaultVotingPower[] vaults;
+        // vault to votingPower
+        mapping(address => uint256) perVaultVotingPower;
     }
 
     struct VoteTotals {

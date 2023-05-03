@@ -4,8 +4,8 @@ from brownie import reverts, MockVault, chain
 def test_set_schedule_with_wrong_start_end(
     governance_manager, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
 
     ct = chain.time() - 1000
     with reverts("schedule must end after it begins"):
@@ -28,8 +28,8 @@ def test_set_schedule_with_wrong_start_end(
 
 
 def test_set_schedule(governance_manager, voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
 
     ct = chain.time() - 1000
     governance_manager.executeCall(
@@ -51,9 +51,9 @@ def test_set_schedule(governance_manager, voting_power_aggregator, admin):
 def test_set_schedule_multiple_times(
     governance_manager, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
-    mv3 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
+    mv3 = admin.deploy(MockVault)
 
     ct = chain.time() - 1000
 
@@ -94,8 +94,8 @@ def test_set_schedule_multiple_times(
 def test_set_schedule_raises_if_vaults_dont_add_up_to_1(
     governance_manager, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
 
     with reverts():
         ct = chain.time() - 1000
@@ -111,8 +111,8 @@ def test_set_schedule_raises_if_vaults_dont_add_up_to_1(
 def test_set_schedule_raises_if_duplicate_vaults(
     governance_manager, voting_power_aggregator, admin
 ):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
 
     with reverts():
         ct = chain.time() - 1000
@@ -126,9 +126,9 @@ def test_set_schedule_raises_if_duplicate_vaults(
 
 
 def test_get_vault_weight(governance_manager, voting_power_aggregator, admin):
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
-    mv3 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
+    mv3 = admin.deploy(MockVault)
 
     ct = chain.time() - 1000
     governance_manager.executeCall(
@@ -147,8 +147,8 @@ def test_get_vault_weight(governance_manager, voting_power_aggregator, admin):
 def test_get_vault_weight_on_schedule(time_settable_voting_power_aggregator, admin):
     vpa = time_settable_voting_power_aggregator
 
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
 
     ct1 = chain.time()
     vpa.setCurrentTime(ct1)
@@ -175,8 +175,8 @@ def test_get_vault_weight_schedule_starts_in_future(
 ):
     vpa = time_settable_voting_power_aggregator
 
-    mv = admin.deploy(MockVault, 5, 10)
-    mv2 = admin.deploy(MockVault, 5, 10)
+    mv = admin.deploy(MockVault)
+    mv2 = admin.deploy(MockVault)
 
     ct = chain.time()
     vpa.setCurrentTime(ct)

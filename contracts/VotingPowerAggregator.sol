@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "./access/ImmutableOwner.sol";
 
-import "../libraries/VaultsSnapshot.sol";
 import "../libraries/Errors.sol";
 import "../libraries/ScaledMath.sol";
 
@@ -15,11 +14,9 @@ import "../interfaces/IVault.sol";
 contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using VaultsSnapshot for VaultsSnapshot.Snapshot;
 
     EnumerableSet.AddressSet internal _vaultAddresses;
     mapping(address => DataTypes.VaultWeightConfiguration) internal _vaults;
-    mapping(uint256 => VaultsSnapshot.Snapshot) internal _vaultSnapshots;
 
     uint256 public scheduleStartsAt;
     uint256 public scheduleEndsAt;
@@ -31,12 +28,15 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         _setSchedule(initialSchedule);
     }
 
-    function snapshotVaults() external onlyOwner {
+    function createVaultsSnapshot()
+        external
+        view
+        returns (DataTypes.VaultSnapshot[] memory snasphots)
+    {
         uint256 len = _vaultAddresses.length();
+        snasphots = new DataTypes.VaultSnapshot[](len);
         for (uint256 i = 0; i < len; i++) {
-            _vaultSnapshots[block.timestamp].add(
-                _makeVaultSnapshot(_vaultAddresses.at(i))
-            );
+            snasphots[i] = _makeVaultSnapshot(_vaultAddresses.at(i));
         }
     }
 
@@ -55,15 +55,14 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         address account,
         uint256 timestamp
     ) external view returns (DataTypes.VaultVotingPower[] memory) {
-        return getVotingPower(account, timestamp, true);
+        return getVotingPower(account, timestamp, _vaultAddresses.values());
     }
 
     function getVotingPower(
         address account,
         uint256 timestamp,
-        bool useVaultsSnapshot
+        address[] memory vaults
     ) public view returns (DataTypes.VaultVotingPower[] memory) {
-        address[] memory vaults = _getVaults(timestamp, useVaultsSnapshot);
         DataTypes.VaultVotingPower[]
             memory userVotingPower = new DataTypes.VaultVotingPower[](
                 vaults.length
@@ -84,32 +83,19 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     }
 
     function calculateWeightedPowerPct(
-        DataTypes.VaultVotingPower[] calldata vaultVotingPowers,
-        uint256 timestamp
+        DataTypes.VaultVotingPower[] calldata vaultVotingPowers
     ) external view returns (uint256) {
         uint256 votingPowerPct;
 
         for (uint256 i; i < vaultVotingPowers.length; i++) {
             DataTypes.VaultVotingPower memory vaultVP = vaultVotingPowers[i];
-            if (timestamp == block.timestamp) {
-                uint256 vaultWeight = getVaultWeight(vaultVP.vaultAddress);
-                if (vaultWeight > 0) {
-                    uint256 tvp = IVault(vaultVP.vaultAddress)
-                        .getTotalRawVotingPower();
-                    votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(
-                        vaultWeight
-                    );
-                }
-            } else {
-                DataTypes.VaultSnapshot memory snapshot = _vaultSnapshots[
-                    timestamp
-                ].get(vaultVP.vaultAddress);
-                if (snapshot.weight > 0) {
-                    votingPowerPct += vaultVP
-                        .votingPower
-                        .divDown(snapshot.totalVotingPower)
-                        .mulDown(snapshot.weight);
-                }
+            uint256 vaultWeight = getVaultWeight(vaultVP.vaultAddress);
+            if (vaultWeight > 0) {
+                uint256 tvp = IVault(vaultVP.vaultAddress)
+                    .getTotalRawVotingPower();
+                votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(
+                    vaultWeight
+                );
             }
         }
 
@@ -229,21 +215,6 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         if (!_vaultAddresses.add(vault.vaultAddress))
             revert Errors.DuplicatedVault(vault.vaultAddress);
         _vaults[vault.vaultAddress] = vault;
-    }
-
-    function _getVaults(
-        uint256 timestamp,
-        bool useSnapshot
-    ) internal view returns (address[] memory) {
-        if (useSnapshot) {
-            address[] memory vaults = _vaultSnapshots[timestamp]
-                .vaults
-                .values();
-            if (vaults.length == 0)
-                revert Errors.NoSnapshotAtTimestamp(timestamp);
-            return vaults;
-        }
-        return _vaultAddresses.values();
     }
 
     function _removeAllVaults() internal {

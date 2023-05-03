@@ -49,9 +49,10 @@ def test_create_proposal(governance_manager, admin):
 
 
 def test_create_proposal_without_sufficient_voting_power(
-    governance_manager, admin, mock_vault
+    governance_manager, admin, mock_vault, chain
 ):
-    mock_vault.setRawVotingPower(0)
+    mock_vault.updateVotingPower(admin, 1e18)
+    chain.sleep(1)
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     with reverts("proposer doesn't have enough voting power to propose this action"):
         governance_manager.createProposal([proposal])
@@ -150,8 +151,13 @@ def test_tally_vote_doesnt_succeed(governance_manager, raising_token):
     assert tx.events["ProposalTallied"]["outcome"] == THRESHOLD_NOT_MET_OUTCOME
 
 
-def test_tally_vote_doesnt_meet_quorum(governance_manager, raising_token, mock_vault):
-    mock_vault.setRawVotingPower(11e18)
+def test_tally_vote_doesnt_meet_quorum(
+    admin, governance_manager, raising_token, mock_vault, chain
+):
+    mock_vault.updateVotingPower(admin, 6e18)
+    chain.sleep(1)
+    chain.mine()
+    print(mock_vault.getRawVotingPower(admin) / mock_vault.getTotalRawVotingPower())
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
@@ -290,8 +296,21 @@ def test_uses_highest_tier_if_multiple_proposals_made(
     assert prop[3] == 5e17  # vote threshold
 
 
-def test_voting_power_snapshot(governance_manager, accounts, mock_vault, admin):
-    mock_vault.setRawVotingPower(0)  # default to 0
+def test_voting_power_snapshot(
+    governance_manager,
+    accounts,
+    mock_vault,
+    admin,
+    alice,
+    chain,
+    charlie,
+    voting_power_aggregator,
+):
+    # reset voting power
+    mock_vault.updateVotingPower(admin, 0)
+    mock_vault.updateVotingPower(alice, 0)
+    mock_vault.updateVotingPower(charlie, 80e18)
+    chain.sleep(1)
 
     # give 20e18 of voting power to account[2] and delegate all of it to acccount[1]
     mock_vault.updateVotingPower(accounts[2], 20e18)
@@ -309,7 +328,8 @@ def test_voting_power_snapshot(governance_manager, accounts, mock_vault, admin):
 
     # ensure that the total voting power is snapshotted correctly with # 20% of votes against
     assert governance_manager.getCurrentPercentages(proposal_id)[1] == 0.2e18
-    mock_vault.setTotalRawVotingPower(150e18)
+    mock_vault.updateVotingPower(charlie, 130e18)
+    chain.sleep(1)
     assert governance_manager.getCurrentPercentages(proposal_id)[1] == 0.2e18
 
     # ensure vote is recorded correctly
@@ -317,16 +337,18 @@ def test_voting_power_snapshot(governance_manager, accounts, mock_vault, admin):
     assert totals["against"][0][1] == 20e18
 
     # ensure that delegating and voting from another address doesn't change the vote
-    mock_vault.changeDelegate(accounts[1], accounts[3], 20e18, {"from": accounts[2]})
-    governance_manager.vote(proposal_id, FOR_BALLOT, {"from": accounts[3]})
+    mock_vault.changeDelegate(accounts[1], accounts[8], 20e18, {"from": accounts[2]})
+    governance_manager.vote(proposal_id, FOR_BALLOT, {"from": accounts[8]})
     assert governance_manager.getVoteTotals(proposal_id)["against"][0][1] == 20e18
+    assert governance_manager.getVoteTotals(proposal_id)["_for"][0][1] == 0
 
     # ensure that undelegating and voting from user's address doesn't change the vote
-    mock_vault.undelegateVote(accounts[3], 20e18, {"from": accounts[2]})
+    mock_vault.undelegateVote(accounts[8], 20e18, {"from": accounts[2]})
     governance_manager.vote(proposal_id, AGAINST_BALLOT, {"from": accounts[2]})
     assert governance_manager.getVoteTotals(proposal_id)["against"][0][1] == 20e18
+    assert governance_manager.getVoteTotals(proposal_id)["_for"][0][1] == 0
 
     # ensure that user with voting power at vote time can change his vote
     governance_manager.vote(proposal_id, FOR_BALLOT, {"from": accounts[1]})
-    assert governance_manager.getVoteTotals(proposal_id)["_for"][0][1] == 20e18
     assert governance_manager.getVoteTotals(proposal_id)["against"][0][1] == 0
+    assert governance_manager.getVoteTotals(proposal_id)["_for"][0][1] == 20e18
