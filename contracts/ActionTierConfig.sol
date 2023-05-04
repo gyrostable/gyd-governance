@@ -11,6 +11,12 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
+    struct StrategyConfig {
+        address _contract;
+        bytes4 _sig;
+        address _strategy;
+    }
+
     function _ruleKey(
         address _contract,
         bytes4 _sig
@@ -24,6 +30,15 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
         address _strategy
     ) external onlyOwner {
         _tierStrategies[_ruleKey(_contract, _sig)] = ITierStrategy(_strategy);
+    }
+
+    function batchSetStrategy(
+        StrategyConfig[] calldata configs
+    ) external onlyOwner {
+        for (uint256 i; i < configs.length; i++) {
+            bytes32 ruleKey = _ruleKey(configs[i]._contract, configs[i]._sig);
+            _tierStrategies[ruleKey] = ITierStrategy(configs[i]._strategy);
+        }
     }
 
     function getStrategy(

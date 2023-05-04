@@ -1,22 +1,79 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "../../interfaces/IVault.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract MockVault is IVault {
+import "../vaults/BaseVault.sol";
+import "../../interfaces/IVault.sol";
+import "../../interfaces/IDelegatingVault.sol";
+import "../../libraries/VotingPowerHistory.sol";
+
+contract MockVault is BaseVault, IDelegatingVault {
+    using VotingPowerHistory for VotingPowerHistory.History;
+    using VotingPowerHistory for VotingPowerHistory.Record;
+    using ScaledMath for uint256;
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     uint256 public rawVotingPower;
     uint256 public totalRawVotingPower;
 
-    constructor(uint256 _rawVotingPower, uint256 _totalRawVotingPower) {
-        rawVotingPower = _rawVotingPower;
-        totalRawVotingPower = _totalRawVotingPower;
+    VotingPowerHistory.History internal history;
+
+    EnumerableSet.AddressSet internal _admins;
+
+    modifier onlyAdmin() {
+        require(_admins.contains(msg.sender), "only admin");
+        _;
     }
 
-    function getRawVotingPower(address user) external view returns (uint256) {
-        return rawVotingPower;
+    constructor() {
+        _admins.add(msg.sender);
     }
 
-    function getTotalRawVotingPower() external view returns (uint256) {
+    function delegateVote(address _delegate, uint256 _amount) external {
+        history.delegateVote(msg.sender, _delegate, _amount);
+    }
+
+    function undelegateVote(address _delegate, uint256 _amount) external {
+        history.undelegateVote(msg.sender, _delegate, _amount);
+    }
+
+    function updateVotingPower(
+        address user,
+        uint256 amount
+    ) external onlyAdmin {
+        VotingPowerHistory.Record memory currentVotingPower = history
+            .currentRecord(user);
+        totalRawVotingPower -= currentVotingPower.multiplier.mulDown(
+            currentVotingPower.baseVotingPower
+        );
+        history.updateVotingPower(
+            user,
+            amount,
+            currentVotingPower.multiplier,
+            currentVotingPower.netDelegatedVotes
+        );
+        totalRawVotingPower += currentVotingPower.multiplier.mulDown(amount);
+    }
+
+    function changeDelegate(
+        address _oldDelegate,
+        address _newDelegate,
+        uint256 _amount
+    ) external {
+        history.undelegateVote(msg.sender, _oldDelegate, _amount);
+        history.delegateVote(msg.sender, _newDelegate, _amount);
+    }
+
+    function getRawVotingPower(
+        address user,
+        uint256 timestamp
+    ) public view override returns (uint256) {
+        return history.getVotingPower(user, timestamp);
+    }
+
+    function getTotalRawVotingPower() public view override returns (uint256) {
         return totalRawVotingPower;
     }
 }

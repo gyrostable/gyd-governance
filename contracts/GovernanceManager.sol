@@ -4,47 +4,55 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
+import "../libraries/VaultsSnapshot.sol";
 
+import "../interfaces/IVault.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
 import "../interfaces/ITierStrategy.sol";
 import "../interfaces/IWrappedERC20WithEMA.sol";
 
-contract GovernanceManager {
+contract GovernanceManager is Initializable {
     using Address for address;
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
+    using VaultsSnapshot for DataTypes.VaultSnapshot[];
+
+    IVotingPowerAggregator public immutable votingPowerAggregator;
+    ITierer public immutable tierer;
+    IWrappedERC20WithEMA public immutable wGYD;
+    DataTypes.LimitUpgradeabilityParameters public limitUpgradeabilityParams;
 
     uint24 public proposalsCount;
-    IWrappedERC20WithEMA internal wGYD;
-
-    DataTypes.LimitUpgradeabilityParameters limitUpgradeabilityParams;
 
     EnumerableSet.Bytes32Set internal _activeProposals;
     EnumerableSet.Bytes32Set internal _timelockedProposals;
     mapping(uint24 => DataTypes.Proposal) internal _proposals;
+    mapping(uint24 => DataTypes.VaultSnapshot[]) internal _vaultSnapshots;
 
     mapping(address => mapping(uint24 => DataTypes.Vote)) internal _votes;
     mapping(uint24 => mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap))
         internal _totals;
 
-    IVotingPowerAggregator public votingPowerAggregator;
-    ITierer public tierer;
-
     constructor(
         IVotingPowerAggregator _votingPowerAggregator,
         ITierer _tierer,
-        DataTypes.LimitUpgradeabilityParameters memory _params,
         IWrappedERC20WithEMA _wGYD
     ) {
         votingPowerAggregator = _votingPowerAggregator;
         tierer = _tierer;
-        limitUpgradeabilityParams = _params;
         wGYD = _wGYD;
+    }
+
+    function initialize(
+        DataTypes.LimitUpgradeabilityParameters memory _params
+    ) external initializer {
+        limitUpgradeabilityParams = _params;
     }
 
     event ProposalCreated(
@@ -84,7 +92,7 @@ contract GovernanceManager {
         }
 
         DataTypes.VaultVotingPower[] memory rawPower = votingPowerAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(msg.sender, block.timestamp - 1);
         uint256 votingPowerPct = votingPowerAggregator
             .calculateWeightedPowerPct(rawPower);
         require(
@@ -109,6 +117,10 @@ contract GovernanceManager {
         for (uint256 i = 0; i < actions.length; i++) {
             p.actions.push(actions[i]);
         }
+
+        votingPowerAggregator.createVaultsSnapshot().persist(
+            _vaultSnapshots[p.id]
+        );
 
         proposalsCount = p.id + 1;
         _activeProposals.add(bytes32(bytes3(p.id)));
@@ -138,38 +150,45 @@ contract GovernanceManager {
             "ballot must be cast FOR, AGAINST, or ABSTAIN"
         );
 
+        DataTypes.VaultSnapshot[] memory vaultSnapshots = _vaultSnapshots[
+            proposalId
+        ];
+
         DataTypes.VaultVotingPower[] memory uvp = votingPowerAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(
+                msg.sender,
+                proposal.createdAt,
+                _vaultAddresses(vaultSnapshots)
+            );
 
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
-        // First, zero out the effect of any vote already cast by the voter.
-        for (uint256 i = 0; i < existingVote.vaults.length; i++) {
-            DataTypes.VaultVotingPower memory vvp = existingVote.vaults[i];
-            (, uint256 val) = _totals[proposalId][existingVote.ballot].tryGet(
+
+        bool isNewVote = existingVote.ballot == DataTypes.Ballot.UNDEFINED;
+        for (uint256 i = 0; i < uvp.length; i++) {
+            DataTypes.VaultVotingPower memory vvp = uvp[i];
+
+            // cancel out the previous vote if it was cast
+            if (!isNewVote) {
+                (, uint256 prevBallotTotal) = _totals[proposalId][
+                    existingVote.ballot
+                ].tryGet(vvp.vaultAddress);
+                _totals[proposalId][existingVote.ballot].set(
+                    vvp.vaultAddress,
+                    prevBallotTotal - vvp.votingPower
+                );
+            }
+
+            (, uint256 newBallotTotal) = _totals[proposalId][ballot].tryGet(
                 vvp.vaultAddress
             );
-            _totals[proposalId][existingVote.ballot].set(
+            _totals[proposalId][ballot].set(
                 vvp.vaultAddress,
-                val - vvp.votingPower
+                newBallotTotal + vvp.votingPower
             );
         }
 
         // Then update the record of this user's vote to the latest ballot and voting power
         existingVote.ballot = ballot;
-        // Copy over the voting power
-        _copyToStorage(existingVote.vaults, uvp);
-
-        // And, finally update running total
-        for (uint256 i = 0; i < uvp.length; i++) {
-            DataTypes.VaultVotingPower memory vvp = uvp[i];
-            (, uint256 val) = _totals[proposalId][existingVote.ballot].tryGet(
-                vvp.vaultAddress
-            );
-            _totals[proposalId][existingVote.ballot].set(
-                vvp.vaultAddress,
-                val + vvp.votingPower
-            );
-        }
 
         emit VoteCast(
             proposalId,
@@ -180,33 +199,16 @@ contract GovernanceManager {
         );
     }
 
-    function _copyToStorage(
-        DataTypes.VaultVotingPower[] storage existingVoteVaults,
-        DataTypes.VaultVotingPower[] memory vaults
-    ) internal {
-        bool hasNewEntries = existingVoteVaults.length < vaults.length;
-        (uint256 minLength, uint256 maxLength) = hasNewEntries
-            ? (existingVoteVaults.length, vaults.length)
-            : (vaults.length, existingVoteVaults.length);
-        for (uint256 i = 0; i < minLength; i++) {
-            existingVoteVaults[i] = vaults[i];
-        }
-        for (uint256 i = minLength; i < maxLength; i++) {
-            if (hasNewEntries) {
-                existingVoteVaults.push(vaults[i]);
-            } else {
-                // this will remove from the end but we only care about removing elements
-                // from existingVoteVaults[minLength:maxLength], so the order in which we
-                // remove them does not matter
-                existingVoteVaults.pop();
-            }
-        }
+    function getVoteTotals(
+        uint24 proposalId
+    ) external view returns (DataTypes.VoteTotals memory) {
+        return _toVoteTotals(_totals[proposalId]);
     }
 
     function _toVoteTotals(
         mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap)
             storage totals
-    ) internal returns (DataTypes.VoteTotals memory) {
+    ) internal view returns (DataTypes.VoteTotals memory) {
         EnumerableMap.AddressToUintMap storage forVotingPower = totals[
             DataTypes.Ballot.FOR
         ];
@@ -256,17 +258,11 @@ contract GovernanceManager {
             "voting is ongoing for this proposal"
         );
 
-        uint256 forTotalPct = votingPowerAggregator.calculateWeightedPowerPct(
-            _toVotingPowers(_totals[proposalId][DataTypes.Ballot.FOR])
-        );
-        uint256 againstTotalPct = votingPowerAggregator
-            .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.AGAINST])
-            );
-        uint256 abstentionsTotalPct = votingPowerAggregator
-            .calculateWeightedPowerPct(
-                _toVotingPowers(_totals[proposalId][DataTypes.Ballot.ABSTAIN])
-            );
+        (
+            uint256 forTotalPct,
+            uint256 againstTotalPct,
+            uint256 abstentionsTotalPct
+        ) = _getCurrentPercentages(proposal);
 
         uint256 combinedPct = forTotalPct +
             againstTotalPct +
@@ -297,6 +293,31 @@ contract GovernanceManager {
         }
         _activeProposals.remove(bytes32(bytes3(proposalId)));
         emit ProposalTallied(proposalId, proposal.status, outcome);
+    }
+
+    function getCurrentPercentages(
+        uint24 proposalId
+    ) external view returns (uint256 for_, uint256 against, uint256 abstain) {
+        DataTypes.Proposal storage proposal = _proposals[proposalId];
+        require(proposal.createdAt != 0, "proposal does not exist");
+        return _getCurrentPercentages(proposal);
+    }
+
+    function _getCurrentPercentages(
+        DataTypes.Proposal storage proposal
+    ) internal view returns (uint256 for_, uint256 against, uint256 abstain) {
+        DataTypes.VaultSnapshot[] memory snapshot = _vaultSnapshots[
+            proposal.id
+        ];
+        mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap)
+            storage propTotals = _totals[proposal.id];
+        for_ = snapshot.getBallotPercentage(propTotals[DataTypes.Ballot.FOR]);
+        against = snapshot.getBallotPercentage(
+            propTotals[DataTypes.Ballot.AGAINST]
+        );
+        abstain = snapshot.getBallotPercentage(
+            propTotals[DataTypes.Ballot.ABSTAIN]
+        );
     }
 
     function _toVotingPowers(
@@ -365,5 +386,16 @@ contract GovernanceManager {
             proposals[i] = _proposals[uint24(bytes3(ids[i]))];
         }
         return proposals;
+    }
+
+    function _vaultAddresses(
+        DataTypes.VaultSnapshot[] memory vaultSnapshots
+    ) internal pure returns (address[] memory) {
+        uint256 len = vaultSnapshots.length;
+        address[] memory vaultAddresses = new address[](len);
+        for (uint256 i = 0; i < len; i++) {
+            vaultAddresses[i] = vaultSnapshots[i].vaultAddress;
+        }
+        return vaultAddresses;
     }
 }

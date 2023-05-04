@@ -21,21 +21,60 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     uint256 public scheduleStartsAt;
     uint256 public scheduleEndsAt;
 
-    constructor(address _owner) ImmutableOwner(_owner) {}
+    constructor(
+        address _owner,
+        DataTypes.VaultWeightSchedule memory initialSchedule
+    ) ImmutableOwner(_owner) {
+        _setSchedule(initialSchedule);
+    }
+
+    function createVaultsSnapshot()
+        external
+        view
+        returns (DataTypes.VaultSnapshot[] memory snapshots)
+    {
+        uint256 len = _vaultAddresses.length();
+        snapshots = new DataTypes.VaultSnapshot[](len);
+        for (uint256 i = 0; i < len; i++) {
+            snapshots[i] = _makeVaultSnapshot(_vaultAddresses.at(i));
+        }
+    }
+
+    function _makeVaultSnapshot(
+        address vaultAddress
+    ) internal view returns (DataTypes.VaultSnapshot memory) {
+        return
+            DataTypes.VaultSnapshot({
+                vaultAddress: vaultAddress,
+                weight: getVaultWeight(vaultAddress),
+                totalVotingPower: IVault(vaultAddress).getTotalRawVotingPower()
+            });
+    }
 
     function getVotingPower(
-        address account
+        address account,
+        uint256 timestamp
     ) external view returns (DataTypes.VaultVotingPower[] memory) {
-        uint256 vaultsCount = _vaultAddresses.length();
+        return getVotingPower(account, timestamp, _vaultAddresses.values());
+    }
+
+    function getVotingPower(
+        address account,
+        uint256 timestamp,
+        address[] memory vaults
+    ) public view returns (DataTypes.VaultVotingPower[] memory) {
         DataTypes.VaultVotingPower[]
             memory userVotingPower = new DataTypes.VaultVotingPower[](
-                vaultsCount
+                vaults.length
             );
-        for (uint256 i; i < vaultsCount; i++) {
-            IVault vault = IVault(_vaultAddresses.at(i));
-            uint256 userRawVotingPower = vault.getRawVotingPower(account);
+        for (uint256 i; i < vaults.length; i++) {
+            IVault vault = IVault(vaults[i]);
+            uint256 userRawVotingPower = vault.getRawVotingPower(
+                account,
+                timestamp
+            );
             userVotingPower[i] = DataTypes.VaultVotingPower({
-                vaultAddress: _vaultAddresses.at(i),
+                vaultAddress: address(vault),
                 votingPower: userRawVotingPower
             });
         }
@@ -50,8 +89,8 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
 
         for (uint256 i; i < vaultVotingPowers.length; i++) {
             DataTypes.VaultVotingPower memory vaultVP = vaultVotingPowers[i];
-            uint256 vaultWeight = this.getVaultWeight(vaultVP.vaultAddress);
-            if (vaultWeight != 0) {
+            uint256 vaultWeight = getVaultWeight(vaultVP.vaultAddress);
+            if (vaultWeight > 0) {
                 uint256 tvp = IVault(vaultVP.vaultAddress)
                     .getTotalRawVotingPower();
                 votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(
@@ -81,7 +120,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
             vaults[i].initialWeight = conf.initialWeight;
             vaults[i].targetWeight = conf.targetWeight;
 
-            uint256 vaultWeight = this.getVaultWeight(conf.vaultAddress);
+            uint256 vaultWeight = getVaultWeight(conf.vaultAddress);
             vaults[i].currentWeight = vaultWeight;
 
             totalWeight += vaultWeight;
@@ -101,7 +140,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         return block.timestamp;
     }
 
-    function getVaultWeight(address vault) external view returns (uint256) {
+    function getVaultWeight(address vault) public view returns (uint256) {
         DataTypes.VaultWeightConfiguration memory vaultWeight = _vaults[vault];
 
         if (blockTimestamp() > scheduleEndsAt) {
@@ -133,25 +172,31 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     }
 
     function setSchedule(
-        DataTypes.VaultWeightConfiguration[] calldata vaults,
-        uint256 _scheduleStartsAt,
-        uint256 _scheduleEndsAt
+        DataTypes.VaultWeightSchedule calldata schedule
     ) external onlyOwner {
+        _setSchedule(schedule);
+    }
+
+    function _setSchedule(
+        DataTypes.VaultWeightSchedule memory schedule
+    ) internal {
         require(
-            _scheduleEndsAt > _scheduleStartsAt,
+            schedule.endsAt > schedule.startsAt,
             "schedule must end after it begins"
         );
 
-        scheduleStartsAt = _scheduleStartsAt;
-        scheduleEndsAt = _scheduleEndsAt;
+        scheduleStartsAt = schedule.startsAt;
+        scheduleEndsAt = schedule.endsAt;
 
         _removeAllVaults();
 
         uint256 totalInitialWeight;
         uint256 totalTargetWeight;
 
-        for (uint256 i; i < vaults.length; i++) {
-            DataTypes.VaultWeightConfiguration calldata vault = vaults[i];
+        for (uint256 i; i < schedule.vaults.length; i++) {
+            DataTypes.VaultWeightConfiguration memory vault = schedule.vaults[
+                i
+            ];
             _addVault(vault);
             totalInitialWeight += vault.initialWeight;
             totalTargetWeight += vault.targetWeight;
@@ -165,7 +210,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     }
 
     function _addVault(
-        DataTypes.VaultWeightConfiguration calldata vault
+        DataTypes.VaultWeightConfiguration memory vault
     ) internal {
         if (!_vaultAddresses.add(vault.vaultAddress))
             revert Errors.DuplicatedVault(vault.vaultAddress);

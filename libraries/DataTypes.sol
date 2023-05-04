@@ -38,6 +38,12 @@ library DataTypes {
         address delegate;
     }
 
+    struct VaultWeightSchedule {
+        VaultWeightConfiguration[] vaults;
+        uint256 startsAt;
+        uint256 endsAt;
+    }
+
     struct VaultWeightConfiguration {
         address vaultAddress;
         uint256 initialWeight;
@@ -66,6 +72,7 @@ library DataTypes {
     }
 
     struct EmergencyRecoveryProposal {
+        uint64 createdAt;
         uint64 completesAt;
         Status status;
         bytes payload;
@@ -81,13 +88,20 @@ library DataTypes {
 
     struct Vote {
         Ballot ballot;
-        VaultVotingPower[] vaults;
+        // vault to votingPower
+        mapping(address => uint256) perVaultVotingPower;
     }
 
     struct VoteTotals {
         VaultVotingPower[] _for;
         VaultVotingPower[] against;
         VaultVotingPower[] abstentions;
+    }
+
+    struct VaultSnapshot {
+        address vaultAddress;
+        uint256 weight;
+        uint256 totalVotingPower;
     }
 
     enum ProposalOutcome {

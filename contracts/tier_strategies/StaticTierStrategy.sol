@@ -15,10 +15,6 @@ contract StaticTierStrategy is ITierStrategy, GovernanceOnly {
         tier = _tier;
     }
 
-    function setTier(DataTypes.Tier memory _tier) external governanceOnly {
-        tier = _tier;
-    }
-
     function getTier(
         bytes calldata
     ) external view returns (DataTypes.Tier memory) {

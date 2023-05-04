@@ -19,13 +19,28 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
         weightedPowerPct = _weightedPowerPct;
     }
 
+    function createVaultsSnapshot()
+        external
+        view
+        returns (DataTypes.VaultSnapshot[] memory snapshots)
+    {
+        snapshots = new DataTypes.VaultSnapshot[](1);
+        snapshots[0] = DataTypes.VaultSnapshot({
+            vaultAddress: address(0x1),
+            weight: 1e18,
+            totalVotingPower: totalVotingPower
+        });
+    }
+
     function setVotingPower(uint256 _votingPower) public {
         votingPower = _votingPower;
     }
 
     function getVotingPower(
-        address
-    ) external view returns (DataTypes.VaultVotingPower[] memory) {
+        address,
+        uint256 /* timestamp */,
+        address[] memory /* useSnapshot */
+    ) public view returns (DataTypes.VaultVotingPower[] memory) {
         DataTypes.VaultVotingPower[]
             memory vp = new DataTypes.VaultVotingPower[](1);
         vp[0] = DataTypes.VaultVotingPower({
@@ -33,6 +48,13 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
             votingPower: votingPower
         });
         return vp;
+    }
+
+    function getVotingPower(
+        address account,
+        uint256 timestamp
+    ) external view returns (DataTypes.VaultVotingPower[] memory) {
+        return getVotingPower(account, timestamp, new address[](0));
     }
 
     function getTotalVotingPower() external view returns (uint256) {
@@ -48,22 +70,20 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
         return weightedPowerPct;
     }
 
-    function getVaultWeight(address) external view returns (uint256) {
+    function getVaultWeight(address) external pure returns (uint256) {
         revert("not implemented");
     }
 
     function listVaults()
         external
-        view
+        pure
         returns (DataTypes.VaultWeight[] memory)
     {
         revert("not implemented");
     }
 
     function setSchedule(
-        DataTypes.VaultWeightConfiguration[] memory,
-        uint256,
-        uint256
+        DataTypes.VaultWeightSchedule calldata // schedule
     ) external {
         revert("not implemented");
     }

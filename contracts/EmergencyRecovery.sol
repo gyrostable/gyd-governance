@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import "./access/GovernanceOnly.sol";
 import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
+import "../libraries/VaultsSnapshot.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
@@ -11,6 +12,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 contract EmergencyRecovery is GovernanceOnly {
     using ScaledMath for uint256;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
+    using VaultsSnapshot for DataTypes.VaultSnapshot[];
 
     address public safeAddress;
     uint64 public sunsetAt;
@@ -23,6 +25,7 @@ contract EmergencyRecovery is GovernanceOnly {
 
     mapping(uint32 => mapping(address => EnumerableMap.AddressToUintMap))
         private vetos;
+    mapping(uint32 => DataTypes.VaultSnapshot[]) internal _vaultSnapshots;
 
     uint32 private currentProposalCount;
 
@@ -68,11 +71,15 @@ contract EmergencyRecovery is GovernanceOnly {
         );
 
         uint32 propId = currentProposalCount;
+        proposals[propId].createdAt = uint64(block.timestamp);
         proposals[propId].completesAt =
             uint64(block.timestamp) +
             timelockDuration;
         proposals[propId].status = DataTypes.Status.Queued;
         proposals[propId].payload = payload;
+        votingAggregator.createVaultsSnapshot().persist(
+            _vaultSnapshots[propId]
+        );
         currentProposalCount++;
 
         emit UpgradeProposed(propId, payload);
@@ -103,9 +110,11 @@ contract EmergencyRecovery is GovernanceOnly {
             "proposal must be queued"
         );
 
-        uint256 vetoedPct = votingAggregator.calculateWeightedPowerPct(
-            _toVotingPowers(prop.vetos)
-        );
+        DataTypes.VaultSnapshot[] memory snapshot = _vaultSnapshots[proposalId];
+        // the following line should never revert unless there is a bug elsewhere in the code
+        // but the operation is critical, so we add it for safety
+        require(snapshot.length > 0, "no snapshot found");
+        uint256 vetoedPct = snapshot.getBallotPercentage(prop.vetos);
         bool isVetoed = vetoedPct > vetoThreshold;
         if (isVetoed) {
             prop.status = DataTypes.Status.Rejected;
@@ -147,7 +156,7 @@ contract EmergencyRecovery is GovernanceOnly {
         }
 
         DataTypes.VaultVotingPower[] memory newVetoPower = votingAggregator
-            .getVotingPower(msg.sender);
+            .getVotingPower(msg.sender, prop.createdAt);
         for (uint256 i = 0; i < newVetoPower.length; i++) {
             DataTypes.VaultVotingPower memory vault = newVetoPower[i];
             (, uint256 currentVetoTotal) = prop.vetos.tryGet(
