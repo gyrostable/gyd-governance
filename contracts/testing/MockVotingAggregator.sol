@@ -22,10 +22,10 @@ contract MockVotingPowerAggregator is IVotingPowerAggregator {
     function createVaultsSnapshot()
         external
         view
-        returns (DataTypes.VaultSnapshot[] memory snasphots)
+        returns (DataTypes.VaultSnapshot[] memory snapshots)
     {
-        snasphots = new DataTypes.VaultSnapshot[](1);
-        snasphots[0] = DataTypes.VaultSnapshot({
+        snapshots = new DataTypes.VaultSnapshot[](1);
+        snapshots[0] = DataTypes.VaultSnapshot({
             vaultAddress: address(0x1),
             weight: 1e18,
             totalVotingPower: totalVotingPower

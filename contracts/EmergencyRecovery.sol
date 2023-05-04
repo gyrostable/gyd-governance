@@ -111,6 +111,9 @@ contract EmergencyRecovery is GovernanceOnly {
         );
 
         DataTypes.VaultSnapshot[] memory snapshot = _vaultSnapshots[proposalId];
+        // the following line should never revert unless there is a bug elsewhere in the code
+        // but the operation is critical, so we add it for safety
+        require(snapshot.length > 0, "no snapshot found");
         uint256 vetoedPct = snapshot.getBallotPercentage(prop.vetos);
         bool isVetoed = vetoedPct > vetoThreshold;
         if (isVetoed) {

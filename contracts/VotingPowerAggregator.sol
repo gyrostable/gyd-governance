@@ -31,12 +31,12 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
     function createVaultsSnapshot()
         external
         view
-        returns (DataTypes.VaultSnapshot[] memory snasphots)
+        returns (DataTypes.VaultSnapshot[] memory snapshots)
     {
         uint256 len = _vaultAddresses.length();
-        snasphots = new DataTypes.VaultSnapshot[](len);
+        snapshots = new DataTypes.VaultSnapshot[](len);
         for (uint256 i = 0; i < len; i++) {
-            snasphots[i] = _makeVaultSnapshot(_vaultAddresses.at(i));
+            snapshots[i] = _makeVaultSnapshot(_vaultAddresses.at(i));
         }
     }
 

@@ -25,11 +25,12 @@ library VaultsSnapshot {
 
     /// @dev this simply appends, so the storage must be clean
     function persist(
-        DataTypes.VaultSnapshot[] memory snasphots,
+        DataTypes.VaultSnapshot[] memory snapshots,
         DataTypes.VaultSnapshot[] storage cleanStorage
     ) internal {
-        for (uint256 i; i < snasphots.length; i++) {
-            cleanStorage.push(snasphots[i]);
+        require(cleanStorage.length == 0, "storage must be clean");
+        for (uint256 i; i < snapshots.length; i++) {
+            cleanStorage.push(snapshots[i]);
         }
     }
 }

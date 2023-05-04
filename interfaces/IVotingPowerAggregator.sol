@@ -7,7 +7,7 @@ interface IVotingPowerAggregator {
     function createVaultsSnapshot()
         external
         view
-        returns (DataTypes.VaultSnapshot[] memory snasphots);
+        returns (DataTypes.VaultSnapshot[] memory snapshots);
 
     function getVotingPower(
         address account,
