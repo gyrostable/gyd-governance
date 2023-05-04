@@ -7,6 +7,9 @@ brownie run --network devnet scripts/deployment/deploy_governance_manager.py pro
 
 # only for development
 brownie run --network devnet scripts/deployment/deploy_erc20_ema_wrapper.py dummy_erc20
+# end
+
+# only for development and testing
 brownie run --network devnet scripts/deployment/deploy_vaults mock
 # end
 

@@ -1,0 +1,31 @@
+{
+  "137": {
+    "ActionTierConfig": [
+      "0x3D3AB8a9C367601BeC84b07acFd8A6463E9450F6"
+    ],
+    "EmptyContract": [
+      "0x09dD5261140C8e7038776a663Cd00f47C9Dd7eDA"
+    ],
+    "GovernanceManager": [
+      "0xc844e96F1aaE0eFA8712530955E7e0fc473AeF70"
+    ],
+    "GovernanceManagerProxy": [
+      "0x3d37fBE1b37473bD3Ff86c6CE91AF8Fe93Ca7A3a"
+    ],
+    "MockVault": [
+      "0x1748C9990dF17E300AB35deb97cDA270Eb2aeB0a"
+    ],
+    "ProxyAdmin": [
+      "0x61349af994e47C418f346FbD0f1285A2F4999071"
+    ],
+    "StaticTierStrategy": [
+      "0x50531Aec10563D3180B039b28641758f9f13B66F"
+    ],
+    "VotingPowerAggregator": [
+      "0xdF78f6cBee14B0347059b38A018F031DfE6c2F1C"
+    ],
+    "WrappedERC20WithEMA": [
+      "0xE4712E020102ee340E8A1a200984070F63085A3e"
+    ]
+  }
+}
