@@ -31,6 +31,14 @@ contract MockVault is BaseVault, IDelegatingVault {
         _admins.add(msg.sender);
     }
 
+    function addAdmin(address _admin) external onlyAdmin {
+        _admins.add(_admin);
+    }
+
+    function listAdmins() external view returns (address[] memory) {
+        return _admins.values();
+    }
+
     function delegateVote(address _delegate, uint256 _amount) external {
         history.delegateVote(msg.sender, _delegate, _amount);
     }
