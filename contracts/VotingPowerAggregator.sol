@@ -90,7 +90,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         for (uint256 i; i < vaultVotingPowers.length; i++) {
             DataTypes.VaultVotingPower memory vaultVP = vaultVotingPowers[i];
             uint256 vaultWeight = getVaultWeight(vaultVP.vaultAddress);
-            if (vaultWeight > 0) {
+            if (vaultWeight > 0 && vaultVP.votingPower > 0) {
                 uint256 tvp = IVault(vaultVP.vaultAddress)
                     .getTotalRawVotingPower();
                 votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(

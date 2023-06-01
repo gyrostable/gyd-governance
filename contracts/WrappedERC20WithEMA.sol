@@ -63,15 +63,15 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
     }
 
     function wrappedPctOfSupply() public view returns (uint256) {
-        return (totalSupply() * ScaledMath.ONE) / underlying.totalSupply();
+        return totalSupply().mulDown(underlying.totalSupply());
     }
 
     function _updateEMA() internal {
         if (previousWrappedPctOfSupply.blockNb < block.number) {
-            uint256 deltaBlockNb = (previousWrappedPctOfSupply.blockNb -
-                expMovingAverage.blockNb) * ScaledMath.ONE;
-            int256 exponent = -int256(deltaBlockNb.divDown(windowWidth));
             uint256 multiplier = ScaledMath.ONE;
+            uint256 deltaBlockNb = (previousWrappedPctOfSupply.blockNb -
+                expMovingAverage.blockNb) * multiplier;
+            int256 exponent = -int256(deltaBlockNb.divDown(windowWidth));
             if (exponent > LogExpMath.MIN_NATURAL_EXPONENT) {
                 int256 discount = LogExpMath.exp(exponent);
                 multiplier -= discount < 0 ? 0 : uint256(discount);

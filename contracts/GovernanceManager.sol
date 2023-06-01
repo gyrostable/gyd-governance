@@ -146,8 +146,8 @@ contract GovernanceManager is Initializable {
         );
 
         require(
-            ballot != DataTypes.Ballot.UNDEFINED,
-            "ballot must be cast FOR, AGAINST, or ABSTAIN"
+            ballot != DataTypes.Ballot.Undefined,
+            "ballot must be cast For, Against, or Abstain"
         );
 
         DataTypes.VaultSnapshot[] memory vaultSnapshots = _vaultSnapshots[
@@ -163,7 +163,7 @@ contract GovernanceManager is Initializable {
 
         DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
 
-        bool isNewVote = existingVote.ballot == DataTypes.Ballot.UNDEFINED;
+        bool isNewVote = existingVote.ballot == DataTypes.Ballot.Undefined;
         for (uint256 i = 0; i < uvp.length; i++) {
             DataTypes.VaultVotingPower memory vvp = uvp[i];
 
@@ -210,21 +210,21 @@ contract GovernanceManager is Initializable {
             storage totals
     ) internal view returns (DataTypes.VoteTotals memory) {
         EnumerableMap.AddressToUintMap storage forVotingPower = totals[
-            DataTypes.Ballot.FOR
+            DataTypes.Ballot.For
         ];
         DataTypes.VaultVotingPower[] memory forTotals = _toVotingPowers(
             forVotingPower
         );
 
         EnumerableMap.AddressToUintMap storage againstVotingPower = totals[
-            DataTypes.Ballot.AGAINST
+            DataTypes.Ballot.Against
         ];
         DataTypes.VaultVotingPower[] memory againstTotals = _toVotingPowers(
             againstVotingPower
         );
 
         EnumerableMap.AddressToUintMap storage abstentionsVotingPower = totals[
-            DataTypes.Ballot.ABSTAIN
+            DataTypes.Ballot.Abstain
         ];
         DataTypes.VaultVotingPower[] memory abstentionsTotals = _toVotingPowers(
             abstentionsVotingPower
@@ -273,7 +273,7 @@ contract GovernanceManager is Initializable {
             emit ProposalTallied(
                 proposalId,
                 proposal.status,
-                DataTypes.ProposalOutcome.QUORUM_NOT_MET
+                DataTypes.ProposalOutcome.QuorumNotMet
             );
             return;
         }
@@ -282,14 +282,14 @@ contract GovernanceManager is Initializable {
         if (forTotalPct + againstTotalPct > 0) {
             result = forTotalPct.divDown(forTotalPct + againstTotalPct);
         }
-        DataTypes.ProposalOutcome outcome = DataTypes.ProposalOutcome.UNDEFINED;
-        if (result > proposal.voteThreshold) {
+        DataTypes.ProposalOutcome outcome = DataTypes.ProposalOutcome.Undefined;
+        if (result >= proposal.voteThreshold) {
             proposal.status = DataTypes.Status.Queued;
-            outcome = DataTypes.ProposalOutcome.SUCCESSFUL;
+            outcome = DataTypes.ProposalOutcome.Successful;
             _timelockedProposals.add(bytes32(bytes3(proposalId)));
         } else {
             proposal.status = DataTypes.Status.Rejected;
-            outcome = DataTypes.ProposalOutcome.THRESHOLD_NOT_MET;
+            outcome = DataTypes.ProposalOutcome.ThresholdNotMet;
         }
         _activeProposals.remove(bytes32(bytes3(proposalId)));
         emit ProposalTallied(proposalId, proposal.status, outcome);
@@ -311,12 +311,12 @@ contract GovernanceManager is Initializable {
         ];
         mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap)
             storage propTotals = _totals[proposal.id];
-        for_ = snapshot.getBallotPercentage(propTotals[DataTypes.Ballot.FOR]);
+        for_ = snapshot.getBallotPercentage(propTotals[DataTypes.Ballot.For]);
         against = snapshot.getBallotPercentage(
-            propTotals[DataTypes.Ballot.AGAINST]
+            propTotals[DataTypes.Ballot.Against]
         );
         abstain = snapshot.getBallotPercentage(
-            propTotals[DataTypes.Ballot.ABSTAIN]
+            propTotals[DataTypes.Ballot.Abstain]
         );
     }
 
