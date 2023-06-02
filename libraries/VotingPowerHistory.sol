@@ -54,7 +54,7 @@ library VotingPowerHistory {
         Record memory updatedRecord = Record({
             at: block.timestamp,
             baseVotingPower: baseVotingPower,
-            multiplier: multiplier == 0 ? ScaledMath.ONE : multiplier,
+            multiplier: multiplier,
             netDelegatedVotes: netDelegatedVotes
         });
         Record memory lastRecord = history.currentRecord(for_);

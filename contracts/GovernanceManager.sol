@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
 import "../libraries/VaultsSnapshot.sol";
+import "../libraries/Errors.sol";
 
 import "../interfaces/IVault.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
@@ -19,7 +20,7 @@ import "../interfaces/IWrappedERC20WithEMA.sol";
 contract GovernanceManager is Initializable {
     using Address for address;
     using ScaledMath for uint256;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using VaultsSnapshot for DataTypes.VaultSnapshot[];
 
@@ -30,14 +31,20 @@ contract GovernanceManager is Initializable {
 
     uint24 public proposalsCount;
 
-    EnumerableSet.Bytes32Set internal _activeProposals;
-    EnumerableSet.Bytes32Set internal _timelockedProposals;
+    EnumerableSet.UintSet internal _activeProposals;
+    EnumerableSet.UintSet internal _timelockedProposals;
     mapping(uint24 => DataTypes.Proposal) internal _proposals;
     mapping(uint24 => DataTypes.VaultSnapshot[]) internal _vaultSnapshots;
 
     mapping(address => mapping(uint24 => DataTypes.Vote)) internal _votes;
     mapping(uint24 => mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap))
         internal _totals;
+
+    modifier onlySelf() {
+        if (msg.sender != address(this))
+            revert Errors.NotAuthorized(msg.sender, address(this));
+        _;
+    }
 
     constructor(
         IVotingPowerAggregator _votingPowerAggregator,
@@ -123,7 +130,7 @@ contract GovernanceManager is Initializable {
         );
 
         proposalsCount = p.id + 1;
-        _activeProposals.add(bytes32(bytes3(p.id)));
+        _activeProposals.add(uint256(p.id));
 
         emit ProposalCreated(p.id, p.proposer, actions);
     }
@@ -131,9 +138,7 @@ contract GovernanceManager is Initializable {
     event VoteCast(
         uint24 indexed proposalId,
         address voter,
-        DataTypes.Ballot vote,
-        DataTypes.VaultVotingPower[] votingPower,
-        DataTypes.VoteTotals voteTotals
+        DataTypes.Ballot vote
     );
 
     function vote(uint24 proposalId, DataTypes.Ballot ballot) external {
@@ -190,13 +195,7 @@ contract GovernanceManager is Initializable {
         // Then update the record of this user's vote to the latest ballot and voting power
         existingVote.ballot = ballot;
 
-        emit VoteCast(
-            proposalId,
-            msg.sender,
-            ballot,
-            uvp,
-            _toVoteTotals(_totals[proposalId])
-        );
+        emit VoteCast(proposalId, msg.sender, ballot);
     }
 
     function getVoteTotals(
@@ -249,7 +248,7 @@ contract GovernanceManager is Initializable {
         require(proposal.createdAt != 0, "proposal does not exist");
 
         require(
-            _activeProposals.contains(bytes32(bytes3(proposalId))),
+            _activeProposals.contains(uint256(proposalId)),
             "proposal is not currently active"
         );
 
@@ -269,7 +268,7 @@ contract GovernanceManager is Initializable {
             abstentionsTotalPct;
         if (combinedPct < proposal.quorum) {
             proposal.status = DataTypes.Status.Rejected;
-            _activeProposals.remove(bytes32(bytes3(proposalId)));
+            _activeProposals.remove(uint256(proposalId));
             emit ProposalTallied(
                 proposalId,
                 proposal.status,
@@ -286,12 +285,12 @@ contract GovernanceManager is Initializable {
         if (result >= proposal.voteThreshold) {
             proposal.status = DataTypes.Status.Queued;
             outcome = DataTypes.ProposalOutcome.Successful;
-            _timelockedProposals.add(bytes32(bytes3(proposalId)));
+            _timelockedProposals.add(uint256(proposalId));
         } else {
             proposal.status = DataTypes.Status.Rejected;
             outcome = DataTypes.ProposalOutcome.ThresholdNotMet;
         }
-        _activeProposals.remove(bytes32(bytes3(proposalId)));
+        _activeProposals.remove(uint256(proposalId));
         emit ProposalTallied(proposalId, proposal.status, outcome);
     }
 
@@ -345,7 +344,7 @@ contract GovernanceManager is Initializable {
         }
 
         require(
-            _timelockedProposals.contains(bytes32(bytes3(proposalId))) &&
+            _timelockedProposals.contains(uint256(proposalId)) &&
                 uint64(block.timestamp) > proposal.executableAt,
             "proposal must be queued and ready to execute"
         );
@@ -357,7 +356,7 @@ contract GovernanceManager is Initializable {
             );
         }
         proposal.status = DataTypes.Status.Executed;
-        _timelockedProposals.remove(bytes32(bytes3(proposalId)));
+        _timelockedProposals.remove(uint256(proposalId));
         emit ProposalExecuted(proposalId);
     }
 
@@ -366,6 +365,12 @@ contract GovernanceManager is Initializable {
         uint24 proposalId
     ) external view returns (DataTypes.Ballot) {
         return _votes[voter][proposalId].ballot;
+    }
+
+    function updateLimitUpgradeabilityParams(
+        DataTypes.LimitUpgradeabilityParameters memory _params
+    ) external onlySelf {
+        limitUpgradeabilityParams = _params;
     }
 
     function listActiveProposals()
@@ -385,12 +390,12 @@ contract GovernanceManager is Initializable {
     }
 
     function _listProposals(
-        bytes32[] memory ids
+        uint256[] memory ids
     ) internal view returns (DataTypes.Proposal[] memory) {
         uint256 len = ids.length;
         DataTypes.Proposal[] memory proposals = new DataTypes.Proposal[](len);
         for (uint256 i = 0; i < len; i++) {
-            proposals[i] = _proposals[uint24(bytes3(ids[i]))];
+            proposals[i] = _proposals[uint24(ids[i])];
         }
         return proposals;
     }

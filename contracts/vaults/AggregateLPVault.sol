@@ -30,15 +30,17 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
     ) external onlyOwner {
         _removeAllVaultWeights();
 
-        for (uint256 i = 0; i < vaultWeights.length; i++) {
+        uint256 totalVoteWeights;
+
+        for (uint256 i; i < vaultWeights.length; i++) {
             VaultWeight memory v = vaultWeights[i];
             require(v.weight > 0, "cannot have a 0 weight");
+            vaultsToWeights.set(v.vaultAddress, v.weight);
+            totalVoteWeights += v.weight;
         }
 
-        for (uint256 i = 0; i < vaultWeights.length; i++) {
-            VaultWeight memory v = vaultWeights[i];
-            vaultsToWeights.set(v.vaultAddress, v.weight);
-        }
+        if (totalVoteWeights != ScaledMath.ONE)
+            revert Errors.InvalidTotalWeight(totalVoteWeights);
     }
 
     function _removeAllVaultWeights() internal {

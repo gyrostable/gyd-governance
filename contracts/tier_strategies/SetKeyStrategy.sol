@@ -5,7 +5,7 @@ import "../access/GovernanceOnly.sol";
 import "../../libraries/DataTypes.sol";
 import "../../interfaces/ITierStrategy.sol";
 
-contract SetAddressStrategy is ITierStrategy, GovernanceOnly {
+contract SetKeyStrategy is ITierStrategy, GovernanceOnly {
     mapping(bytes32 => MapValue) keysToTiers;
     DataTypes.Tier public defaultTier;
 
@@ -37,7 +37,7 @@ contract SetAddressStrategy is ITierStrategy, GovernanceOnly {
     function getTier(
         bytes calldata _calldata
     ) external view returns (DataTypes.Tier memory) {
-        (bytes32 key, ) = abi.decode(_calldata[4:], (bytes32, address));
+        bytes32 key = abi.decode(_calldata[4:36], (bytes32));
 
         MapValue memory mapValue = keysToTiers[key];
         if (!mapValue.present) {

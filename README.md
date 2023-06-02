@@ -43,7 +43,7 @@ The following strategies are implemented:
 - `SimpleThresholdStrategy`: returns a tier based on whether one of the parameters is above a given threshold
 - `SetVaultFeesStrategy`: Same as `SimpleThresholdStrategy` but compares two arguments to the threshold
 - `SetSystemParamsStrategy`: Similar to `SimpleThresholdStrategy` but compares a several fields of a `struct` to multiple thresholds
-- `SetAddressStrategy`: Has a different tier per address argument. This is used for the `GyroConfig.setAddress` that has the power to replace parts of the system. 
+- `SetKeyStrategy`: Has a different tier per key argument. This is used for the `GyroConfig.setAddress` that has the power to replace parts of the system. 
 
 
 # Proposal lifecycle

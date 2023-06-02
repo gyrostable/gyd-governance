@@ -12,7 +12,9 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
     using ScaledMath for uint256;
     using LogExpMath for uint256;
 
-    IERC20 internal underlying;
+    event WindowWidthUpdated(uint256 windowWidth);
+
+    IERC20 public underlying;
 
     struct UintValue {
         uint256 blockNb;
@@ -22,7 +24,7 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
     UintValue public previousWrappedPctOfSupply;
     UintValue public expMovingAverage;
 
-    uint256 internal windowWidth;
+    uint256 public windowWidth;
 
     constructor(
         address governance,
@@ -42,6 +44,8 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
 
         expMovingAverage.blockNb = block.number;
         previousWrappedPctOfSupply.blockNb = block.number;
+
+        emit WindowWidthUpdated(windowWidth);
     }
 
     event Deposit(address indexed src, uint256 amount);
@@ -63,7 +67,7 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
     }
 
     function wrappedPctOfSupply() public view returns (uint256) {
-        return totalSupply().mulDown(underlying.totalSupply());
+        return totalSupply().divDown(underlying.totalSupply());
     }
 
     function _updateEMA() internal {
@@ -93,6 +97,15 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
 
     function updateEMA() external {
         _updateEMA();
+    }
+
+    function setWindowWidth(uint256 _windowWidth) external governanceOnly {
+        require(
+            _windowWidth >= 0.01e18,
+            "window width must be scaled to 18 decimals"
+        );
+        windowWidth = _windowWidth;
+        emit WindowWidthUpdated(windowWidth);
     }
 
     function wrappedPctEMA() public view returns (uint256) {
