@@ -361,6 +361,13 @@ contract GovernanceManager is Initializable {
         emit ProposalExecuted(proposalId);
     }
 
+    function getBallot(
+        address voter,
+        uint24 proposalId
+    ) external view returns (DataTypes.Ballot) {
+        return _votes[voter][proposalId].ballot;
+    }
+
     function listActiveProposals()
         external
         view

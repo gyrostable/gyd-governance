@@ -13,6 +13,14 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
         address _owner,
         StrategyConfig[] memory configs
     ) ImmutableOwner(_owner) {
+        // special case to allow to initialize the contract with itself
+        // without knowing the address
+        for (uint256 i; i < configs.length; i++) {
+            if (configs[i]._contract == address(0)) {
+                configs[i]._contract = address(this);
+            }
+        }
+
         _batchSetStrategy(configs);
     }
 

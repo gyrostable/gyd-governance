@@ -17,7 +17,10 @@ brownie run --network $NETWORK scripts/deployment/deploy_vaults mock
 
 brownie run --network $NETWORK scripts/deployment/deploy_erc20_ema_wrapper.py
 brownie run --network $NETWORK scripts/deployment/deploy_voting_power_aggregator.py
+
 brownie run --network $NETWORK scripts/deployment/deploy_tier_strategy.py upgradeability
 brownie run --network $NETWORK scripts/deployment/deploy_tier_strategy.py static_medium_impact
+brownie run --network $NETWORK scripts/deployment/deploy_tier_strategy.py static_very_low_impact
+
 brownie run --network $NETWORK scripts/deployment/deploy_tierer.py
 brownie run --network $NETWORK scripts/deployment/deploy_governance_manager.py

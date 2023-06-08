@@ -1,5 +1,6 @@
 from brownie import ActionTierConfig, GovernanceManagerProxy  # type: ignore
 from brownie import VotingPowerAggregator, StaticTierStrategy  # type: ignore
+from brownie import ZERO_ADDRESS
 from typing import NamedTuple
 
 from scripts.utils import get_deployer, make_params
@@ -18,6 +19,16 @@ def main():
             VotingPowerAggregator[0],
             VotingPowerAggregator.signatures["setSchedule"],
             StaticTierStrategy[1],
+        ),
+        StrategyConfig(
+            ZERO_ADDRESS,
+            ActionTierConfig.signatures["batchSetStrategy"],
+            StaticTierStrategy[2],
+        ),
+        StrategyConfig(
+            ZERO_ADDRESS,
+            ActionTierConfig.signatures["setStrategy"],
+            StaticTierStrategy[2],
         ),
     ]
 

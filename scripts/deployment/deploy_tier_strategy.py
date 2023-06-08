@@ -16,7 +16,7 @@ def upgradeability():
             proposal_length=10 * 86400,
             action_level=20,
         ),
-        **make_params()
+        **make_params(),
     )
 
 
@@ -32,5 +32,21 @@ def static_medium_impact():
             proposal_length=7 * 86400,
             action_level=15,
         ),
-        **make_params()
+        **make_params(),
+    )
+
+
+def static_very_low_impact():
+    get_deployer().deploy(
+        StaticTierStrategy,
+        GovernanceManagerProxy[0],
+        Tier(
+            quorum=int(scale("0.05")),
+            proposal_threshold=int(scale("0.01")),
+            vote_threshold=int(scale("0.3")),
+            time_lock_duration=3600,
+            proposal_length=3600 * 3,
+            action_level=2,
+        ),
+        **make_params(),
     )
