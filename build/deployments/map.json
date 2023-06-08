@@ -1,0 +1,34 @@
+{
+  "137": {
+    "ActionTierConfig": [
+      "0xBb96BCc33A1d85925164A9a3735AD5Ba9eF4C7bb"
+    ],
+    "ERC20Mintable": [
+      "0x4511e14698139464f689971194ce6Aa506B5c465"
+    ],
+    "EmptyContract": [
+      "0xD7a5f8a5134D31882c49c925A08EFF31ccC22FdF"
+    ],
+    "GovernanceManager": [
+      "0x2dB78A06713ce47d790a0d554a4F11e69632c9a2"
+    ],
+    "GovernanceManagerProxy": [
+      "0xE0Ed1Ec9Ca58C1FC174a3213d381Cd214507BC2a"
+    ],
+    "MockVault": [
+      "0x81eBc7da633C9a618fB11317c7d518A54053f395"
+    ],
+    "ProxyAdmin": [
+      "0xC265553E362c5F736e20eD20C01FD16a1886D2B6"
+    ],
+    "StaticTierStrategy": [
+      "0x91c35C49e7ff17FCd499F8611720C193e5686cB6"
+    ],
+    "VotingPowerAggregator": [
+      "0xA4C896578a39ECa86b96acc7DECf8ce7C6F4B00a"
+    ],
+    "WrappedERC20WithEMA": [
+      "0xb1e9A32c9603935BeA4952594181aDDEC1FC69d1"
+    ]
+  }
+}

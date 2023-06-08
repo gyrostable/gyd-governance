@@ -56,7 +56,7 @@ contract GovernanceManager is Initializable {
     }
 
     event ProposalCreated(
-        uint24 id,
+        uint24 indexed id,
         address proposer,
         DataTypes.ProposalAction[] actions
     );
@@ -129,7 +129,7 @@ contract GovernanceManager is Initializable {
     }
 
     event VoteCast(
-        uint24 proposalId,
+        uint24 indexed proposalId,
         address voter,
         DataTypes.Ballot vote,
         DataTypes.VaultVotingPower[] votingPower,
@@ -239,7 +239,7 @@ contract GovernanceManager is Initializable {
     }
 
     event ProposalTallied(
-        uint24 proposalId,
+        uint24 indexed proposalId,
         DataTypes.Status status,
         DataTypes.ProposalOutcome outcome
     );
@@ -336,7 +336,7 @@ contract GovernanceManager is Initializable {
         return vvps;
     }
 
-    event ProposalExecuted(uint24 proposalId);
+    event ProposalExecuted(uint24 indexed proposalId);
 
     function executeProposal(uint24 proposalId) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
