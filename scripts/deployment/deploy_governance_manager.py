@@ -12,7 +12,7 @@ def proxy_admin():
 def proxy():
     deployer = get_deployer()
     proxy_admin = get_proxy_admin()
-    empty_contract = deployer.deploy(EmptyContract)
+    empty_contract = deployer.deploy(EmptyContract, **make_params())
     deployer.deploy(
         GovernanceManagerProxy, empty_contract, proxy_admin, b"", **make_params()
     )

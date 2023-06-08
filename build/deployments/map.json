@@ -1,70 +1,33 @@
 {
-  "1337": {
-    "ActionTierConfig": [
-      "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e",
-      "0x9b1f7F645351AF3631a656421eD2e40f2802E6c0"
-    ],
-    "ERC20Mintable": [
-      "0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
-    ],
-    "EmptyContract": [
-      "0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
-    ],
-    "GovernanceManager": [
-      "0x2612Af3A521c2df9EAF28422Ca335b04AdF3ac66",
-      "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
-    ],
-    "GovernanceManagerProxy": [
-      "0xCfEB869F69431e42cdB54A4F4f105C19C080A601"
-    ],
-    "MockVault": [
-      "0xD833215cBcc3f914bD1C9ece3EE7BF8B14f841bb"
-    ],
-    "ProxyAdmin": [
-      "0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab"
-    ],
-    "StaticTierStrategy": [
-      "0x9b1f7F645351AF3631a656421eD2e40f2802E6c0",
-      "0x0290FB167208Af455bB137780163b7B7a9a10C16",
-      "0x59d3631c86BbE35EF041872d502F218A39FBa150"
-    ],
-    "VotingPowerAggregator": [
-      "0xe982E462b094850F12AF94d21D470e21bE9D0E9C"
-    ],
-    "WrappedERC20WithEMA": [
-      "0x9561C133DD8580860B6b7E504bC5Aa500f0f06a7"
-    ]
-  },
   "137": {
     "ActionTierConfig": [
-      "0xBb96BCc33A1d85925164A9a3735AD5Ba9eF4C7bb"
-    ],
-    "ERC20Mintable": [
-      "0x4511e14698139464f689971194ce6Aa506B5c465"
+      "0x846c3771f76B4be22CD8875e31c34C3418CDE194"
     ],
     "EmptyContract": [
-      "0xD7a5f8a5134D31882c49c925A08EFF31ccC22FdF"
+      "0x4AacDFb27C15Fb6b8Af0569CDf6b34C10465E698"
     ],
     "GovernanceManager": [
-      "0x2dB78A06713ce47d790a0d554a4F11e69632c9a2"
+      "0xaB55F71394c31867252F30593539742D928eB0d0"
     ],
     "GovernanceManagerProxy": [
-      "0xE0Ed1Ec9Ca58C1FC174a3213d381Cd214507BC2a"
+      "0xFc45C351ae4d0F07794E0E36e1f7490a88C6963b"
     ],
     "MockVault": [
-      "0x81eBc7da633C9a618fB11317c7d518A54053f395"
+      "0x8916B27e36eBC2c3791A3c0d62325B485Bf6f6ef"
     ],
     "ProxyAdmin": [
-      "0xC265553E362c5F736e20eD20C01FD16a1886D2B6"
+      "0x6075cea0E5c6ad658ff865ae70B15574bD67a109"
     ],
     "StaticTierStrategy": [
-      "0x91c35C49e7ff17FCd499F8611720C193e5686cB6"
+      "0xB49e304cBd05697aF0f3A784Db013eF3b2975473",
+      "0x1dFd5AA9fB697764323Da592A4639A5216Cfb956",
+      "0xE7edEa0984f4e95c431693fE773407fc3DD07F81"
     ],
     "VotingPowerAggregator": [
-      "0xA4C896578a39ECa86b96acc7DECf8ce7C6F4B00a"
+      "0x266d26Caf0A134E2260F6570d2514F9e0Daf2Eb1"
     ],
     "WrappedERC20WithEMA": [
-      "0xb1e9A32c9603935BeA4952594181aDDEC1FC69d1"
+      "0xABDC3Bf6123FCc49C4B23bDD27eF93ee614b6B6b"
     ]
   }
 }

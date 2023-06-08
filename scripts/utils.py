@@ -38,6 +38,9 @@ def make_params(extra_params=None):
     if extra_params is None:
         extra_params = {}
     params = extra_params.copy()
+    params["required_confs"] = 1
+    if chain.id == 137:
+        params["required_confs"] = 3
     if "BROWNIE_PRIORITY_GWEI" in os.environ:
         params["priority_fee"] = os.environ["BROWNIE_PRIORITY_GWEI"] + " gwei"
     else:
