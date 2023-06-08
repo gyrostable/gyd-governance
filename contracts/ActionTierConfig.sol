@@ -9,7 +9,12 @@ import "../interfaces/ITierStrategy.sol";
 contract ActionTierConfig is ImmutableOwner, ITierer {
     mapping(bytes32 => ITierStrategy) internal _tierStrategies;
 
-    constructor(address _owner) ImmutableOwner(_owner) {}
+    constructor(
+        address _owner,
+        StrategyConfig[] memory configs
+    ) ImmutableOwner(_owner) {
+        _batchSetStrategy(configs);
+    }
 
     struct StrategyConfig {
         address _contract;
@@ -35,6 +40,10 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
     function batchSetStrategy(
         StrategyConfig[] calldata configs
     ) external onlyOwner {
+        _batchSetStrategy(configs);
+    }
+
+    function _batchSetStrategy(StrategyConfig[] memory configs) internal {
         for (uint256 i; i < configs.length; i++) {
             bytes32 ruleKey = _ruleKey(configs[i]._contract, configs[i]._sig);
             _tierStrategies[ruleKey] = ITierStrategy(configs[i]._strategy);

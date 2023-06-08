@@ -7,7 +7,7 @@ from tests.conftest import Tier
 
 @pytest.fixture
 def tier_config(admin):
-    return admin.deploy(ActionTierConfig, admin)
+    return admin.deploy(ActionTierConfig, admin, [])
 
 
 def test_reverts_if_no_strategy_defined(admin, tier_config):
