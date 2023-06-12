@@ -54,7 +54,7 @@ library VotingPowerHistory {
         Record memory updatedRecord = Record({
             at: block.timestamp,
             baseVotingPower: baseVotingPower,
-            multiplier: multiplier == 0 ? ScaledMath.ONE : multiplier,
+            multiplier: multiplier,
             netDelegatedVotes: netDelegatedVotes
         });
         Record memory lastRecord = history.currentRecord(for_);
@@ -154,6 +154,7 @@ library VotingPowerHistory {
             toCurrent.multiplier,
             history.netDelegatedVotingPower(to)
         );
+
         emit VotesDelegated(from, to, amount);
     }
 
@@ -172,8 +173,6 @@ library VotingPowerHistory {
         history._delegatedToOthers[from] -= amount;
         history._delegations[from][to] -= amount;
 
-        emit VotesUndelegated(from, to, amount);
-
         Record memory fromCurrent = history.currentRecord(from);
         history.updateVotingPower(
             from,
@@ -188,6 +187,8 @@ library VotingPowerHistory {
             toCurrent.multiplier,
             history.netDelegatedVotingPower(to)
         );
+
+        emit VotesUndelegated(from, to, amount);
     }
 
     function netDelegatedVotingPower(

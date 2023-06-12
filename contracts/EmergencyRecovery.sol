@@ -94,9 +94,7 @@ contract EmergencyRecovery is GovernanceOnly {
     );
     event UpgradeVetoed(uint32 proposalId);
 
-    function completeGovernanceUpgrade(
-        uint32 proposalId
-    ) external onlyFromSafe notSunset {
+    function completeGovernanceUpgrade(uint32 proposalId) external {
         DataTypes.EmergencyRecoveryProposal storage prop = proposals[
             proposalId
         ];
@@ -131,11 +129,10 @@ contract EmergencyRecovery is GovernanceOnly {
 
     event VetoCast(
         uint24 proposalId,
-        DataTypes.VaultVotingPower[] castVetoPower,
-        DataTypes.VaultVotingPower[] totalVetos
+        DataTypes.VaultVotingPower[] castVetoPower
     );
 
-    function veto(uint24 proposalId) external notSunset {
+    function veto(uint24 proposalId) external {
         DataTypes.EmergencyRecoveryProposal storage prop = proposals[
             proposalId
         ];
@@ -168,8 +165,7 @@ contract EmergencyRecovery is GovernanceOnly {
         }
         emit VetoCast(
             proposalId,
-            _toVotingPowers(vetos[proposalId][msg.sender]),
-            _toVotingPowers(prop.vetos)
+            _toVotingPowers(vetos[proposalId][msg.sender])
         );
     }
 

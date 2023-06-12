@@ -160,10 +160,6 @@ contract LPVault is
         ];
         require(pending.to == msg.sender, "matching withdrawal does not exist");
         require(
-            pending.withdrawableAt > 0 && pending.amount > 0,
-            "matching withdrawal does not exist"
-        );
-        require(
             pending.withdrawableAt <= block.timestamp,
             "no valid pending withdrawal"
         );

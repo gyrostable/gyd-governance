@@ -78,7 +78,7 @@ def test_vote_on_inactive_proposal(governance_manager, admin):
 def test_invalid_vote(governance_manager, admin):
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
-    with reverts("ballot must be cast FOR, AGAINST, or ABSTAIN"):
+    with reverts("ballot must be cast For, Against, or Abstain"):
         governance_manager.vote(tx.events["ProposalCreated"]["id"], UNDEFINED_BALLOT)
 
 
@@ -86,8 +86,12 @@ def test_vote(mock_vault, governance_manager, admin):
     mv = mock_vault
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
-    tx = governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
-    assert tx.events["VoteCast"]["votingPower"][0] == (mv.address, 50e18)
+    propId = tx.events["ProposalCreated"]["id"]
+    tx = governance_manager.vote(propId, AGAINST_BALLOT)
+    vote_totals = governance_manager.getVoteTotals(propId)
+    assert vote_totals == VoteTotals(
+        for_=[], against=[(mv.address, 50e18)], abstentions=[]
+    )
 
 
 def test_vote_doesnt_double_count_if_vote_is_changed(
@@ -102,7 +106,8 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
     assert tx.events["VoteCast"]["vote"] == AGAINST_BALLOT
 
     tx = governance_manager.vote(propId, FOR_BALLOT)
-    assert tx.events["VoteCast"]["voteTotals"] == VoteTotals(
+    vote_totals = governance_manager.getVoteTotals(propId)
+    assert vote_totals == VoteTotals(
         for_=[(mv.address, 50e18)], against=[(mv.address, 0)], abstentions=[]
     )
 
@@ -266,6 +271,7 @@ def test_uses_override_tier_if_enough_gyd_is_wrapped(
     # trigger another update since the EMA lags by one update.
     wrapped_erc20.updateEMA({"from": admin})
     chain.mine()
+    wrapped_erc20.updateEMA({"from": admin})
 
     tx = governance_manager.createProposal([proposal])
 

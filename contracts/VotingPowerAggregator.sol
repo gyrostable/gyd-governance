@@ -90,7 +90,7 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         for (uint256 i; i < vaultVotingPowers.length; i++) {
             DataTypes.VaultVotingPower memory vaultVP = vaultVotingPowers[i];
             uint256 vaultWeight = getVaultWeight(vaultVP.vaultAddress);
-            if (vaultWeight > 0) {
+            if (vaultWeight > 0 && vaultVP.votingPower > 0) {
                 uint256 tvp = IVault(vaultVP.vaultAddress)
                     .getTotalRawVotingPower();
                 votingPowerPct += vaultVP.votingPower.divDown(tvp).mulDown(
@@ -111,7 +111,6 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
         DataTypes.VaultWeight[] memory vaults = new DataTypes.VaultWeight[](
             length
         );
-        uint256 totalWeight;
         for (uint256 i; i < length; i++) {
             DataTypes.VaultWeightConfiguration memory conf = _vaults[
                 _vaultAddresses.at(i)
@@ -122,15 +121,6 @@ contract VotingPowerAggregator is IVotingPowerAggregator, ImmutableOwner {
 
             uint256 vaultWeight = getVaultWeight(conf.vaultAddress);
             vaults[i].currentWeight = vaultWeight;
-
-            totalWeight += vaultWeight;
-        }
-
-        // Normalize
-        for (uint256 i; i < length; i++) {
-            vaults[i].currentWeight = vaults[i].currentWeight.divDown(
-                totalWeight
-            );
         }
 
         return vaults;

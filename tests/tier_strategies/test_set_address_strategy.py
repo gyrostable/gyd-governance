@@ -3,7 +3,7 @@ from eth_abi import encode
 from tests.conftest import Tier
 
 
-def test_set_address_strategy(admin, SetAddressStrategy):
+def test_set_address_strategy(admin, SetKeyStrategy):
     strict_tier = Tier(
         quorum=5e17,
         vote_threshold=2e17,
@@ -22,7 +22,7 @@ def test_set_address_strategy(admin, SetAddressStrategy):
         action_level=10,
     )
 
-    tier_strategy = admin.deploy(SetAddressStrategy, admin, strict_tier)
+    tier_strategy = admin.deploy(SetKeyStrategy, admin, strict_tier)
     cd = fn_selector("setAddress(bytes32,address)") + encode(
         ["bytes32", "address"], [b"foo", admin.address]
     )
@@ -37,7 +37,7 @@ def test_set_address_strategy(admin, SetAddressStrategy):
     assert tier == less_strict_tier
 
 
-def test_set_address_strategy_set_default_tier(admin, SetAddressStrategy):
+def test_set_address_strategy_set_default_tier(admin, SetKeyStrategy):
     default_tier = Tier(
         quorum=5e17,
         vote_threshold=2e17,
@@ -47,7 +47,7 @@ def test_set_address_strategy_set_default_tier(admin, SetAddressStrategy):
         action_level=10,
     )
 
-    tier_strategy = admin.deploy(SetAddressStrategy, admin, default_tier)
+    tier_strategy = admin.deploy(SetKeyStrategy, admin, default_tier)
     cd = fn_selector("setAddress(bytes32,address)") + encode(
         ["bytes32", "address"], [b"foo", admin.address]
     )

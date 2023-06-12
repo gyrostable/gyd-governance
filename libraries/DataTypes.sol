@@ -80,10 +80,10 @@ library DataTypes {
     }
 
     enum Ballot {
-        UNDEFINED,
-        FOR,
-        AGAINST,
-        ABSTAIN
+        Undefined,
+        For,
+        Against,
+        Abstain
     }
 
     struct Vote {
@@ -105,10 +105,10 @@ library DataTypes {
     }
 
     enum ProposalOutcome {
-        UNDEFINED,
-        QUORUM_NOT_MET,
-        THRESHOLD_NOT_MET,
-        SUCCESSFUL
+        Undefined,
+        QuorumNotMet,
+        ThresholdNotMet,
+        Successful
     }
 
     struct LimitUpgradeabilityParameters {
