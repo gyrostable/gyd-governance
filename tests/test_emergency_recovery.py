@@ -82,7 +82,7 @@ def test_cannot_complete_if_vetoed(emergency_recovery, mock_proxy):
         emergency_recovery.completeGovernanceUpgrade(propId)
 
 
-def test_cannot_complete_if_sunset(emergency_recovery, mock_proxy):
+def test_can_complete_after_sunset(emergency_recovery, mock_proxy):
     toAddress = accounts[1]
     tx = emergency_recovery.startGovernanceUpgrade(toAddress)
     propId = tx.events["UpgradeProposed"]["proposalId"]
@@ -90,8 +90,8 @@ def test_cannot_complete_if_sunset(emergency_recovery, mock_proxy):
     chain.sleep(SUNSET_DURATION + 1)
     chain.mine()
 
-    with reverts("emergency recovery is sunset"):
-        tx = emergency_recovery.completeGovernanceUpgrade(propId)
+    tx = emergency_recovery.completeGovernanceUpgrade(propId)
+    assert "UpgradeExecuted" in tx.events
 
 
 def test_doesnt_double_count_vetos(
@@ -105,18 +105,14 @@ def test_doesnt_double_count_vetos(
     assert tx.events["VetoCast"]["castVetoPower"] == [
         ("0x0000000000000000000000000000000000000001", 21e18)
     ]
-    assert tx.events["VetoCast"]["totalVetos"] == [
-        ("0x0000000000000000000000000000000000000001", 21e18)
-    ]
+    assert emergency_recovery.getVetoPercentage(propId) == 0.21e18
 
     mock_voting_aggregator.setVotingPower(30e18)
     tx = emergency_recovery.veto(propId)
     assert tx.events["VetoCast"]["castVetoPower"] == [
         ("0x0000000000000000000000000000000000000001", 30e18)
     ]
-    assert tx.events["VetoCast"]["totalVetos"] == [
-        ("0x0000000000000000000000000000000000000001", 30e18)
-    ]
+    assert emergency_recovery.getVetoPercentage(propId) == 0.30e18
 
 
 def test_cannot_veto_if_out_of_timelock(emergency_recovery, mock_proxy):

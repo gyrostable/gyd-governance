@@ -198,4 +198,14 @@ contract EmergencyRecovery is GovernanceOnly {
     ) external governanceOnly {
         timelockDuration = _timelockDuration;
     }
+
+    function getVetoPercentage(
+        uint32 proposalId
+    ) external view returns (uint256) {
+        DataTypes.EmergencyRecoveryProposal storage prop = proposals[
+            proposalId
+        ];
+        DataTypes.VaultSnapshot[] memory snapshot = _vaultSnapshots[proposalId];
+        return snapshot.getBallotPercentage(prop.vetos);
+    }
 }

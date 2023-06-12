@@ -38,9 +38,6 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
             vaultsToWeights.set(v.vaultAddress, v.weight);
             totalVoteWeights += v.weight;
         }
-
-        if (totalVoteWeights != ScaledMath.ONE)
-            revert Errors.InvalidTotalWeight(totalVoteWeights);
     }
 
     function _removeAllVaultWeights() internal {
@@ -60,10 +57,10 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
     ) public view override returns (uint256) {
         uint256 rawVotingPower = 0;
         for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
-            (address vault, uint256 price) = vaultsToWeights.at(i);
+            (address vault, uint256 weight) = vaultsToWeights.at(i);
             rawVotingPower += IVault(vault)
                 .getRawVotingPower(_user, timestamp)
-                .mulDown(price);
+                .mulDown(weight);
         }
 
         return rawVotingPower;
@@ -72,10 +69,10 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
     function getTotalRawVotingPower() public view override returns (uint256) {
         uint256 totalRawVotingPower = 0;
         for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
-            (address vault, uint256 price) = vaultsToWeights.at(i);
+            (address vault, uint256 weight) = vaultsToWeights.at(i);
             totalRawVotingPower += IVault(vault)
                 .getTotalRawVotingPower()
-                .mulDown(price);
+                .mulDown(weight);
         }
 
         if (totalRawVotingPower <= threshold) {
