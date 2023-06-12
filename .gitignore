@@ -2,7 +2,12 @@ __pycache__
 .env
 .history
 .hypothesis/
-build/
+build/*
+!build/deployments
+build/deployments/*
+!build/deployments/map.json
+!build/deployments/1
+!build/deployments/137
 reports/
 .venv/
 *.sw?

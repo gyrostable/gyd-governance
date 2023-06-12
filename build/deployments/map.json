@@ -1,4 +1,15 @@
 {
+  "1": {
+    "EmptyContract": [
+      "0x712BBEe63dF6fB9328F256d9C1405d8162dc463B"
+    ],
+    "GovernanceManagerProxy": [
+      "0x78EcF97572c3890eD02221A611014F30219f6219"
+    ],
+    "ProxyAdmin": [
+      "0xC77fd1c986C8d1F084DAFb0FF43FbD19cf92dbFb"
+    ]
+  },
   "137": {
     "ActionTierConfig": [
       "0x846c3771f76B4be22CD8875e31c34C3418CDE194"

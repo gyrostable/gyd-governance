@@ -10,6 +10,7 @@ BROWNIE_ACCOUNT_PASSWORD = os.environ.get("BROWNIE_ACCOUNT_PASSWORD")
 DEV = os.environ.get("DEV", "0").lower() in ["1", "true", "yes"]
 
 PROXY_ADMIN_POLYGON = "0x83d34ca335d197bcFe403cb38E82CBD734C4CbBE"
+PROXY_ADMIN_MAINNET = "0xC77fd1c986C8d1F084DAFb0FF43FbD19cf92dbFb"
 
 
 def get_deployer():
@@ -17,6 +18,11 @@ def get_deployer():
         return cast(
             LocalAccount, accounts.load("gyro-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
         )
+    if chain.id == 1:  # polygon
+        return cast(
+            LocalAccount, accounts.load("gyroscope-foundation-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
+        )
+
     return accounts[0]
 
 
@@ -31,6 +37,8 @@ def get_proxy_admin():
         return ProxyAdmin[0]
     if chain.id == 137:
         return ProxyAdmin.at(PROXY_ADMIN_POLYGON)
+    if chain.id == 1:
+        return ProxyAdmin.at(PROXY_ADMIN_MAINNET)
     raise ValueError("Unknown chain id")
 
 
