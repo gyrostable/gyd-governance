@@ -40,10 +40,12 @@ def test_change_delegate(admin, accounts, token, lp_vault):
         == lp_vault.getTotalRawVotingPower()
         == 10
     )
+    assert lp_vault.getDelegations(admin) == [(accounts[1], 10)]
 
     lp_vault.changeDelegate(accounts[1], accounts[2], 10)
     assert lp_vault.getRawVotingPower(accounts[2]) == 10
     assert lp_vault.getRawVotingPower(accounts[1]) == 0
+    assert lp_vault.getDelegations(admin) == [(accounts[2], 10)]
 
 
 def test_delegation(admin, accounts, token, lp_vault):
@@ -52,8 +54,10 @@ def test_delegation(admin, accounts, token, lp_vault):
     assert lp_vault.getTotalRawVotingPower() == 10
     assert lp_vault.getRawVotingPower(accounts[1]) == 10
     assert lp_vault.getRawVotingPower(admin) == 0
+    assert lp_vault.getDelegations(admin) == [(accounts[1], 10)]
 
     tx = lp_vault.initiateWithdrawal(10, accounts[1])
+    assert lp_vault.getDelegations(admin) == []
 
     chain.sleep(DURATION_SECONDS)
     chain.mine()

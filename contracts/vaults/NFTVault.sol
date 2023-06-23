@@ -6,34 +6,15 @@ import "../../interfaces/IDelegatingVault.sol";
 import "./../access/ImmutableOwner.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/VotingPowerHistory.sol";
-import "./BaseVault.sol";
+import "./BaseDelegatingVault.sol";
 
-abstract contract NFTVault is BaseVault, IDelegatingVault, ImmutableOwner {
+abstract contract NFTVault is BaseDelegatingVault, ImmutableOwner {
     using VotingPowerHistory for VotingPowerHistory.History;
     using VotingPowerHistory for VotingPowerHistory.Record;
-
-    VotingPowerHistory.History internal history;
 
     uint256 internal sumVotingPowers;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
-
-    function delegateVote(address _delegate, uint256 _amount) external {
-        history.delegateVote(msg.sender, _delegate, _amount);
-    }
-
-    function undelegateVote(address _delegate, uint256 _amount) external {
-        history.undelegateVote(msg.sender, _delegate, _amount);
-    }
-
-    function changeDelegate(
-        address _oldDelegate,
-        address _newDelegate,
-        uint256 _amount
-    ) external {
-        history.undelegateVote(msg.sender, _oldDelegate, _amount);
-        history.delegateVote(msg.sender, _newDelegate, _amount);
-    }
 
     function getRawVotingPower(
         address user,

@@ -59,18 +59,21 @@ def test_delegation_with_mutable_voting_power(vault, admin, accounts):
     vault.delegateVote(accounts[5], 1e18, {"from": admin})
     assert vault.getRawVotingPower(admin) == 0
     assert vault.getRawVotingPower(accounts[5]) == 1e18
+    assert vault.getDelegations(admin) == [(accounts[5], 1e18)]
 
     vault.updateMultiplier([admin], 2e18)
     assert vault.getRawVotingPower(admin) == 1e18
 
     vault.delegateVote(accounts[6], 1e18, {"from": admin})
     assert vault.getRawVotingPower(accounts[6]) == 1e18
+    assert vault.getDelegations(admin) == [(accounts[5], 1e18), (accounts[6], 1e18)]
 
     vault.undelegateVote(accounts[6], 1e18, {"from": admin})
     vault.delegateVote(accounts[5], 1e18, {"from": admin})
     assert vault.getRawVotingPower(accounts[5]) == 2e18
     assert vault.getRawVotingPower(accounts[6]) == 0
     assert vault.getRawVotingPower(admin) == 0
+    assert vault.getDelegations(admin) == [(accounts[5], 2e18)]
 
 
 def test_undelegation(vault, admin, accounts):
