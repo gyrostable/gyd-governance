@@ -18,7 +18,7 @@ def main():
         StrategyConfig(
             VotingPowerAggregator[0],
             VotingPowerAggregator.signatures["setSchedule"],
-            StaticTierStrategy[1],
+            StaticTierStrategy[2],
         ),
         StrategyConfig(
             ZERO_ADDRESS,
