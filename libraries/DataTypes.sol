@@ -116,4 +116,9 @@ library DataTypes {
         uint256 emaThreshold;
         ITierStrategy tierStrategy;
     }
+
+    struct Delegation {
+        address delegate;
+        uint256 amount;
+    }
 }

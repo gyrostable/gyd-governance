@@ -2,23 +2,22 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
-import "../vaults/BaseVault.sol";
+import "../vaults/BaseDelegatingVault.sol";
 import "../../interfaces/IVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 import "../../libraries/VotingPowerHistory.sol";
+import "../../libraries/DataTypes.sol";
 
-contract MockVault is BaseVault, IDelegatingVault {
+contract MockVault is BaseDelegatingVault {
     using VotingPowerHistory for VotingPowerHistory.History;
     using VotingPowerHistory for VotingPowerHistory.Record;
     using ScaledMath for uint256;
-
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint256 public rawVotingPower;
     uint256 public totalRawVotingPower;
-
-    VotingPowerHistory.History internal history;
 
     EnumerableSet.AddressSet internal _admins;
 
@@ -39,14 +38,6 @@ contract MockVault is BaseVault, IDelegatingVault {
         return _admins.values();
     }
 
-    function delegateVote(address _delegate, uint256 _amount) external {
-        history.delegateVote(msg.sender, _delegate, _amount);
-    }
-
-    function undelegateVote(address _delegate, uint256 _amount) external {
-        history.undelegateVote(msg.sender, _delegate, _amount);
-    }
-
     function updateVotingPower(
         address user,
         uint256 amount
@@ -63,15 +54,6 @@ contract MockVault is BaseVault, IDelegatingVault {
             currentVotingPower.netDelegatedVotes
         );
         totalRawVotingPower += currentVotingPower.multiplier.mulDown(amount);
-    }
-
-    function changeDelegate(
-        address _oldDelegate,
-        address _newDelegate,
-        uint256 _amount
-    ) external {
-        history.undelegateVote(msg.sender, _oldDelegate, _amount);
-        history.delegateVote(msg.sender, _newDelegate, _amount);
     }
 
     function getRawVotingPower(

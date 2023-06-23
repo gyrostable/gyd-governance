@@ -6,17 +6,15 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../access/ImmutableOwner.sol";
 import "../../libraries/VotingPowerHistory.sol";
 
-import "./BaseVault.sol";
+import "./BaseDelegatingVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 
-contract FriendlyDAOVault is BaseVault, IDelegatingVault, ImmutableOwner {
+contract FriendlyDAOVault is BaseDelegatingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.AddressSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
     EnumerableSet.AddressSet internal _daos;
     uint256 internal _totalRawVotingPower;
-
-    VotingPowerHistory.History internal history;
 
     constructor(address _owner) ImmutableOwner(_owner) {}
 
@@ -49,23 +47,6 @@ contract FriendlyDAOVault is BaseVault, IDelegatingVault, ImmutableOwner {
                 actualTotalPower,
                 totalVotingPower
             );
-    }
-
-    function delegateVote(address _delegate, uint256 _amount) external {
-        history.delegateVote(msg.sender, _delegate, _amount);
-    }
-
-    function undelegateVote(address _delegate, uint256 _amount) external {
-        history.undelegateVote(msg.sender, _delegate, _amount);
-    }
-
-    function changeDelegate(
-        address _oldDelegate,
-        address _newDelegate,
-        uint256 _amount
-    ) external {
-        history.undelegateVote(msg.sender, _oldDelegate, _amount);
-        history.delegateVote(msg.sender, _newDelegate, _amount);
     }
 
     function getRawVotingPower(

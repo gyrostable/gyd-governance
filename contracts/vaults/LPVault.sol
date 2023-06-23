@@ -5,17 +5,15 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../../interfaces/ILockingVault.sol";
-import "../../interfaces/IDelegatingVault.sol";
 import "../../libraries/DataTypes.sol";
 import "../../libraries/VotingPowerHistory.sol";
 import "../access/ImmutableOwner.sol";
 import "../LiquidityMining.sol";
-import "./BaseVault.sol";
+import "./BaseDelegatingVault.sol";
 
 contract LPVault is
-    BaseVault,
+    BaseDelegatingVault,
     ILockingVault,
-    IDelegatingVault,
     ImmutableOwner,
     LiquidityMining
 {
@@ -24,8 +22,6 @@ contract LPVault is
 
     IERC20 internal lpToken;
     uint256 internal withdrawalWaitDuration;
-
-    VotingPowerHistory.History internal history;
 
     // Mapping of a user's address to their pending withdrawal ids.
     mapping(address => EnumerableSet.UintSet) internal userPendingWithdrawalIds;
@@ -82,29 +78,12 @@ contract LPVault is
             current.netDelegatedVotes
         );
         if (_delegate != address(0) && _delegate != msg.sender) {
-            history.delegateVote(msg.sender, _delegate, _amount);
+            _delegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply += _amount;
         _stake(msg.sender, _amount);
 
         emit Deposit(msg.sender, _delegate, _amount);
-    }
-
-    function delegateVote(address _delegate, uint256 _amount) external {
-        history.delegateVote(msg.sender, _delegate, _amount);
-    }
-
-    function undelegateVote(address _delegate, uint256 _amount) external {
-        history.undelegateVote(msg.sender, _delegate, _amount);
-    }
-
-    function changeDelegate(
-        address _oldDelegate,
-        address _newDelegate,
-        uint256 _amount
-    ) external {
-        history.undelegateVote(msg.sender, _oldDelegate, _amount);
-        history.delegateVote(msg.sender, _newDelegate, _amount);
     }
 
     function initiateWithdrawal(
@@ -126,7 +105,7 @@ contract LPVault is
             currentVotingPower.netDelegatedVotes
         );
         if (_delegate != address(0) && _delegate != msg.sender) {
-            history.undelegateVote(msg.sender, _delegate, _amount);
+            _undelegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply -= _amount;
         _unstake(msg.sender, _amount);
