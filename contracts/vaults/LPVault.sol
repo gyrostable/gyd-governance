@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../../interfaces/ILockingVault.sol";
@@ -12,6 +13,7 @@ import "../LiquidityMining.sol";
 import "./BaseDelegatingVault.sol";
 
 contract LPVault is
+    Initializable,
     BaseDelegatingVault,
     ILockingVault,
     ImmutableOwner,
@@ -20,7 +22,7 @@ contract LPVault is
     using EnumerableSet for EnumerableSet.UintSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
-    IERC20 internal lpToken;
+    IERC20 internal immutable lpToken;
     uint256 internal withdrawalWaitDuration;
 
     // Mapping of a user's address to their pending withdrawal ids.
@@ -36,11 +38,14 @@ contract LPVault is
     constructor(
         address _owner,
         address _lpToken,
-        address _rewardsToken,
-        uint256 _withdrawalWaitDuration
+        address _rewardsToken
     ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
         lpToken = IERC20(_lpToken);
+    }
+
+    function initialize(uint256 _withdrawalWaitDuration) external initializer {
         withdrawalWaitDuration = _withdrawalWaitDuration;
+        globalCheckpoint();
     }
 
     function startMining(

@@ -26,6 +26,9 @@
     "GovernanceManagerProxy": [
       "0xE8C1C2d82b2871ADf364cBF51E2aA6473DB07CFe"
     ],
+    "LPVault": [
+      "0xe0170dB5Dd22d05Ef63f10D7A154ad1dB3BcD2a5"
+    ],
     "MockVault": [
       "0xE5FFeF5C1657eF73801d0049003A5626D1147F7f"
     ],
@@ -33,9 +36,12 @@
       "0x7dfa6B36f13863083895d6e4cfC4021c03FBCc6D"
     ],
     "StaticTierStrategy": [
-      "0x1266423F8952F0021b3400D70027070Ec163106b",
       "0xD9784550a1403F48B3CD2a189eE540539794DCB9",
+      "0x1266423F8952F0021b3400D70027070Ec163106b",
       "0x219A465F3fd976b54c6caC62fF61EA55B9A63Ac1"
+    ],
+    "TransparentUpgradeableProxy": [
+      "0xcb714d5D7b17c4d68823345F3919c40332FfE3B9"
     ],
     "VotingPowerAggregator": [
       "0x679E5d3e9Ba5Ac63c6061E659e218124FDb8F3ad"
