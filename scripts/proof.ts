@@ -2,14 +2,17 @@ import { utils } from "ethers";
 import { promises } from "fs";
 import path from "path";
 
-const { open, readFile, writeFile } = promises;
+const { open, readFile } = promises;
 
-const defaultInFile = path.join(path.dirname(__dirname), "data", "frog_owners.csv")
-const defaultOutFile = path.join(path.dirname(__dirname), "data", "proofs.json")
-
-type Proofs = { root: string, proofs: Map<string,string[]> };
+const defaultInFile = path.join(path.dirname(__dirname), "data", "discord_contributors.csv")
+const defaultOutFile = path.join(path.dirname(__dirname), "data", "proofs-discord.json")
 
 type Element = { owner: string, multiplier: BigInt }
+type OutputDatum = {
+  owner: string,
+  multiplier: string,
+  proof: string[]
+};
 
 
 function traverseMerkle(
@@ -58,7 +61,7 @@ function generateProof(line: Element, lines: Element[]): string[] {
   return hashes;
 }
 
-async function generateProofs(inFile: string = defaultInFile, outFile: string = defaultOutFile): Promise<void> {
+async function generateProofs(inFile: string, outFile: string): Promise<void> {
   const ownerData = await readFile(inFile, "utf-8");
   const lines = ownerData.trim().split("\n")
   const parse = (line: string) => {
@@ -68,14 +71,18 @@ async function generateProofs(inFile: string = defaultInFile, outFile: string = 
   const data = lines.map(parse);
 
   const root = generateRoot(data);
-  const proofs = new Map<string,string[]>();
+  const proofs: OutputDatum[] = [];
   for (const datum of data) {
     const proof = generateProof(datum, data);
     let result = validateProof(datum.owner, datum.multiplier, proof, root);
     if (!result) {
-	throw "invalid proof"
+	    throw "invalid proof"
     }
-    proofs[datum.owner] = proof;
+    proofs.push({
+      owner: datum.owner,
+      multiplier: datum.multiplier.toString(),
+      proof
+    });
   }
 
   const out = await open(outFile, 'w');
@@ -92,4 +99,5 @@ function validateProof(owner: string, multiplier: BigInt, proof: string[], root:
   return node == root
 }
 
-generateProofs();
+
+generateProofs(defaultInFile, defaultOutFile);

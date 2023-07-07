@@ -1,3 +1,5 @@
+import json
+
 from brownie import (
     FriendlyDAOVault,
     MockVault,
@@ -6,6 +8,7 @@ from brownie import (
     TransparentUpgradeableProxy,
     GovernanceManagerProxy,
     ProxyAdmin,
+    FoundingFrogVault,
 )
 from scripts.constants import GYFI_TOKEN_ADDRESS  # type: ignore
 
@@ -32,5 +35,19 @@ def lp_vault(lp_token):
         vault,
         GovernanceManagerProxy[0],
         vault.initialize.encode_input(86400),  # 1 day withdrawal
+        **make_params()
+    )
+
+
+def founding_frog_vault(proofs_file):
+    deployer = get_deployer()
+    with open(proofs_file) as f:
+        data = json.load(f)
+    sum_voting_power = sum(int(d["multiplier"]) for d in data["proofs"])
+    deployer.deploy(
+        FoundingFrogVault,
+        GovernanceManagerProxy[0],
+        sum_voting_power,
+        data["root"],
         **make_params()
     )
