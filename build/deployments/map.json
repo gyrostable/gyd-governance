@@ -30,6 +30,7 @@
       "0xE8C1C2d82b2871ADf364cBF51E2aA6473DB07CFe"
     ],
     "LPVault": [
+      "0xcDE293e7b3a47ccC1Fe1B22bdD670eaEF99fdbC5",
       "0xe0170dB5Dd22d05Ef63f10D7A154ad1dB3BcD2a5"
     ],
     "MockVault": [
@@ -40,10 +41,11 @@
     ],
     "StaticTierStrategy": [
       "0xD9784550a1403F48B3CD2a189eE540539794DCB9",
-      "0x1266423F8952F0021b3400D70027070Ec163106b",
-      "0x219A465F3fd976b54c6caC62fF61EA55B9A63Ac1"
+      "0x219A465F3fd976b54c6caC62fF61EA55B9A63Ac1",
+      "0x1266423F8952F0021b3400D70027070Ec163106b"
     ],
     "TransparentUpgradeableProxy": [
+      "0xCEe95Cfc35aECe24776b7f3285f549893127DE30",
       "0xcb714d5D7b17c4d68823345F3919c40332FfE3B9"
     ],
     "VotingPowerAggregator": [
