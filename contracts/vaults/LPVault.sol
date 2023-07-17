@@ -22,7 +22,7 @@ contract LPVault is
     using EnumerableSet for EnumerableSet.UintSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
-    IERC20 internal immutable lpToken;
+    IERC20 public immutable lpToken;
     uint256 internal withdrawalWaitDuration;
 
     // Mapping of a user's address to their pending withdrawal ids.
@@ -153,7 +153,7 @@ contract LPVault is
         delete pendingWithdrawals[withdrawalId];
         userPendingWithdrawalIds[pending.to].remove(withdrawalId);
 
-        emit WithdrawalCompleted(pending.to, pending.amount);
+        emit WithdrawalCompleted(withdrawalId, pending.to, pending.amount);
     }
 
     function getRawVotingPower(
