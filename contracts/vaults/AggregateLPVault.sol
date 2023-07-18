@@ -12,37 +12,47 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using ScaledMath for uint256;
 
+    struct VaultWeight {
+        address vaultAddress;
+        uint256 weight;
+    }
+
     EnumerableMap.AddressToUintMap internal vaultsToWeights;
 
     uint256 internal threshold;
 
-    constructor(address _owner, uint256 _threshold) ImmutableOwner(_owner) {
+    constructor(
+        address _owner,
+        uint256 _threshold,
+        VaultWeight[] memory vaultWeights
+    ) ImmutableOwner(_owner) {
         threshold = _threshold;
-    }
-
-    struct VaultWeight {
-        address vaultAddress;
-        uint256 weight;
+        _setVaultWeights(vaultWeights);
     }
 
     function setVaultWeights(
         VaultWeight[] calldata vaultWeights
     ) external onlyOwner {
         _removeAllVaultWeights();
+        _setVaultWeights(vaultWeights);
+    }
 
-        uint256 totalVoteWeights;
+    function getVaultWeights() external view returns (VaultWeight[] memory) {
+        uint256 length = vaultsToWeights.length();
+        VaultWeight[] memory vaultWeights = new VaultWeight[](length);
 
-        for (uint256 i; i < vaultWeights.length; i++) {
-            VaultWeight memory v = vaultWeights[i];
-            require(v.weight > 0, "cannot have a 0 weight");
-            vaultsToWeights.set(v.vaultAddress, v.weight);
-            totalVoteWeights += v.weight;
+        for (uint256 i = 0; i < length; i++) {
+            (address vault, uint256 weight) = vaultsToWeights.at(i);
+            vaultWeights[i] = VaultWeight(vault, weight);
         }
+
+        return vaultWeights;
     }
 
     function _removeAllVaultWeights() internal {
-        for (uint256 i = 0; i < vaultsToWeights.length(); i++) {
-            (address key, ) = vaultsToWeights.at(i);
+        uint256 length = vaultsToWeights.length();
+        for (uint256 i = 0; i < length; i++) {
+            (address key, ) = vaultsToWeights.at(0);
             vaultsToWeights.remove(key);
         }
     }
@@ -80,5 +90,13 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
         }
 
         return totalRawVotingPower;
+    }
+
+    function _setVaultWeights(VaultWeight[] memory vaultWeights) internal {
+        for (uint256 i; i < vaultWeights.length; i++) {
+            VaultWeight memory v = vaultWeights[i];
+            require(v.weight > 0, "cannot have a 0 weight");
+            vaultsToWeights.set(v.vaultAddress, v.weight);
+        }
     }
 }

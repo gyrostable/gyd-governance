@@ -14,6 +14,9 @@
     "ActionTierConfig": [
       "0x46F658FCE81d891528aB95787CcCbD45F7026384"
     ],
+    "AggregateLPVault": [
+      "0xf957eDC629fa6315ce4936bdb670AD01B23b783f"
+    ],
     "ERC20Mintable": [
       "0x0FD3394D7097B79Bf3BE4dabB308b106FE316930"
     ],
@@ -30,8 +33,8 @@
       "0xE8C1C2d82b2871ADf364cBF51E2aA6473DB07CFe"
     ],
     "LPVault": [
-      "0xcDE293e7b3a47ccC1Fe1B22bdD670eaEF99fdbC5",
-      "0xe0170dB5Dd22d05Ef63f10D7A154ad1dB3BcD2a5"
+      "0xe0170dB5Dd22d05Ef63f10D7A154ad1dB3BcD2a5",
+      "0xcDE293e7b3a47ccC1Fe1B22bdD670eaEF99fdbC5"
     ],
     "MockVault": [
       "0xE5FFeF5C1657eF73801d0049003A5626D1147F7f"
@@ -45,8 +48,8 @@
       "0x1266423F8952F0021b3400D70027070Ec163106b"
     ],
     "TransparentUpgradeableProxy": [
-      "0xCEe95Cfc35aECe24776b7f3285f549893127DE30",
-      "0xcb714d5D7b17c4d68823345F3919c40332FfE3B9"
+      "0xcb714d5D7b17c4d68823345F3919c40332FfE3B9",
+      "0xCEe95Cfc35aECe24776b7f3285f549893127DE30"
     ],
     "VotingPowerAggregator": [
       "0x679E5d3e9Ba5Ac63c6061E659e218124FDb8F3ad"

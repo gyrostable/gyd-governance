@@ -1,4 +1,5 @@
 import json
+from typing import NamedTuple
 
 from brownie import (
     FriendlyDAOVault,
@@ -9,6 +10,7 @@ from brownie import (
     GovernanceManagerProxy,
     ProxyAdmin,
     FoundingFrogVault,
+    AggregateLPVault,
 )
 from scripts.constants import GYFI_TOKEN_ADDRESS  # type: ignore
 
@@ -50,4 +52,18 @@ def founding_frog_vault(proofs_file):
         sum_voting_power,
         data["root"],
         **make_params()
+    )
+
+
+class VaultWeight(NamedTuple):
+    vault_address: str
+    weight: int
+
+
+def aggregate_lp_vault(config_file):
+    with open(config_file) as f:
+        pool_weights = [VaultWeight(**v) for v in json.load(f)]
+    deployer = get_deployer()
+    deployer.deploy(
+        AggregateLPVault, GovernanceManagerProxy[0], 0, pool_weights, **make_params()
     )
