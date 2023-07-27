@@ -3,10 +3,13 @@ name: "Setup environment"
 runs:
   using: "composite"
   steps:
-    - name: Python 3.10.8
+    - name: Python 3.9.17
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10.8'
+        python-version: '3.9.17'
+    - name: Install typing extensions
+      run: pip3 install typing-extensions
+      shell: bash
     - name: Install dependencies
       run: make install_deps
       shell: bash

@@ -13,6 +13,8 @@ contract FoundingFrogVault is NFTVault, EIP712 {
     using Merkle for Merkle.Root;
     using VotingPowerHistory for VotingPowerHistory.History;
 
+    string internal constant _VAULT_TYPE = "FoundingFrog";
+
     mapping(address => bool) private _claimed;
 
     bytes32 private immutable _TYPE_HASH =
@@ -78,5 +80,9 @@ contract FoundingFrogVault is NFTVault, EIP712 {
             proofB = bytes.concat(proofB, abi.encode(proof[i]));
         }
         return keccak256(proofB);
+    }
+
+    function getVaultType() external pure returns (string memory) {
+        return _VAULT_TYPE;
     }
 }

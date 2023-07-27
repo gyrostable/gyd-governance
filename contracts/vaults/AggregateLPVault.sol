@@ -12,6 +12,8 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using ScaledMath for uint256;
 
+    string internal constant _VAULT_TYPE = "AggregateLP";
+
     struct VaultWeight {
         address vaultAddress;
         uint256 weight;
@@ -90,6 +92,10 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
         }
 
         return totalRawVotingPower;
+    }
+
+    function getVaultType() external pure returns (string memory) {
+        return _VAULT_TYPE;
     }
 
     function _setVaultWeights(VaultWeight[] memory vaultWeights) internal {

@@ -16,4 +16,6 @@ interface IVault {
     ) external view returns (uint256);
 
     function getTotalRawVotingPower() external view returns (uint256);
+
+    function getVaultType() external view returns (string memory);
 }

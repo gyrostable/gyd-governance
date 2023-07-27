@@ -16,6 +16,8 @@ contract MockVault is BaseDelegatingVault {
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    string internal constant _VAULT_TYPE = "Mock";
+
     uint256 public rawVotingPower;
     uint256 public totalRawVotingPower;
 
@@ -65,5 +67,9 @@ contract MockVault is BaseDelegatingVault {
 
     function getTotalRawVotingPower() public view override returns (uint256) {
         return totalRawVotingPower;
+    }
+
+    function getVaultType() external pure returns (string memory) {
+        return _VAULT_TYPE;
     }
 }
