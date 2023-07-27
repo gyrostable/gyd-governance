@@ -22,6 +22,8 @@ contract LPVault is
     using EnumerableSet for EnumerableSet.UintSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
+    string internal constant _VAULT_TYPE = "LPVault";
+
     IERC20 public immutable lpToken;
     uint256 internal withdrawalWaitDuration;
 
@@ -177,5 +179,9 @@ contract LPVault is
             pending[i] = pendingWithdrawals[ids.at(i)];
         }
         return pending;
+    }
+
+    function getVaultType() external pure returns (string memory) {
+        return _VAULT_TYPE;
     }
 }

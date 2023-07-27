@@ -11,6 +11,8 @@ contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
     using VotingPowerHistory for VotingPowerHistory.History;
     using VotingPowerHistory for VotingPowerHistory.Record;
 
+    string internal constant _VAULT_TYPE = "RecruitNFT";
+
     address internal immutable underlyingAddress;
 
     constructor(address _owner, address _underlyingAddress) NFTVault(_owner) {
@@ -37,5 +39,9 @@ contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
             ovp.netDelegatedVotes
         );
         sumVotingPowers += (nvp.total() - oldTotal);
+    }
+
+    function getVaultType() external pure returns (string memory) {
+        return _VAULT_TYPE;
     }
 }

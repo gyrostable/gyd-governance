@@ -13,6 +13,8 @@ contract FriendlyDAOVault is BaseDelegatingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.AddressSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
+    string internal constant _VAULT_TYPE = "FriendlyDAO";
+
     EnumerableSet.AddressSet internal _daos;
     uint256 internal _totalRawVotingPower;
 
@@ -58,5 +60,9 @@ contract FriendlyDAOVault is BaseDelegatingVault, ImmutableOwner {
 
     function getTotalRawVotingPower() public view override returns (uint256) {
         return _totalRawVotingPower;
+    }
+
+    function getVaultType() external pure returns (string memory) {
+        return _VAULT_TYPE;
     }
 }
