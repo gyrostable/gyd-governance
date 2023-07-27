@@ -14,17 +14,27 @@
     "ActionTierConfig": [
       "0x46F658FCE81d891528aB95787CcCbD45F7026384"
     ],
+    "AggregateLPVault": [
+      "0xf957eDC629fa6315ce4936bdb670AD01B23b783f"
+    ],
     "ERC20Mintable": [
       "0x0FD3394D7097B79Bf3BE4dabB308b106FE316930"
     ],
     "EmptyContract": [
       "0x8387d043Ef6F11c4a8660BcdA59816f71f67746B"
     ],
+    "FoundingFrogVault": [
+      "0x0444406774408CfD278d3C592C604EB34326A366"
+    ],
     "GovernanceManager": [
       "0xf2f932866117FBc4d160E125AB46FEAAa64735a6"
     ],
     "GovernanceManagerProxy": [
       "0xE8C1C2d82b2871ADf364cBF51E2aA6473DB07CFe"
+    ],
+    "LPVault": [
+      "0xe0170dB5Dd22d05Ef63f10D7A154ad1dB3BcD2a5",
+      "0xcDE293e7b3a47ccC1Fe1B22bdD670eaEF99fdbC5"
     ],
     "MockVault": [
       "0xE5FFeF5C1657eF73801d0049003A5626D1147F7f"
@@ -33,9 +43,13 @@
       "0x7dfa6B36f13863083895d6e4cfC4021c03FBCc6D"
     ],
     "StaticTierStrategy": [
-      "0x1266423F8952F0021b3400D70027070Ec163106b",
       "0xD9784550a1403F48B3CD2a189eE540539794DCB9",
-      "0x219A465F3fd976b54c6caC62fF61EA55B9A63Ac1"
+      "0x219A465F3fd976b54c6caC62fF61EA55B9A63Ac1",
+      "0x1266423F8952F0021b3400D70027070Ec163106b"
+    ],
+    "TransparentUpgradeableProxy": [
+      "0xcb714d5D7b17c4d68823345F3919c40332FfE3B9",
+      "0xCEe95Cfc35aECe24776b7f3285f549893127DE30"
     ],
     "VotingPowerAggregator": [
       "0x679E5d3e9Ba5Ac63c6061E659e218124FDb8F3ad"

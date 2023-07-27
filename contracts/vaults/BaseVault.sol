@@ -12,6 +12,12 @@ abstract contract BaseVault is IVault {
 
     VotingPowerHistory.History internal history;
 
+    function getCurrentRecord(
+        address account
+    ) external view returns (VotingPowerHistory.Record memory) {
+        return history.currentRecord(account);
+    }
+
     function getRawVotingPower(
         address account
     ) external view returns (uint256) {

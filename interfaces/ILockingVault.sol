@@ -6,7 +6,11 @@ interface ILockingVault {
 
     function deposit(uint256 _amount, address _delegate) external;
 
-    event Deposit(address from, address delegate, uint256 amount);
+    event Deposit(
+        address indexed from,
+        address indexed delegate,
+        uint256 amount
+    );
 
     function initiateWithdrawal(
         uint256 _amount,
@@ -16,11 +20,15 @@ interface ILockingVault {
     function withdraw(uint256 withdrawalId) external;
 
     event WithdrawalQueued(
-        uint256 id,
-        address to,
-        address delegate,
+        uint256 indexed id,
+        address indexed to,
+        address indexed delegate,
         uint256 withdrawalAt,
         uint256 amount
     );
-    event WithdrawalCompleted(address to, uint256 amount);
+    event WithdrawalCompleted(
+        uint256 indexed id,
+        address indexed to,
+        uint256 amount
+    );
 }

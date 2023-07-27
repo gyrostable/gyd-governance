@@ -65,9 +65,9 @@ abstract contract LiquidityMining is ILiquidityMining {
     }
 
     function globalCheckpoint() public {
-        uint256 elapsedTime = block.timestamp - _lastCheckpointTime;
         uint256 totalStaked_ = totalStaked;
         if (totalStaked_ > 0) {
+            uint256 elapsedTime = block.timestamp - _lastCheckpointTime;
             uint256 newRewards = rewardsEmissionRate() * elapsedTime;
             _totalStakedIntegral += newRewards.divDown(totalStaked_);
             _totalUnclaimedRewards += newRewards;
