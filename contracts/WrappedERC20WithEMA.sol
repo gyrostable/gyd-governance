@@ -78,7 +78,7 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
             int256 exponent = -int256(deltaBlockNb.divDown(windowWidth));
             if (exponent > LogExpMath.MIN_NATURAL_EXPONENT) {
                 int256 discount = LogExpMath.exp(exponent);
-                multiplier -= discount < 0 ? 0 : uint256(discount);
+                multiplier -= uint256(discount);
             }
 
             if (previousWrappedPctOfSupply.value > expMovingAverage.value) {
