@@ -75,9 +75,17 @@ def test_vote_on_inactive_proposal(governance_manager, admin):
         governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
 
 
-def test_invalid_vote(governance_manager, admin):
+def test_instant_vote(governance_manager, admin):
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    with reverts("voting has not started"):
+        governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
+
+
+def test_invalid_vote(governance_manager, admin, chain):
+    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     with reverts("ballot must be cast For, Against, or Abstain"):
         governance_manager.vote(tx.events["ProposalCreated"]["id"], UNDEFINED_BALLOT)
 
@@ -86,6 +94,7 @@ def test_vote(mock_vault, governance_manager, admin):
     mv = mock_vault
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
     vote_totals = governance_manager.getVoteTotals(propId)
@@ -100,6 +109,7 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
     mv = mock_vault
     proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
 
@@ -115,6 +125,7 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
 def test_tally(governance_manager, raising_token):
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 
@@ -145,6 +156,7 @@ def test_tally(governance_manager, raising_token):
 def test_tally_vote_doesnt_succeed(governance_manager, raising_token):
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, AGAINST_BALLOT)
 
@@ -165,6 +177,7 @@ def test_tally_vote_doesnt_meet_quorum(
     print(mock_vault.getRawVotingPower(admin) / mock_vault.getTotalRawVotingPower())
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 
@@ -179,6 +192,7 @@ def test_tally_vote_doesnt_meet_quorum(
 def test_tally_vote_abstentions_contribute_to_quorum(governance_manager, raising_token):
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, ABSTAIN_BALLOT)
 
@@ -198,6 +212,7 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
 ):
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
 
     # voteThreshold is 1e17, so since each vote has 20 voting power (out of 100 for the
@@ -217,6 +232,7 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
 def test_tally_inactive_proposal(governance_manager, raising_token):
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 
@@ -234,6 +250,7 @@ def test_tally_inactive_proposal(governance_manager, raising_token):
 def test_tally_ongoing_proposal(governance_manager, raising_token):
     proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
+    chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
     tx = governance_manager.vote(propId, FOR_BALLOT)
 

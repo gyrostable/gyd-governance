@@ -144,6 +144,7 @@ contract GovernanceManager is Initializable {
     function vote(uint24 proposalId, DataTypes.Ballot ballot) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt != 0, "proposal does not exist");
+        require(block.timestamp > proposal.createdAt, "voting has not started");
 
         require(
             proposal.votingEndsAt > uint64(block.timestamp),
