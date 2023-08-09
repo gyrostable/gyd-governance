@@ -36,7 +36,7 @@ contract GovernanceManager is Initializable {
     mapping(uint24 => DataTypes.Proposal) internal _proposals;
     mapping(uint24 => DataTypes.VaultSnapshot[]) internal _vaultSnapshots;
 
-    mapping(address => mapping(uint24 => DataTypes.Vote)) internal _votes;
+    mapping(address => mapping(uint24 => DataTypes.Ballot)) internal _votes;
     mapping(uint24 => mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap))
         internal _totals;
 
@@ -166,18 +166,17 @@ contract GovernanceManager is Initializable {
                 _vaultAddresses(vaultSnapshots)
             );
 
-        DataTypes.Vote storage existingVote = _votes[msg.sender][proposalId];
+        DataTypes.Ballot existingVote = _votes[msg.sender][proposalId];
 
-        bool isNewVote = existingVote.ballot == DataTypes.Ballot.Undefined;
+        bool isNewVote = existingVote == DataTypes.Ballot.Undefined;
         for (uint256 i = 0; i < uvp.length; i++) {
             DataTypes.VaultVotingPower memory vvp = uvp[i];
 
             // cancel out the previous vote if it was cast
             if (!isNewVote) {
-                (, uint256 prevBallotTotal) = _totals[proposalId][
-                    existingVote.ballot
-                ].tryGet(vvp.vaultAddress);
-                _totals[proposalId][existingVote.ballot].set(
+                (, uint256 prevBallotTotal) = _totals[proposalId][existingVote]
+                    .tryGet(vvp.vaultAddress);
+                _totals[proposalId][existingVote].set(
                     vvp.vaultAddress,
                     prevBallotTotal - vvp.votingPower
                 );
@@ -193,7 +192,7 @@ contract GovernanceManager is Initializable {
         }
 
         // Then update the record of this user's vote to the latest ballot and voting power
-        existingVote.ballot = ballot;
+        _votes[msg.sender][proposalId] = ballot;
 
         emit VoteCast(proposalId, msg.sender, ballot);
     }
@@ -364,7 +363,7 @@ contract GovernanceManager is Initializable {
         address voter,
         uint24 proposalId
     ) external view returns (DataTypes.Ballot) {
-        return _votes[voter][proposalId].ballot;
+        return _votes[voter][proposalId];
     }
 
     function updateLimitUpgradeabilityParams(

@@ -86,12 +86,6 @@ library DataTypes {
         Abstain
     }
 
-    struct Vote {
-        Ballot ballot;
-        // vault to votingPower
-        mapping(address => uint256) perVaultVotingPower;
-    }
-
     struct VoteTotals {
         VaultVotingPower[] _for;
         VaultVotingPower[] against;
