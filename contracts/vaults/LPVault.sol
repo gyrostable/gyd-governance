@@ -101,8 +101,14 @@ contract LPVault is
 
         VotingPowerHistory.Record memory currentVotingPower = history
             .currentRecord(msg.sender);
+
+        bool undelegating = _delegate != address(0) && _delegate != msg.sender;
         require(
-            currentVotingPower.baseVotingPower >= _amount,
+            currentVotingPower.baseVotingPower >= _amount &&
+                (undelegating ||
+                    currentVotingPower.baseVotingPower -
+                        history.delegatedVotingPower(msg.sender) >=
+                    _amount),
             "not enough to undelegate"
         );
         history.updateVotingPower(
@@ -111,7 +117,7 @@ contract LPVault is
             currentVotingPower.multiplier,
             currentVotingPower.netDelegatedVotes
         );
-        if (_delegate != address(0) && _delegate != msg.sender) {
+        if (undelegating) {
             _undelegateVote(msg.sender, _delegate, _amount);
         }
         totalSupply -= _amount;

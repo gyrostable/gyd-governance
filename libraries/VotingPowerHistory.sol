@@ -200,6 +200,13 @@ library VotingPowerHistory {
             int256(history._delegatedToOthers[who]);
     }
 
+    function delegatedVotingPower(
+        History storage history,
+        address who
+    ) internal view returns (uint256) {
+        return history._delegatedToOthers[who];
+    }
+
     function updateMultiplier(
         History storage history,
         address who,
