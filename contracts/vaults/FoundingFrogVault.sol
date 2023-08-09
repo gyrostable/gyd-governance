@@ -18,7 +18,9 @@ contract FoundingFrogVault is NFTVault, EIP712 {
     mapping(address => bool) private _claimed;
 
     bytes32 private immutable _TYPE_HASH =
-        keccak256("Proof(address account,uint128 multiplier,bytes32[] proof)");
+        keccak256(
+            "Proof(address account,address receiver,uint128 multiplier,bytes32[] proof)"
+        );
     Merkle.Root private merkleRoot;
 
     constructor(
@@ -46,6 +48,7 @@ contract FoundingFrogVault is NFTVault, EIP712 {
                 abi.encode(
                     _TYPE_HASH,
                     nftOwner,
+                    msg.sender,
                     multiplier,
                     _encodeProof(proof)
                 )
