@@ -7,8 +7,9 @@ import "./access/ImmutableOwner.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
+contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712, Initializable {
     using Merkle for Merkle.Root;
 
     constructor(
@@ -33,7 +34,7 @@ contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712 {
 
     mapping(address => bool) private _claimed;
 
-    function setGovernanceVault(address _vault) public onlyOwner {
+    function initializeGovernanceVault(address _vault) public initializer {
         vault = IVotingPowersUpdater(_vault);
     }
 

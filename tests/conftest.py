@@ -240,7 +240,7 @@ def nft_vault(recruit_nft, admin):
         admin,
         recruit_nft,
     )
-    recruit_nft.setGovernanceVault(nft_vault)
+    recruit_nft.initializeGovernanceVault(nft_vault)
 
     for i in range(5):
         recruit_nft.mint(accounts[i], PROOF, i)
