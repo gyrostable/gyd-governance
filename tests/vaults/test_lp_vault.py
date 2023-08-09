@@ -1,6 +1,6 @@
 import pytest
 
-from brownie import chain, reverts, LPVault
+from brownie import ZERO_ADDRESS, chain, reverts, LPVault
 from brownie.exceptions import VirtualMachineError
 from tests.conftest import INITIAL_BALANCE
 
@@ -173,3 +173,11 @@ def test_list_pending_withdrawals_doesnt_list_completed(
 
     pws = lp_vault.listPendingWithdrawals(admin)
     assert len(pws) == 0
+
+
+def test_cannot_abuse_delegation(lp_vault, admin, token, alice):
+    token.approve(lp_vault, 10)
+    lp_vault.deposit(10, alice)
+    assert lp_vault.getRawVotingPower(alice) == lp_vault.getTotalRawVotingPower() == 10
+    with reverts("not enough to undelegate"):
+        lp_vault.initiateWithdrawal(10, ZERO_ADDRESS)
