@@ -20,7 +20,7 @@ def test_invalid_proof_claim(admin, local_account, accounts, frog_vault):
             ACCOUNT_ADDRESS,
             1e18,
             [ROOT],
-            signature(local_account, 1e18, frog_vault.address, [ROOT]),
+            signature(local_account, admin, 1e18, frog_vault.address, [ROOT]),
         )
 
 
@@ -29,7 +29,7 @@ def test_valid_proof(admin, accounts, frog_vault, local_account):
         ACCOUNT_ADDRESS,
         1e18,
         PROOF,
-        signature(local_account, 1e18, frog_vault.address, PROOF),
+        signature(local_account, admin, 1e18, frog_vault.address, PROOF),
     )
     assert frog_vault.getRawVotingPower(admin) == 1e18
     frog_vault.updateMultiplier([admin], 2e18)
@@ -45,7 +45,7 @@ def test_claiming_nft_doesnt_increase_supply(
         ACCOUNT_ADDRESS,
         1e18,
         PROOF,
-        signature(local_account, 1e18, frog_vault.address, PROOF),
+        signature(local_account, admin, 1e18, frog_vault.address, PROOF),
     )
     assert frog_vault.getTotalRawVotingPower() == 5e18
 
@@ -60,7 +60,7 @@ def test_updates_raw_power(local_account, admin, accounts, frog_vault):
         ACCOUNT_ADDRESS,
         1e18,
         PROOF,
-        signature(local_account, 1e18, frog_vault.address, PROOF),
+        signature(local_account, admin, 1e18, frog_vault.address, PROOF),
     )
     assert frog_vault.getRawVotingPower(admin) == 1e18
     assert frog_vault.getTotalRawVotingPower() == 5e18
@@ -75,7 +75,7 @@ def test_nft_already_claimed(local_account, admin, accounts, frog_vault):
         ACCOUNT_ADDRESS,
         1e18,
         PROOF,
-        signature(local_account, 1e18, frog_vault.address, PROOF),
+        signature(local_account, accounts[6], 1e18, frog_vault.address, PROOF),
         {"from": accounts[6]},
     )
     with reverts("NFT already claimed"):
@@ -83,7 +83,7 @@ def test_nft_already_claimed(local_account, admin, accounts, frog_vault):
             ACCOUNT_ADDRESS,
             1e18,
             PROOF,
-            signature(local_account, 1e18, frog_vault.address, PROOF),
+            signature(local_account, accounts[6], 1e18, frog_vault.address, PROOF),
             {"from": accounts[6]},
         )
 
@@ -101,7 +101,7 @@ def test_nft_claimed_with_nonzero_multiplier(admin, local_account, FoundingFrogV
         ACCOUNT_ADDRESS,
         multiplier,
         proof,
-        signature(local_account, multiplier, frog_vault.address, proof),
+        signature(local_account, admin, multiplier, frog_vault.address, proof),
         {"from": admin},
     )
     assert frog_vault.getRawVotingPower(admin) == 2e18

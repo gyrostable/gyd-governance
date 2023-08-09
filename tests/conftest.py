@@ -60,7 +60,7 @@ class Tier(NamedTuple):
     action_level: int
 
 
-def signature(local_account, multiplier, verifying_contract, proof):
+def signature(local_account, receiver, multiplier, verifying_contract, proof):
     class Proof(EIP712Message):
         # domain
         _name_: "string"
@@ -69,6 +69,7 @@ def signature(local_account, multiplier, verifying_contract, proof):
         _verifyingContract_: "address"
 
         account: "address"
+        receiver: "address"
         multiplier: "uint128"
         proof: "bytes32[]"
 
@@ -79,6 +80,7 @@ def signature(local_account, multiplier, verifying_contract, proof):
         _chainId_=chain.id,
         _verifyingContract_=verifying_contract,
         account=local_account.address,
+        receiver=receiver.address,
         # Coerce to int, since numbers created using e-notation are created as floats, not
         # ints. This results in eip712 being unable to encode the number to a uint128
         # type.
@@ -255,8 +257,8 @@ def frog_vault(admin):
 
 
 @pytest.fixture
-def frog_vault_with_claimed_nfts(local_account, frog_vault):
-    sig = signature(local_account, 1e18, frog_vault.address, PROOF)
+def frog_vault_with_claimed_nfts(local_account, frog_vault, admin):
+    sig = signature(local_account, admin, 1e18, frog_vault.address, PROOF)
     frog_vault.claimNFT(ACCOUNT_ADDRESS, 1e18, PROOF, sig)
     return frog_vault
 
