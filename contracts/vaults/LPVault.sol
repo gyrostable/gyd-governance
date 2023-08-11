@@ -103,6 +103,9 @@ contract LPVault is
             .currentRecord(msg.sender);
 
         bool undelegating = _delegate != address(0) && _delegate != msg.sender;
+
+        // NOTE: voting power in LP vault always has a multiplier of 1e18 (default on initialization) and is never updated
+        // therefore, we do not need to worry about it in the calculation of the condition below
         require(
             currentVotingPower.baseVotingPower >= _amount &&
                 (undelegating ||
