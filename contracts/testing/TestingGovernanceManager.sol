@@ -9,9 +9,8 @@ contract TestingGovernanceManager is GovernanceManager {
 
     constructor(
         IVotingPowerAggregator _votingPowerAggregator,
-        ITierer _tierer,
-        IWrappedERC20WithEMA _wGYD
-    ) GovernanceManager(_votingPowerAggregator, _tierer, _wGYD) {}
+        ITierer _tierer
+    ) GovernanceManager(_votingPowerAggregator, _tierer) {}
 
     function executeCall(address target, bytes calldata data) external {
         target.functionCall(data);
