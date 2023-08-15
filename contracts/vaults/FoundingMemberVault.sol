@@ -9,11 +9,11 @@ import "../../libraries/VotingPowerHistory.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-contract FoundingFrogVault is NFTVault, EIP712 {
+contract FoundingMemberVault is NFTVault, EIP712 {
     using Merkle for Merkle.Root;
     using VotingPowerHistory for VotingPowerHistory.History;
 
-    string internal constant _VAULT_TYPE = "FoundingFrog";
+    string internal constant _VAULT_TYPE = "FoundingMember";
 
     mapping(address => bool) private _claimed;
 
@@ -27,7 +27,7 @@ contract FoundingFrogVault is NFTVault, EIP712 {
         address _owner,
         uint256 _sumVotingPowers,
         bytes32 _merkleRoot
-    ) EIP712("FoundingFrogVault", "1") NFTVault(_owner) {
+    ) EIP712("FoundingMemberVault", "1") NFTVault(_owner) {
         sumVotingPowers = _sumVotingPowers;
         merkleRoot = Merkle.Root(_merkleRoot);
     }

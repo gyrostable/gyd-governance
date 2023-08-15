@@ -7,11 +7,11 @@ import "../../libraries/DataTypes.sol";
 import "../../interfaces/IVotingPowersUpdater.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
-contract RecruitNFTVault is NFTVault, IVotingPowersUpdater {
+contract CouncillorNFTVault is NFTVault, IVotingPowersUpdater {
     using VotingPowerHistory for VotingPowerHistory.History;
     using VotingPowerHistory for VotingPowerHistory.Record;
 
-    string internal constant _VAULT_TYPE = "RecruitNFT";
+    string internal constant _VAULT_TYPE = "CouncillorNFT";
 
     address internal immutable underlyingAddress;
 

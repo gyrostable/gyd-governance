@@ -1,11 +1,6 @@
 import pytest
-from brownie import (
-    ERC721Mintable,
-    RecruitNFTVault,
-    FoundingFrogVault,
-    accounts,
-    reverts,
-)
+from brownie import (CouncillorNFTVault, ERC721Mintable, FoundingMemberVault,
+                     accounts, reverts)
 
 
 def test_total_raw_voting_power(vault):

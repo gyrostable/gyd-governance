@@ -15,9 +15,9 @@ In most vaults, the voting power can be delegated, which decreases the voting po
 
 The following vaults are currently implemented:
 
-1. `FoundingFrogVault`: Every owner of a Gyro founding frog (NFT distributed on Ethereum) starts with a prescribed voting power. To claim the voting power, a user must submit a Merkle proof that it owns a founding frog by signing a message. The Merkle proof is generated from a snapshot of founding frog holders. Governance can later decide to increase the voting power of some users by calling `NFTVault.updateMultiplier`
-2. `RecruitNFTVault`: This vault is similar to the `FoundingFrogVault` but the voting power is assigned when minting a `RecruitNFT`
-3. `FriendlyDAOVault`: This vault allows governance to arbitrarily assign voting power to any address by calling `FriendlyDAOVault.updateDAOAndTotalWeight`. In practice, this will be used to give voting power to other DAOs that are part of the Gyroscope ecosystem.
+1. `FoundingMemberVault`: Every owner of a Gyro founding member (NFT distributed on Ethereum) starts with a prescribed voting power. To claim the voting power, a user must submit a Merkle proof that it owns a founding member NFT by signing a message. The Merkle proof is generated from a snapshot of founding member NFT holders. Governance can later decide to increase the voting power of some users by calling `NFTVault.updateMultiplier`
+2. `CouncillorNFTVault`: This vault is similar to the `FoundingMemberVault` but the voting power is assigned when minting a `CouncillorNFT`
+3. `AssociatedDAOVault`: This vault allows governance to arbitrarily assign voting power to any address by calling `AssociatedDAOVault.updateDAOAndTotalWeight`. In practice, this will be used to give voting power to other DAOs that are part of the Gyroscope ecosystem.
 4. Locking vaults: The `LPVault` allows a user to lock a given token (such as LP tokens or GYFI) to earn voting power. There can be as many `LPVault` in existence as we decide to support different tokens. An locking vault for LP assets could be incentivised through a liquidity mining scheme implemented in its parent `LiquidityMining` contract
 5. `AggregateLPVault`: This aggregates the voting power across a set of registered `LPVault`s (e.g., all vaults that lock are set up for LP shares). The `LPVault`s are weighted through governance.
 
