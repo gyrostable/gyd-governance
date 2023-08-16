@@ -26,7 +26,8 @@ contract GovernanceManager is Initializable {
 
     IVotingPowerAggregator public immutable votingPowerAggregator;
     ITierer public immutable tierer;
-    IWrappedERC20WithEMA public immutable wGYD;
+
+    IWrappedERC20WithEMA public wGYD;
     DataTypes.LimitUpgradeabilityParameters public limitUpgradeabilityParams;
 
     uint24 public proposalsCount;
@@ -48,17 +49,17 @@ contract GovernanceManager is Initializable {
 
     constructor(
         IVotingPowerAggregator _votingPowerAggregator,
-        ITierer _tierer,
-        IWrappedERC20WithEMA _wGYD
+        ITierer _tierer
     ) {
         votingPowerAggregator = _votingPowerAggregator;
         tierer = _tierer;
-        wGYD = _wGYD;
     }
 
-    function initialize(
+    function initializeUpgradeabilityParams(
+        IWrappedERC20WithEMA _wGYD,
         DataTypes.LimitUpgradeabilityParameters memory _params
-    ) external initializer {
+    ) external initializer onlySelf {
+        wGYD = _wGYD;
         limitUpgradeabilityParams = _params;
     }
 
@@ -92,6 +93,7 @@ contract GovernanceManager is Initializable {
         // are happy with the system and are against further high-level upgrades.
         // As a result, we should apply a higher tier if the proposed action has big impacts.
         if (
+            address(wGYD) != address(0) &&
             wGYD.wrappedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
             tier.actionLevel > limitUpgradeabilityParams.actionLevelThreshold
         ) {

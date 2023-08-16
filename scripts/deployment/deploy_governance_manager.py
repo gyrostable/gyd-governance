@@ -25,16 +25,11 @@ def main():
         GovernanceManager,
         VotingPowerAggregator[0],
         ActionTierConfig[0],
-        WrappedERC20WithEMA[0],
         **make_params()
     )
-    upgradeability_tier_strategy = StaticTierStrategy[0]
-    init_data = governance_manager.initialize.encode_input(
-        (10, 10e16, upgradeability_tier_strategy)
-    )
-    proxy_admin.upgradeAndCall(
+
+    proxy_admin.upgrade(
         GovernanceManagerProxy[0],
         governance_manager,
-        init_data,
         make_params({"from": deployer}),
     )

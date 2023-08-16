@@ -179,14 +179,8 @@ def governance_manager_impl(
     TestingGovernanceManager,
     voting_power_aggregator,
     mock_tierer,
-    wrapped_erc20,
 ):
-    return admin.deploy(
-        TestingGovernanceManager,
-        voting_power_aggregator,
-        mock_tierer,
-        wrapped_erc20,
-    )
+    return admin.deploy(TestingGovernanceManager, voting_power_aggregator, mock_tierer)
 
 
 @pytest.fixture(scope="module")
@@ -209,15 +203,20 @@ def governance_manager(
     upgradeability_tier_strategy,
     TestingGovernanceManager,
     GovernanceManagerProxy,
+    wrapped_erc20,
 ):
-    init_data = governance_manager_impl.initialize.encode_input(
-        (10, 10**16, upgradeability_tier_strategy)
-    )
-    proxy_admin.upgradeAndCall(
-        governance_manager_proxy, governance_manager_impl, init_data, {"from": admin}
+    proxy_admin.upgrade(
+        governance_manager_proxy, governance_manager_impl, {"from": admin}
     )
     GovernanceManagerProxy.remove(governance_manager_proxy)
-    return TestingGovernanceManager.at(governance_manager_proxy.address, owner=admin)
+    gov_manager = TestingGovernanceManager.at(
+        governance_manager_proxy.address, owner=admin
+    )
+    init_data = governance_manager_impl.initializeUpgradeabilityParams.encode_input(
+        wrapped_erc20, (10, 10**16, upgradeability_tier_strategy)
+    )
+    gov_manager.executeCall(gov_manager, init_data, {"from": admin})
+    return gov_manager
 
 
 @pytest.fixture(scope="module")
