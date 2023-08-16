@@ -28,7 +28,9 @@ def test_delegation(associated_dao_vault, dummy_dao_addresses, accounts):
         dummy_dao_addresses[0], scale("0.5"), scale("1")
     )
     associated_dao_vault.updateDAOAndTotalWeight(accounts[1], scale("0.5"), scale("1"))
-    assert associated_dao_vault.getRawVotingPower(dummy_dao_addresses[0]) == scale("0.5")
+    assert associated_dao_vault.getRawVotingPower(dummy_dao_addresses[0]) == scale(
+        "0.5"
+    )
     assert associated_dao_vault.getRawVotingPower(accounts[1]) == scale("0.5")
 
     associated_dao_vault.delegateVote(accounts[2], scale("0.5"), {"from": accounts[1]})

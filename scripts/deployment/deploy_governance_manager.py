@@ -1,5 +1,13 @@
-from brownie import GovernanceManagerProxy, ProxyAdmin, EmptyContract, GovernanceManager  # type: ignore
-from brownie import VotingPowerAggregator, ActionTierConfig, WrappedERC20WithEMA, StaticTierStrategy  # type: ignore
+from brownie import (
+    ActionTierConfig,
+    BoundedERC20WithEMA,  # type: ignore
+    EmptyContract,
+    GovernanceManager,
+    GovernanceManagerProxy,
+    ProxyAdmin,
+    StaticTierStrategy,
+    VotingPowerAggregator,
+)
 
 from scripts.utils import get_deployer, get_proxy_admin, make_params
 

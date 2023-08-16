@@ -1,5 +1,5 @@
 # TODO: change this to a value we actually want
-WRAPPED_ERC20_WITH_EMA_WINDOW_WIDTH = 100 * 10**18  # 100 blocks
+BOUNDED_ERC20_WITH_EMA_WINDOW_WIDTH = 100 * 10**18  # 100 blocks
 
 
 GYD_TOKEN_ADDRESS = {

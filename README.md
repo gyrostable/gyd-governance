@@ -78,9 +78,9 @@ On top of the basic voting structure, the governance system includes several che
 
 ### Power of GYD users to limit upgradeability
 
-A special form of optimistic approval is used to give end users of the protocol (GYD stablecoin holders) power over governance regarding how upgradeable the protocol should be. This takes the form of an alternative 'wrapped' form of GYD that can affect governance settings.
+A special form of optimistic approval is used to give end users of the protocol (GYD stablecoin holders) power over governance regarding how upgradeable the protocol should be. This takes the form of an alternative 'bounded' form of GYD that can affect governance settings.
 
-As implemented in `WrappedERC20WithEMA`, at any time, a user can choose between holding GYD or the wrapped wGYD and can freely convert between them. Choosing to hold wGYD signifies a vote for more limited upgradeability of the protocol. When a user converts between GYD and wGYD, a moving average is updated in the wGYD contract. When the moving average exceeds a threshold in addition to the total wGYD supply exceeding another threshold, upgradeability of core Gyroscope contracts through governance becomes more difficult. This takes the form of increased difficulty in action tiering.
+As implemented in `BoundedERC20WithEMA`, at any time, a user can choose between holding GYD or the bounded wGYD and can freely convert between them. Choosing to hold wGYD signifies a vote for more limited upgradeability of the protocol. When a user converts between GYD and wGYD, a moving average is updated in the wGYD contract. When the moving average exceeds a threshold in addition to the total wGYD supply exceeding another threshold, upgradeability of core Gyroscope contracts through governance becomes more difficult. This takes the form of increased difficulty in action tiering.
 
 The main idea is to let the user market decide when the system should be more upgradeable and when core infrastructure should be considered more settled based on the market choice of whether to adopt GYD or wGYD.
 
@@ -107,9 +107,9 @@ The variables in `_updateEMA()` match the variables from the formulas above as f
 | Math      | Code                                 |
 |-----------|--------------------------------------|
 | $y_{i-1}$ | `expMovingAverage.value`             |
-| $x_i$     | `previousWrappedPctOfSupply.value`   |
+| $x_i$     | `previousBoundedPctOfSupply.value`   |
 | $t_{i-1}$ | `expMovingAverage.blockNb`           |
-| $t_i$     | `previousWrappedPctOfSupply.blockNb` |
+| $t_i$     | `previousBoundedPctOfSupply.blockNb` |
 | $\tau$    | `windowWidth`                        |
 ### Reserve stewardship incentives
 

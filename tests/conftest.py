@@ -2,9 +2,18 @@ from typing import NamedTuple
 
 import eth_keys
 import pytest
-from brownie import (ZERO_ADDRESS, CouncillorNFT, CouncillorNFTVault,
-                     ERC20Mintable, ERC721Mintable, FoundingMemberVault,
-                     RaisingERC20, StaticTierStrategy, accounts, chain)
+from brownie import (
+    ZERO_ADDRESS,
+    CouncillorNFT,
+    CouncillorNFTVault,
+    ERC20Mintable,
+    ERC721Mintable,
+    FoundingMemberVault,
+    RaisingERC20,
+    StaticTierStrategy,
+    accounts,
+    chain,
+)
 from eip712.messages import EIP712Message
 from eth_abi import encode
 from eth_abi.packed import encode_packed
@@ -161,8 +170,8 @@ def mock_tierer(admin, MockTierer):
 
 
 @pytest.fixture(scope="module")
-def wrapped_erc20(admin, WrappedERC20WithEMA, token):
-    return admin.deploy(WrappedERC20WithEMA, admin, token.address, 2e18)
+def bounded_erc20(admin, BoundedERC20WithEMA, token):
+    return admin.deploy(BoundedERC20WithEMA, admin, token.address, 2e18)
 
 
 @pytest.fixture(scope="module")
@@ -195,7 +204,7 @@ def governance_manager(
     upgradeability_tier_strategy,
     TestingGovernanceManager,
     GovernanceManagerProxy,
-    wrapped_erc20,
+    bounded_erc20,
 ):
     proxy_admin.upgrade(
         governance_manager_proxy, governance_manager_impl, {"from": admin}
@@ -205,7 +214,7 @@ def governance_manager(
         governance_manager_proxy.address, owner=admin
     )
     init_data = governance_manager_impl.initializeUpgradeabilityParams.encode_input(
-        wrapped_erc20, (10, 10**16, upgradeability_tier_strategy)
+        bounded_erc20, (10, 10**16, upgradeability_tier_strategy)
     )
     gov_manager.executeCall(gov_manager, init_data, {"from": admin})
     return gov_manager
@@ -248,7 +257,9 @@ def founding_member_vault(admin):
 
 
 @pytest.fixture
-def founding_member_vault_with_claimed_nfts(local_account, founding_member_vault, admin):
+def founding_member_vault_with_claimed_nfts(
+    local_account, founding_member_vault, admin
+):
     sig = signature(local_account, admin, 1e18, founding_member_vault.address, PROOF)
     founding_member_vault.claimNFT(ACCOUNT_ADDRESS, 1e18, PROOF, sig)
     return founding_member_vault
@@ -265,7 +276,9 @@ def vault(request, nft_vault, founding_member_vault_with_claimed_nfts):
 
 def pytest_generate_tests(metafunc):
     if "vault" in metafunc.fixturenames:
-        metafunc.parametrize("vault", ["nft_vault", "founding_member_vault"], indirect=["vault"])
+        metafunc.parametrize(
+            "vault", ["nft_vault", "founding_member_vault"], indirect=["vault"]
+        )
 
 
 @pytest.fixture(scope="module")

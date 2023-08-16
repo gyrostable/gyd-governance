@@ -21,7 +21,9 @@ def test_invalid_proof_claim(admin, local_account, accounts, founding_member_vau
             ACCOUNT_ADDRESS,
             1e18,
             [ROOT],
-            signature(local_account, admin, 1e18, founding_member_vault.address, [ROOT]),
+            signature(
+                local_account, admin, 1e18, founding_member_vault.address, [ROOT]
+            ),
         )
 
 
@@ -76,7 +78,9 @@ def test_nft_already_claimed(local_account, admin, accounts, founding_member_vau
         ACCOUNT_ADDRESS,
         1e18,
         PROOF,
-        signature(local_account, accounts[6], 1e18, founding_member_vault.address, PROOF),
+        signature(
+            local_account, accounts[6], 1e18, founding_member_vault.address, PROOF
+        ),
         {"from": accounts[6]},
     )
     with reverts("NFT already claimed"):
@@ -84,7 +88,9 @@ def test_nft_already_claimed(local_account, admin, accounts, founding_member_vau
             ACCOUNT_ADDRESS,
             1e18,
             PROOF,
-            signature(local_account, accounts[6], 1e18, founding_member_vault.address, PROOF),
+            signature(
+                local_account, accounts[6], 1e18, founding_member_vault.address, PROOF
+            ),
             {"from": accounts[6]},
         )
 
@@ -102,7 +108,9 @@ def test_nft_claimed_with_nonzero_multiplier(admin, local_account, FoundingMembe
         ACCOUNT_ADDRESS,
         multiplier,
         proof,
-        signature(local_account, admin, multiplier, founding_member_vault.address, proof),
+        signature(
+            local_account, admin, multiplier, founding_member_vault.address, proof
+        ),
         {"from": admin},
     )
     assert founding_member_vault.getRawVotingPower(admin) == 2e18

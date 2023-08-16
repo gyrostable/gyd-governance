@@ -15,7 +15,7 @@ import "../interfaces/IVault.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
 import "../interfaces/ITierStrategy.sol";
-import "../interfaces/IWrappedERC20WithEMA.sol";
+import "../interfaces/IBoundedERC20WithEMA.sol";
 
 contract GovernanceManager is Initializable {
     using Address for address;
@@ -26,8 +26,7 @@ contract GovernanceManager is Initializable {
 
     IVotingPowerAggregator public immutable votingPowerAggregator;
     ITierer public immutable tierer;
-
-    IWrappedERC20WithEMA public wGYD;
+    IBoundedERC20WithEMA public bGYD;
     DataTypes.LimitUpgradeabilityParameters public limitUpgradeabilityParams;
 
     uint24 public proposalsCount;
@@ -56,10 +55,10 @@ contract GovernanceManager is Initializable {
     }
 
     function initializeUpgradeabilityParams(
-        IWrappedERC20WithEMA _wGYD,
+        IBoundedERC20WithEMA _wGYD,
         DataTypes.LimitUpgradeabilityParameters memory _params
     ) external initializer onlySelf {
-        wGYD = _wGYD;
+        bGYD = _wGYD;
         limitUpgradeabilityParams = _params;
     }
 
@@ -89,12 +88,12 @@ contract GovernanceManager is Initializable {
             }
         }
 
-        // If a sufficiently large amount of GYD is wrapped, this signifies that holders
+        // If a sufficiently large amount of GYD is bounded, this signifies that holders
         // are happy with the system and are against further high-level upgrades.
         // As a result, we should apply a higher tier if the proposed action has big impacts.
         if (
-            address(wGYD) != address(0) &&
-            wGYD.wrappedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
+            address(bGYD) != address(0) &&
+            bGYD.boundedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
             tier.actionLevel > limitUpgradeabilityParams.actionLevelThreshold
         ) {
             tier = limitUpgradeabilityParams.tierStrategy.getTier(action.data);

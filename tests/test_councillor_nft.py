@@ -9,7 +9,9 @@ def test_councillor_nft_is_not_transferable(admin, accounts, councillor_nft, nft
         councillor_nft.transferFrom(admin, accounts[1], 0)
 
 
-def test_councillor_nft_is_mintable_by_owner(admin, accounts, councillor_nft, nft_vault):
+def test_councillor_nft_is_mintable_by_owner(
+    admin, accounts, councillor_nft, nft_vault
+):
     acc = accounts[1]
     with reverts("ECDSA: invalid signature length"):
         councillor_nft.mint(acc, [], b"", {"from": acc})
@@ -65,7 +67,9 @@ PROOF = [
 def test_councillor_nft_is_mintable_by_allowlisted_address(
     admin, local_account, CouncillorNFT, CouncillorNFTVault
 ):
-    councillor_nft = admin.deploy(CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT)
+    councillor_nft = admin.deploy(
+        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT
+    )
     nft_vault = admin.deploy(CouncillorNFTVault, admin, councillor_nft)
     councillor_nft.initializeGovernanceVault(nft_vault.address)
 
@@ -83,7 +87,9 @@ def test_councillor_nft_is_mintable_only_once(
     CouncillorNFT,
     CouncillorNFTVault,
 ):
-    councillor_nft = admin.deploy(CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT)
+    councillor_nft = admin.deploy(
+        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT
+    )
     nft_vault = admin.deploy(CouncillorNFTVault, admin, councillor_nft)
     councillor_nft.initializeGovernanceVault(nft_vault.address)
 
