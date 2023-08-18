@@ -21,7 +21,7 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
             }
         }
 
-        _batchSetStrategy(configs);
+        _batchSetStrategy(configs, true);
     }
 
     struct StrategyConfig {
@@ -37,6 +37,25 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
         return keccak256(abi.encodePacked(_contract, _sig));
     }
 
+    function initializeStrategy(
+        address _contract,
+        bytes4 _sig,
+        address _strategy
+    ) external onlyOwner {
+        bytes32 ruleKey = _ruleKey(_contract, _sig);
+        require(
+            address(_tierStrategies[ruleKey]) == address(0),
+            "strategy already set"
+        );
+        _tierStrategies[ruleKey] = ITierStrategy(_strategy);
+    }
+
+    function batchInitializeStrategy(
+        StrategyConfig[] calldata configs
+    ) external onlyOwner {
+        _batchSetStrategy(configs, true);
+    }
+
     function setStrategy(
         address _contract,
         bytes4 _sig,
@@ -48,12 +67,20 @@ contract ActionTierConfig is ImmutableOwner, ITierer {
     function batchSetStrategy(
         StrategyConfig[] calldata configs
     ) external onlyOwner {
-        _batchSetStrategy(configs);
+        _batchSetStrategy(configs, false);
     }
 
-    function _batchSetStrategy(StrategyConfig[] memory configs) internal {
+    function _batchSetStrategy(
+        StrategyConfig[] memory configs,
+        bool initializing
+    ) internal {
         for (uint256 i; i < configs.length; i++) {
             bytes32 ruleKey = _ruleKey(configs[i]._contract, configs[i]._sig);
+            require(
+                !initializing ||
+                    address(_tierStrategies[ruleKey]) == address(0),
+                "strategy already set"
+            );
             _tierStrategies[ruleKey] = ITierStrategy(configs[i]._strategy);
         }
     }

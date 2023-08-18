@@ -15,11 +15,48 @@ def test_reverts_if_no_strategy_defined(admin, tier_config):
         tier_config.getTier(admin.address, "")
 
 
+def test_initialize_strategy(admin, token, tier_config, static_tier_strategy):
+    selector = function_signature_to_4byte_selector("totalSupply()")
+    tier_config.initializeStrategy(token, selector, static_tier_strategy)
+
+    assert tier_config.getStrategy(token, selector) == static_tier_strategy
+    with reverts("strategy already set"):
+        tier_config.initializeStrategy(token, selector, static_tier_strategy)
+
+
 def test_set_and_get_strategy(admin, token, tier_config, static_tier_strategy):
     selector = function_signature_to_4byte_selector("totalSupply()")
     tier_config.setStrategy(token, selector, static_tier_strategy)
 
     assert tier_config.getStrategy(token, selector) == static_tier_strategy
+
+    tier_config.setStrategy(token, selector, static_tier_strategy)
+
+
+def test_batch_initialize_strategy(
+    admin,
+    token,
+    tier_config,
+    static_tier_strategy,
+    upgradeability_tier_strategy,
+    governance_manager,
+):
+    selector = function_signature_to_4byte_selector("totalSupply()")
+    selector2 = function_signature_to_4byte_selector("upgrade(address)")
+    tier_config.batchInitializeStrategy(
+        [
+            (token, selector, static_tier_strategy),
+            (governance_manager, selector2, upgradeability_tier_strategy),
+        ]
+    )
+
+    assert tier_config.getStrategy(token, selector) == static_tier_strategy
+    assert (
+        tier_config.getStrategy(governance_manager, selector2)
+        == upgradeability_tier_strategy
+    )
+    with reverts("strategy already set"):
+        tier_config.batchInitializeStrategy([(token, selector, static_tier_strategy)])
 
 
 def test_batch_set_strategy(
