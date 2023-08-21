@@ -19,10 +19,11 @@ def test_invalid_proof_claim(admin, local_account, accounts, founding_member_vau
     with reverts("invalid proof"):
         founding_member_vault.claimNFT(
             ACCOUNT_ADDRESS,
+            admin,
             1e18,
             [ROOT],
             signature(
-                local_account, admin, 1e18, founding_member_vault.address, [ROOT]
+                local_account, admin, admin, 1e18, founding_member_vault.address, [ROOT]
             ),
         )
 
@@ -30,9 +31,12 @@ def test_invalid_proof_claim(admin, local_account, accounts, founding_member_vau
 def test_valid_proof(admin, accounts, founding_member_vault, local_account):
     founding_member_vault.claimNFT(
         ACCOUNT_ADDRESS,
+        admin,
         1e18,
         PROOF,
-        signature(local_account, admin, 1e18, founding_member_vault.address, PROOF),
+        signature(
+            local_account, admin, admin, 1e18, founding_member_vault.address, PROOF
+        ),
     )
     assert founding_member_vault.getRawVotingPower(admin) == 1e18
     founding_member_vault.updateMultiplier([admin], 2e18)
@@ -46,9 +50,12 @@ def test_claiming_nft_doesnt_increase_supply(
     assert founding_member_vault.getTotalRawVotingPower() == 5e18
     founding_member_vault.claimNFT(
         ACCOUNT_ADDRESS,
+        admin,
         1e18,
         PROOF,
-        signature(local_account, admin, 1e18, founding_member_vault.address, PROOF),
+        signature(
+            local_account, admin, admin, 1e18, founding_member_vault.address, PROOF
+        ),
     )
     assert founding_member_vault.getTotalRawVotingPower() == 5e18
 
@@ -61,9 +68,12 @@ def test_claiming_nft_doesnt_increase_supply(
 def test_updates_raw_power(local_account, admin, accounts, founding_member_vault):
     founding_member_vault.claimNFT(
         ACCOUNT_ADDRESS,
+        admin,
         1e18,
         PROOF,
-        signature(local_account, admin, 1e18, founding_member_vault.address, PROOF),
+        signature(
+            local_account, admin, admin, 1e18, founding_member_vault.address, PROOF
+        ),
     )
     assert founding_member_vault.getRawVotingPower(admin) == 1e18
     assert founding_member_vault.getTotalRawVotingPower() == 5e18
@@ -76,20 +86,32 @@ def test_updates_raw_power(local_account, admin, accounts, founding_member_vault
 def test_nft_already_claimed(local_account, admin, accounts, founding_member_vault):
     founding_member_vault.claimNFT(
         ACCOUNT_ADDRESS,
+        accounts[6],
         1e18,
         PROOF,
         signature(
-            local_account, accounts[6], 1e18, founding_member_vault.address, PROOF
+            local_account,
+            accounts[6],
+            accounts[6],
+            1e18,
+            founding_member_vault.address,
+            PROOF,
         ),
         {"from": accounts[6]},
     )
     with reverts("NFT already claimed"):
         founding_member_vault.claimNFT(
             ACCOUNT_ADDRESS,
+            accounts[6],
             1e18,
             PROOF,
             signature(
-                local_account, accounts[6], 1e18, founding_member_vault.address, PROOF
+                local_account,
+                accounts[6],
+                accounts[6],
+                1e18,
+                founding_member_vault.address,
+                PROOF,
             ),
             {"from": accounts[6]},
         )
@@ -106,12 +128,47 @@ def test_nft_claimed_with_nonzero_multiplier(admin, local_account, FoundingMembe
     founding_member_vault = admin.deploy(FoundingMemberVault, admin, 6e18, root)
     founding_member_vault.claimNFT(
         ACCOUNT_ADDRESS,
+        admin,
         multiplier,
         proof,
         signature(
-            local_account, admin, multiplier, founding_member_vault.address, proof
+            local_account,
+            admin,
+            admin,
+            multiplier,
+            founding_member_vault.address,
+            proof,
         ),
         {"from": admin},
     )
     assert founding_member_vault.getRawVotingPower(admin) == 2e18
+    assert founding_member_vault.getTotalRawVotingPower() == 6e18
+
+
+def test_nft_claimed_and_delegate(admin, local_account, FoundingMemberVault, accounts):
+    root = "0x8005654da8bad4ccb60009614a4f7d79bdb27f747c64fef259f5b7a0f064bc5a"
+    proof = [
+        "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+        "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+        "0xcc20bdebe234641ec9c9c1c278579ef608f23fb46f1be71cd61a8cb3d6a53735",
+    ]
+    multiplier = 2e18
+    founding_member_vault = admin.deploy(FoundingMemberVault, admin, 6e18, root)
+    founding_member_vault.claimNFT(
+        ACCOUNT_ADDRESS,
+        accounts[8],
+        multiplier,
+        proof,
+        signature(
+            local_account,
+            admin,
+            accounts[8],
+            multiplier,
+            founding_member_vault.address,
+            proof,
+        ),
+        {"from": admin},
+    )
+    assert founding_member_vault.getRawVotingPower(admin) == 0
+    assert founding_member_vault.getRawVotingPower(accounts[8]) == 2e18
     assert founding_member_vault.getTotalRawVotingPower() == 6e18

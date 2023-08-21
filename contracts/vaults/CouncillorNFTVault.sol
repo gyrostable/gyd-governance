@@ -27,6 +27,7 @@ contract CouncillorNFTVault is NFTVault, IVotingPowersUpdater {
 
     function updateBaseVotingPower(
         address _user,
+        address _delegate,
         uint128 _addedCount
     ) external onlyUnderlying {
         VotingPowerHistory.Record memory ovp = history.currentRecord(_user);
@@ -39,6 +40,9 @@ contract CouncillorNFTVault is NFTVault, IVotingPowersUpdater {
             ovp.netDelegatedVotes
         );
         sumVotingPowers += (nvp.total() - oldTotal);
+        if (_delegate != address(0) && _delegate != _user) {
+            _delegateVote(_user, _delegate, _addedCount);
+        }
     }
 
     function getVaultType() external pure returns (string memory) {

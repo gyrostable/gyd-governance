@@ -61,7 +61,7 @@ class Tier(NamedTuple):
     action_level: int
 
 
-def signature(local_account, receiver, multiplier, verifying_contract, proof):
+def signature(local_account, receiver, delegate, multiplier, verifying_contract, proof):
     class Proof(EIP712Message):
         # domain
         _name_: "string"
@@ -71,6 +71,7 @@ def signature(local_account, receiver, multiplier, verifying_contract, proof):
 
         account: "address"
         receiver: "address"
+        delegate: "address"
         multiplier: "uint128"
         proof: "bytes32[]"
 
@@ -82,6 +83,7 @@ def signature(local_account, receiver, multiplier, verifying_contract, proof):
         _verifyingContract_=verifying_contract,
         account=local_account.address,
         receiver=receiver.address,
+        delegate=delegate.address,
         # Coerce to int, since numbers created using e-notation are created as floats, not
         # ints. This results in eip712 being unable to encode the number to a uint128
         # type.
@@ -245,7 +247,7 @@ def nft_vault(councillor_nft, admin):
     councillor_nft.initializeGovernanceVault(nft_vault)
 
     for i in range(5):
-        councillor_nft.mint(accounts[i], PROOF, i)
+        councillor_nft.mint(accounts[i], accounts[i], PROOF, i)
 
     return nft_vault
 
@@ -260,8 +262,10 @@ def founding_member_vault(admin):
 def founding_member_vault_with_claimed_nfts(
     local_account, founding_member_vault, admin
 ):
-    sig = signature(local_account, admin, 1e18, founding_member_vault.address, PROOF)
-    founding_member_vault.claimNFT(ACCOUNT_ADDRESS, 1e18, PROOF, sig)
+    sig = signature(
+        local_account, admin, admin, 1e18, founding_member_vault.address, PROOF
+    )
+    founding_member_vault.claimNFT(ACCOUNT_ADDRESS, admin, 1e18, PROOF, sig)
     return founding_member_vault
 
 

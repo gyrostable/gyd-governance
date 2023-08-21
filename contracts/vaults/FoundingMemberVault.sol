@@ -19,7 +19,7 @@ contract FoundingMemberVault is NFTVault, EIP712 {
 
     bytes32 private immutable _TYPE_HASH =
         keccak256(
-            "Proof(address account,address receiver,uint128 multiplier,bytes32[] proof)"
+            "Proof(address account,address receiver,address delegate,uint128 multiplier,bytes32[] proof)"
         );
     Merkle.Root private merkleRoot;
 
@@ -34,6 +34,7 @@ contract FoundingMemberVault is NFTVault, EIP712 {
 
     function claimNFT(
         address nftOwner,
+        address delegate,
         uint128 multiplier,
         bytes32[] calldata proof,
         bytes calldata signature
@@ -49,6 +50,7 @@ contract FoundingMemberVault is NFTVault, EIP712 {
                     _TYPE_HASH,
                     nftOwner,
                     msg.sender,
+                    delegate,
                     multiplier,
                     _encodeProof(proof)
                 )
@@ -73,6 +75,10 @@ contract FoundingMemberVault is NFTVault, EIP712 {
             multiplier,
             current.netDelegatedVotes
         );
+
+        if (delegate != address(0) && delegate != msg.sender) {
+            _delegateVote(msg.sender, delegate, multiplier);
+        }
     }
 
     function _encodeProof(

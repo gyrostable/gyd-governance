@@ -11,5 +11,6 @@ def test_sum_voting_powers(admin, accounts, nft_vault, councillor_nft):
     assert new_total == initial_total + (proposed_admin_multiplier - admin_voting_power)
 
     # minting an NFT updates the total
-    councillor_nft.mint(accounts.add(), [], b"", {"from": admin})
+    acc = accounts.add()
+    councillor_nft.mint(acc, acc, [], b"", {"from": admin})
     assert nft_vault.getTotalRawVotingPower() == new_total + 1e18
