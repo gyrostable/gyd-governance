@@ -1,18 +1,20 @@
-import pytest
 from typing import NamedTuple, Union
-from eth_utils.abi import function_signature_to_4byte_selector
+
+import pytest
 from brownie import chain
 from brownie.test.managers.runner import RevertContextManager as reverts
+from eth_utils.abi import function_signature_to_4byte_selector
+
 from tests.conftest import (
-    FOR_BALLOT,
-    AGAINST_BALLOT,
-    UNDEFINED_BALLOT,
     ABSTAIN_BALLOT,
+    AGAINST_BALLOT,
+    FOR_BALLOT,
     PROPOSAL_LENGTH_DURATION,
-    TIMELOCKED_DURATION,
     QUORUM_NOT_MET_OUTCOME,
-    THRESHOLD_NOT_MET_OUTCOME,
     SUCCESSFUL_OUTCOME,
+    THRESHOLD_NOT_MET_OUTCOME,
+    TIMELOCKED_DURATION,
+    UNDEFINED_BALLOT,
     Tier,
 )
 
@@ -272,8 +274,8 @@ def test_execute_must_be_queued(governance_manager, raising_token):
         tx = governance_manager.executeProposal(propId)
 
 
-def test_uses_override_tier_if_enough_gyd_is_wrapped(
-    admin, governance_manager, wrapped_erc20, token
+def test_uses_override_tier_if_enough_gyd_is_bounded(
+    admin, governance_manager, bounded_erc20, token
 ):
     proposal = ProposalAction.nullary_function(governance_manager, "upgradeTo()")
     tx = governance_manager.createProposal([proposal])
@@ -281,14 +283,14 @@ def test_uses_override_tier_if_enough_gyd_is_wrapped(
     prop = governance_manager.listActiveProposals()[-1]
     assert prop[3] == 1e17  # vote threshold
 
-    token.approve(wrapped_erc20.address, 100, {"from": admin})
-    wrapped_erc20.deposit(100, {"from": admin})
+    token.approve(bounded_erc20.address, 100, {"from": admin})
+    bounded_erc20.deposit(100, {"from": admin})
     chain.mine()
 
     # trigger another update since the EMA lags by one update.
-    wrapped_erc20.updateEMA({"from": admin})
+    bounded_erc20.updateEMA({"from": admin})
     chain.mine()
-    wrapped_erc20.updateEMA({"from": admin})
+    bounded_erc20.updateEMA({"from": admin})
 
     tx = governance_manager.createProposal([proposal])
 

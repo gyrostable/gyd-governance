@@ -2,13 +2,13 @@
 pragma solidity ^0.8.17;
 
 import "./access/GovernanceOnly.sol";
-import "../interfaces/IWrappedERC20WithEMA.sol";
+import "../interfaces/IBoundedERC20WithEMA.sol";
 import "../libraries/ScaledMath.sol";
 import "../libraries/LogExpMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
+contract BoundedERC20WithEMA is IBoundedERC20WithEMA, ERC20, GovernanceOnly {
     using ScaledMath for uint256;
     using LogExpMath for uint256;
 
@@ -21,7 +21,7 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
         uint256 value;
     }
 
-    UintValue public previousWrappedPctOfSupply;
+    UintValue public previousBoundedPctOfSupply;
     UintValue public expMovingAverage;
 
     uint256 public windowWidth;
@@ -30,7 +30,7 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
         address governance,
         address _underlying,
         uint256 _windowWidth
-    ) ERC20("WrappedGYD", "wGYD") GovernanceOnly(governance) {
+    ) ERC20("BoundedGYD", "bGYD") GovernanceOnly(governance) {
         require(
             _windowWidth >= 0.01e18,
             "window width must be scaled to 18 decimals"
@@ -38,12 +38,12 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
         underlying = IERC20(_underlying);
         windowWidth = _windowWidth;
 
-        uint256 wrappedPct = wrappedPctOfSupply();
-        expMovingAverage.value = wrappedPct;
-        previousWrappedPctOfSupply.value = wrappedPct;
+        uint256 boundedPct = boundedPctOfSupply();
+        expMovingAverage.value = boundedPct;
+        previousBoundedPctOfSupply.value = boundedPct;
 
         expMovingAverage.blockNb = block.number;
-        previousWrappedPctOfSupply.blockNb = block.number;
+        previousBoundedPctOfSupply.blockNb = block.number;
 
         emit WindowWidthUpdated(windowWidth);
     }
@@ -66,14 +66,14 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
         _updateEMA();
     }
 
-    function wrappedPctOfSupply() public view returns (uint256) {
+    function boundedPctOfSupply() public view returns (uint256) {
         return totalSupply().divDown(underlying.totalSupply());
     }
 
     function _updateEMA() internal {
-        if (previousWrappedPctOfSupply.blockNb < block.number) {
+        if (previousBoundedPctOfSupply.blockNb < block.number) {
             uint256 multiplier = ScaledMath.ONE;
-            uint256 deltaBlockNb = (previousWrappedPctOfSupply.blockNb -
+            uint256 deltaBlockNb = (previousBoundedPctOfSupply.blockNb -
                 expMovingAverage.blockNb) * multiplier;
             int256 exponent = -int256(deltaBlockNb.divDown(windowWidth));
             if (exponent > LogExpMath.MIN_NATURAL_EXPONENT) {
@@ -81,18 +81,18 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
                 multiplier -= uint256(discount);
             }
 
-            if (previousWrappedPctOfSupply.value > expMovingAverage.value) {
-                expMovingAverage.value += (previousWrappedPctOfSupply.value -
+            if (previousBoundedPctOfSupply.value > expMovingAverage.value) {
+                expMovingAverage.value += (previousBoundedPctOfSupply.value -
                     expMovingAverage.value).mulDown(multiplier);
             } else {
                 expMovingAverage.value -= (expMovingAverage.value -
-                    previousWrappedPctOfSupply.value).mulDown(multiplier);
+                    previousBoundedPctOfSupply.value).mulDown(multiplier);
             }
 
-            expMovingAverage.blockNb = previousWrappedPctOfSupply.blockNb;
+            expMovingAverage.blockNb = previousBoundedPctOfSupply.blockNb;
         }
-        previousWrappedPctOfSupply.value = wrappedPctOfSupply();
-        previousWrappedPctOfSupply.blockNb = block.number;
+        previousBoundedPctOfSupply.value = boundedPctOfSupply();
+        previousBoundedPctOfSupply.blockNb = block.number;
     }
 
     function updateEMA() external {
@@ -108,7 +108,7 @@ contract WrappedERC20WithEMA is IWrappedERC20WithEMA, ERC20, GovernanceOnly {
         emit WindowWidthUpdated(windowWidth);
     }
 
-    function wrappedPctEMA() public view returns (uint256) {
+    function boundedPctEMA() public view returns (uint256) {
         return uint256(expMovingAverage.value);
     }
 }

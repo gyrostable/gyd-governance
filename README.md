@@ -15,9 +15,9 @@ In most vaults, the voting power can be delegated, which decreases the voting po
 
 The following vaults are currently implemented:
 
-1. `FoundingFrogVault`: Every owner of a Gyro founding frog (NFT distributed on Ethereum) starts with a prescribed voting power. To claim the voting power, a user must submit a Merkle proof that it owns a founding frog by signing a message. The Merkle proof is generated from a snapshot of founding frog holders. Governance can later decide to increase the voting power of some users by calling `NFTVault.updateMultiplier`
-2. `RecruitNFTVault`: This vault is similar to the `FoundingFrogVault` but the voting power is assigned when minting a `RecruitNFT`
-3. `FriendlyDAOVault`: This vault allows governance to arbitrarily assign voting power to any address by calling `FriendlyDAOVault.updateDAOAndTotalWeight`. In practice, this will be used to give voting power to other DAOs that are part of the Gyroscope ecosystem.
+1. `FoundingMemberVault`: Every owner of a Gyro founding member (NFT distributed on Ethereum) starts with a prescribed voting power. To claim the voting power, a user must submit a Merkle proof that it owns a founding member NFT by signing a message. The Merkle proof is generated from a snapshot of founding member NFT holders. Governance can later decide to increase the voting power of some users by calling `NFTVault.updateMultiplier`
+2. `CouncillorNFTVault`: This vault is similar to the `FoundingMemberVault` but the voting power is assigned when minting a `CouncillorNFT`
+3. `AssociatedDAOVault`: This vault allows governance to arbitrarily assign voting power to any address by calling `AssociatedDAOVault.updateDAOAndTotalWeight`. In practice, this will be used to give voting power to other DAOs that are part of the Gyroscope ecosystem.
 4. Locking vaults: The `LPVault` allows a user to lock a given token (such as LP tokens or GYFI) to earn voting power. There can be as many `LPVault` in existence as we decide to support different tokens. An locking vault for LP assets could be incentivised through a liquidity mining scheme implemented in its parent `LiquidityMining` contract
 5. `AggregateLPVault`: This aggregates the voting power across a set of registered `LPVault`s (e.g., all vaults that lock are set up for LP shares). The `LPVault`s are weighted through governance.
 
@@ -78,9 +78,9 @@ On top of the basic voting structure, the governance system includes several che
 
 ### Power of GYD users to limit upgradeability
 
-A special form of optimistic approval is used to give end users of the protocol (GYD stablecoin holders) power over governance regarding how upgradeable the protocol should be. This takes the form of an alternative 'wrapped' form of GYD that can affect governance settings.
+A special form of optimistic approval is used to give end users of the protocol (GYD stablecoin holders) power over governance regarding how upgradeable the protocol should be. This takes the form of an alternative 'bounded' form of GYD that can affect governance settings.
 
-As implemented in `WrappedERC20WithEMA`, at any time, a user can choose between holding GYD or the wrapped wGYD and can freely convert between them. Choosing to hold wGYD signifies a vote for more limited upgradeability of the protocol. When a user converts between GYD and wGYD, a moving average is updated in the wGYD contract. When the moving average exceeds a threshold in addition to the total wGYD supply exceeding another threshold, upgradeability of core Gyroscope contracts through governance becomes more difficult. This takes the form of increased difficulty in action tiering.
+As implemented in `BoundedERC20WithEMA`, at any time, a user can choose between holding GYD or the bounded wGYD and can freely convert between them. Choosing to hold wGYD signifies a vote for more limited upgradeability of the protocol. When a user converts between GYD and wGYD, a moving average is updated in the wGYD contract. When the moving average exceeds a threshold in addition to the total wGYD supply exceeding another threshold, upgradeability of core Gyroscope contracts through governance becomes more difficult. This takes the form of increased difficulty in action tiering.
 
 The main idea is to let the user market decide when the system should be more upgradeable and when core infrastructure should be considered more settled based on the market choice of whether to adopt GYD or wGYD.
 
@@ -107,9 +107,9 @@ The variables in `_updateEMA()` match the variables from the formulas above as f
 | Math      | Code                                 |
 |-----------|--------------------------------------|
 | $y_{i-1}$ | `expMovingAverage.value`             |
-| $x_i$     | `previousWrappedPctOfSupply.value`   |
+| $x_i$     | `previousBoundedPctOfSupply.value`   |
 | $t_{i-1}$ | `expMovingAverage.blockNb`           |
-| $t_i$     | `previousWrappedPctOfSupply.blockNb` |
+| $t_i$     | `previousBoundedPctOfSupply.blockNb` |
 | $\tau$    | `windowWidth`                        |
 ### Reserve stewardship incentives
 

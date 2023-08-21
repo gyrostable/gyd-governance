@@ -1,6 +1,7 @@
-from brownie import ERC20Mintable, WrappedERC20WithEMA, GovernanceManagerProxy
-from scripts.utils import get_deployer, get_gyd_address, make_params
+from brownie import BoundedERC20WithEMA, ERC20Mintable, GovernanceManagerProxy
+
 from scripts import constants
+from scripts.utils import get_deployer, get_gyd_address, make_params
 
 
 def dummy_erc20():
@@ -12,9 +13,9 @@ def dummy_erc20():
 def main():
     deployer = get_deployer()
     deployer.deploy(
-        WrappedERC20WithEMA,
+        BoundedERC20WithEMA,
         GovernanceManagerProxy[0],
         get_gyd_address(),
-        constants.WRAPPED_ERC20_WITH_EMA_WINDOW_WIDTH,
+        constants.BOUNDED_ERC20_WITH_EMA_WINDOW_WIDTH,
         **make_params(),
     )

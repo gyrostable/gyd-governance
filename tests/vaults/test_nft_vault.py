@@ -1,8 +1,8 @@
 import pytest
 from brownie import (
+    CouncillorNFTVault,
     ERC721Mintable,
-    RecruitNFTVault,
-    FoundingFrogVault,
+    FoundingMemberVault,
     accounts,
     reverts,
 )

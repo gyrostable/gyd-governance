@@ -9,11 +9,11 @@ import "../../libraries/VotingPowerHistory.sol";
 import "./BaseDelegatingVault.sol";
 import "../../interfaces/IDelegatingVault.sol";
 
-contract FriendlyDAOVault is BaseDelegatingVault, ImmutableOwner {
+contract AssociatedDAOVault is BaseDelegatingVault, ImmutableOwner {
     using EnumerableSet for EnumerableSet.AddressSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
-    string internal constant _VAULT_TYPE = "FriendlyDAO";
+    string internal constant _VAULT_TYPE = "AssociatedDAO";
 
     EnumerableSet.AddressSet internal _daos;
     uint256 internal _totalRawVotingPower;

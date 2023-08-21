@@ -9,7 +9,12 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract RecruitNFT is ERC721Enumerable, ImmutableOwner, EIP712, Initializable {
+contract CouncillorNFT is
+    ERC721Enumerable,
+    ImmutableOwner,
+    EIP712,
+    Initializable
+{
     using Merkle for Merkle.Root;
 
     constructor(

@@ -1,24 +1,25 @@
+from typing import NamedTuple
+
+import eth_keys
 import pytest
 from brownie import (
-    ERC721Mintable,
+    ZERO_ADDRESS,
+    CouncillorNFT,
+    CouncillorNFTVault,
     ERC20Mintable,
+    ERC721Mintable,
+    FoundingMemberVault,
     RaisingERC20,
-    RecruitNFTVault,
-    RecruitNFT,
     StaticTierStrategy,
-    FoundingFrogVault,
     accounts,
     chain,
-    ZERO_ADDRESS,
 )
-from typing import NamedTuple
-from eth_account._utils.signing import sign_message_hash
-import eth_keys
-from hexbytes import HexBytes
-from eth_utils import keccak
+from eip712.messages import EIP712Message
 from eth_abi import encode
 from eth_abi.packed import encode_packed
-from eip712.messages import EIP712Message
+from eth_account._utils.signing import sign_message_hash
+from eth_utils import keccak
+from hexbytes import HexBytes
 
 UNDEFINED_BALLOT = 0
 FOR_BALLOT = 1
@@ -75,7 +76,7 @@ def signature(local_account, receiver, multiplier, verifying_contract, proof):
 
     proofToBytes = [bytearray.fromhex(p[2:]) for p in proof]  # strip 0x prefix
     msg = Proof(
-        _name_="FoundingFrogVault",
+        _name_="FoundingMemberVault",
         _version_="1",
         _chainId_=chain.id,
         _verifyingContract_=verifying_contract,
@@ -128,8 +129,8 @@ def dummy_dao_addresses():
 
 
 @pytest.fixture(scope="module")
-def friendly_dao_vault(admin, FriendlyDAOVault):
-    return admin.deploy(FriendlyDAOVault, admin)
+def associated_dao_vault(admin, AssociatedDAOVault):
+    return admin.deploy(AssociatedDAOVault, admin)
 
 
 @pytest.fixture(scope="module")
@@ -169,8 +170,8 @@ def mock_tierer(admin, MockTierer):
 
 
 @pytest.fixture(scope="module")
-def wrapped_erc20(admin, WrappedERC20WithEMA, token):
-    return admin.deploy(WrappedERC20WithEMA, admin, token.address, 2e18)
+def bounded_erc20(admin, BoundedERC20WithEMA, token):
+    return admin.deploy(BoundedERC20WithEMA, admin, token.address, 2e18)
 
 
 @pytest.fixture(scope="module")
@@ -203,7 +204,7 @@ def governance_manager(
     upgradeability_tier_strategy,
     TestingGovernanceManager,
     GovernanceManagerProxy,
-    wrapped_erc20,
+    bounded_erc20,
 ):
     proxy_admin.upgrade(
         governance_manager_proxy, governance_manager_impl, {"from": admin}
@@ -213,7 +214,7 @@ def governance_manager(
         governance_manager_proxy.address, owner=admin
     )
     init_data = governance_manager_impl.initializeUpgradeabilityParams.encode_input(
-        wrapped_erc20, (10, 10**16, upgradeability_tier_strategy)
+        bounded_erc20, (10, 10**16, upgradeability_tier_strategy)
     )
     gov_manager.executeCall(gov_manager, init_data, {"from": admin})
     return gov_manager
@@ -230,50 +231,54 @@ def isolation_setup(fn_isolation):
 
 
 @pytest.fixture
-def recruit_nft(admin):
-    return admin.deploy(RecruitNFT, "RecruitNFT", "RNFT", admin, 10, ROOT)
+def councillor_nft(admin):
+    return admin.deploy(CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT)
 
 
 @pytest.fixture
-def nft_vault(recruit_nft, admin):
+def nft_vault(councillor_nft, admin):
     nft_vault = admin.deploy(
-        RecruitNFTVault,
+        CouncillorNFTVault,
         admin,
-        recruit_nft,
+        councillor_nft,
     )
-    recruit_nft.initializeGovernanceVault(nft_vault)
+    councillor_nft.initializeGovernanceVault(nft_vault)
 
     for i in range(5):
-        recruit_nft.mint(accounts[i], PROOF, i)
+        councillor_nft.mint(accounts[i], PROOF, i)
 
     return nft_vault
 
 
 @pytest.fixture
-def frog_vault(admin):
-    frog_vault = admin.deploy(FoundingFrogVault, admin, 5e18, ROOT)
-    return frog_vault
+def founding_member_vault(admin):
+    founding_member_vault = admin.deploy(FoundingMemberVault, admin, 5e18, ROOT)
+    return founding_member_vault
 
 
 @pytest.fixture
-def frog_vault_with_claimed_nfts(local_account, frog_vault, admin):
-    sig = signature(local_account, admin, 1e18, frog_vault.address, PROOF)
-    frog_vault.claimNFT(ACCOUNT_ADDRESS, 1e18, PROOF, sig)
-    return frog_vault
+def founding_member_vault_with_claimed_nfts(
+    local_account, founding_member_vault, admin
+):
+    sig = signature(local_account, admin, 1e18, founding_member_vault.address, PROOF)
+    founding_member_vault.claimNFT(ACCOUNT_ADDRESS, 1e18, PROOF, sig)
+    return founding_member_vault
 
 
 @pytest.fixture
-def vault(request, nft_vault, frog_vault_with_claimed_nfts):
+def vault(request, nft_vault, founding_member_vault_with_claimed_nfts):
     if request.param == "nft_vault":
         return nft_vault
-    if request.param == "frog_vault":
-        return frog_vault_with_claimed_nfts
+    if request.param == "founding_member_vault":
+        return founding_member_vault_with_claimed_nfts
     raise ValueError("invalid vault")
 
 
 def pytest_generate_tests(metafunc):
     if "vault" in metafunc.fixturenames:
-        metafunc.parametrize("vault", ["nft_vault", "frog_vault"], indirect=["vault"])
+        metafunc.parametrize(
+            "vault", ["nft_vault", "founding_member_vault"], indirect=["vault"]
+        )
 
 
 @pytest.fixture(scope="module")
