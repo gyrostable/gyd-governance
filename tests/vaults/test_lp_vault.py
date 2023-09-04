@@ -15,10 +15,19 @@ def lp_vault(token, admin, ERC20Mintable):
     return vault
 
 
+@pytest.fixture
+def lp_vault_6_decimals(token, admin, ERC20Mintable):
+    token.changeDecimals(6)
+    reward_token = admin.deploy(ERC20Mintable)
+    vault = admin.deploy(LPVault, admin, token, reward_token)
+    vault.initialize(DURATION_SECONDS)
+    return vault
+
+
 def test_deposit(admin, token, lp_vault):
     assert lp_vault.getTotalRawVotingPower() == 0
 
-    with reverts(revert_msg="cannot deposit zero _amount"):
+    with reverts(revert_msg="cannot deposit zero amount"):
         lp_vault.deposit(0, admin)
 
     with reverts(revert_msg="no delegation to 0"):
@@ -181,3 +190,27 @@ def test_cannot_abuse_delegation(lp_vault, admin, token, alice):
     assert lp_vault.getRawVotingPower(alice) == lp_vault.getTotalRawVotingPower() == 10
     with reverts("not enough to undelegate"):
         lp_vault.initiateWithdrawal(10, ZERO_ADDRESS)
+
+
+def test_withdrawal_custom_decimals(admin, token, lp_vault_6_decimals):
+    lp_vault = lp_vault_6_decimals
+
+    token.mint(admin, 10**6)
+    token.approve(lp_vault, 10**6)
+    lp_vault.deposit(10**6, admin)
+    assert lp_vault.getRawVotingPower(admin) == 10**18
+    assert lp_vault.getTotalRawVotingPower() == 10**18
+
+    tx = lp_vault.initiateWithdrawal(10**18, admin)
+    withdrawal_id = tx.events["WithdrawalQueued"]["id"]
+    assert tx.events["WithdrawalQueued"]["amount"] == 10**18
+
+    chain.sleep(DURATION_SECONDS)
+    chain.mine()
+
+    current_balance = token.balanceOf(admin)
+    lp_vault.withdraw(withdrawal_id)
+    assert token.balanceOf(admin) == current_balance + 10**6
+    assert token.balanceOf(lp_vault) == 0
+    assert lp_vault.getRawVotingPower(admin) == 0
+    assert lp_vault.getTotalRawVotingPower() == 0
