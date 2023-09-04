@@ -1,3 +1,4 @@
+import random
 from brownie import chain, reverts
 from eip712.messages import EIP712Message
 from eth_abi.packed import encode_packed
@@ -128,3 +129,15 @@ def test_councillor_nft_is_mintable_only_once(
 
     with reverts("user has already claimed NFT"):
         councillor_nft.mint(local_account, local_account, PROOF, sig, {"from": bob})
+        # councillor_nft.mint(local_account, PROOF, sig, {"from": bob})
+
+
+def test_update_minting_params(councillor_nft, alice):
+    new_merkle_root = "0x" + random.randint(0, 2**256 - 1).to_bytes(32, "big").hex()
+
+    with reverts():
+        councillor_nft.updateMintingParams(100, new_merkle_root, {"from": alice})
+
+    councillor_nft.updateMintingParams(100, new_merkle_root)
+    assert councillor_nft.maxSupply() == 100
+    assert councillor_nft.getMerkleRoot() == new_merkle_root

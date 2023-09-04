@@ -15,6 +15,8 @@ contract CouncillorNFT is
     EIP712,
     Initializable
 {
+    event MintingParamsUpdated(uint16 maxSupply, bytes32 merkleRoot);
+
     using Merkle for Merkle.Root;
 
     constructor(
@@ -22,10 +24,10 @@ contract CouncillorNFT is
         string memory _ticker,
         address _owner,
         uint16 _maxSupply,
-        bytes32 _merkleRoot
+        bytes32 merkleRoot
     ) ERC721(_name, _ticker) ImmutableOwner(_owner) EIP712(_name, "1") {
         maxSupply = _maxSupply;
-        merkleRoot = Merkle.Root(_merkleRoot);
+        _merkleRoot = Merkle.Root(merkleRoot);
     }
 
     IVotingPowersUpdater private vault;
@@ -33,7 +35,7 @@ contract CouncillorNFT is
     uint16 public maxSupply;
     bool private transfersAllowed;
 
-    Merkle.Root private merkleRoot;
+    Merkle.Root internal _merkleRoot;
     bytes32 private immutable _TYPE_HASH =
         keccak256("Proof(address to,address delegate,bytes32[] proof)");
 
@@ -43,8 +45,21 @@ contract CouncillorNFT is
         vault = IVotingPowersUpdater(_vault);
     }
 
+    function getMerkleRoot() external view returns (bytes32) {
+        return _merkleRoot._root;
+    }
+
     function setTransfersAllowed(bool _transfersAllowed) public onlyOwner {
         transfersAllowed = _transfersAllowed;
+    }
+
+    function updateMintingParams(
+        uint16 _maxSupply,
+        bytes32 merkleRoot
+    ) public onlyOwner {
+        maxSupply = _maxSupply;
+        _merkleRoot = Merkle.Root(merkleRoot);
+        emit MintingParamsUpdated(_maxSupply, merkleRoot);
     }
 
     function mint(
@@ -87,7 +102,7 @@ contract CouncillorNFT is
         require(claimant == to, "invalid signature");
 
         bytes32 node = keccak256(abi.encodePacked(to));
-        require(merkleRoot.isProofValid(node, proof), "invalid proof");
+        require(_merkleRoot.isProofValid(node, proof), "invalid proof");
     }
 
     function _encodeProof(
