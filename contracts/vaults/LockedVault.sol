@@ -15,7 +15,7 @@ import "../access/ImmutableOwner.sol";
 import "../LiquidityMining.sol";
 import "./BaseDelegatingVault.sol";
 
-contract LPVault is
+contract LockedVault is
     Initializable,
     BaseDelegatingVault,
     ILockingVault,
@@ -26,7 +26,7 @@ contract LPVault is
     using EnumerableSet for EnumerableSet.UintSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
-    string internal constant _VAULT_TYPE = "LPVault";
+    string internal constant _VAULT_TYPE = "LockedVault";
 
     IERC20 public immutable lpToken;
     uint256 internal withdrawalWaitDuration;

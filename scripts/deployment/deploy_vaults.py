@@ -8,7 +8,7 @@ from brownie import (
     CouncillorNFTVault,
     FoundingMemberVault,
     GovernanceManagerProxy,
-    LPVault,
+    LockedVault,
     MockVault,
     ProxyAdmin,
     TransparentUpgradeableProxy,
@@ -29,10 +29,10 @@ def mock():
     deployer.deploy(MockVault, **make_params())
 
 
-def lp_vault(lp_token):
+def locked_vault(lp_token):
     deployer = get_deployer()
     vault = deployer.deploy(
-        LPVault, deployer, lp_token, GYFI_TOKEN_ADDRESS[chain.id], **make_params()
+        LockedVault, deployer, lp_token, GYFI_TOKEN_ADDRESS[chain.id], **make_params()
     )
     deployer.deploy(
         TransparentUpgradeableProxy,
