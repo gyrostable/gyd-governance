@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../../interfaces/ILockingVault.sol";
+
 import "../../libraries/DataTypes.sol";
+import "../../libraries/ScaledMath.sol";
 import "../../libraries/VotingPowerHistory.sol";
+
 import "../access/ImmutableOwner.sol";
 import "../LiquidityMining.sol";
 import "./BaseDelegatingVault.sol";
@@ -19,6 +22,7 @@ contract LPVault is
     ImmutableOwner,
     LiquidityMining
 {
+    using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
     using VotingPowerHistory for VotingPowerHistory.History;
 
@@ -37,12 +41,15 @@ contract LPVault is
     // Total supply of shares locked in the vault that are not queued for withdrawal
     uint256 public totalSupply;
 
+    uint8 internal immutable _underlyingDecimals;
+
     constructor(
         address _owner,
         address _lpToken,
         address _rewardsToken
     ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
         lpToken = IERC20(_lpToken);
+        _underlyingDecimals = IERC20Metadata(_lpToken).decimals();
     }
 
     function initialize(uint256 _withdrawalWaitDuration) external initializer {
@@ -70,34 +77,41 @@ contract LPVault is
         deposit(_amount, msg.sender);
     }
 
-    function deposit(uint256 _amount, address _delegate) public {
+    function deposit(uint256 _tokenAmount, address _delegate) public {
         require(_delegate != address(0), "no delegation to 0");
-        require(_amount > 0, "cannot deposit zero _amount");
+        require(_tokenAmount > 0, "cannot deposit zero amount");
 
-        lpToken.transferFrom(msg.sender, address(this), _amount);
+        lpToken.transferFrom(msg.sender, address(this), _tokenAmount);
+
         VotingPowerHistory.Record memory current = history.currentRecord(
             msg.sender
         );
+
+        // internal accounting is done with 18 decimals
+        uint256 scaledAmount = _tokenAmount.changeScale(
+            _underlyingDecimals,
+            18
+        );
         history.updateVotingPower(
             msg.sender,
-            current.baseVotingPower + _amount,
+            current.baseVotingPower + scaledAmount,
             current.multiplier,
             current.netDelegatedVotes
         );
         if (_delegate != address(0) && _delegate != msg.sender) {
-            _delegateVote(msg.sender, _delegate, _amount);
+            _delegateVote(msg.sender, _delegate, scaledAmount);
         }
-        totalSupply += _amount;
-        _stake(msg.sender, _amount);
+        totalSupply += scaledAmount;
+        _stake(msg.sender, scaledAmount);
 
-        emit Deposit(msg.sender, _delegate, _amount);
+        emit Deposit(msg.sender, _delegate, _tokenAmount);
     }
 
     function initiateWithdrawal(
-        uint256 _amount,
+        uint256 _vaultTokenAmount,
         address _delegate
     ) external returns (uint256) {
-        require(_amount >= 0, "invalid withdrawal amount");
+        require(_vaultTokenAmount >= 0, "invalid withdrawal amount");
 
         VotingPowerHistory.Record memory currentVotingPower = history
             .currentRecord(msg.sender);
@@ -107,30 +121,30 @@ contract LPVault is
         // NOTE: voting power in LP vault always has a multiplier of 1e18 (default on initialization) and is never updated
         // therefore, we do not need to worry about it in the calculation of the condition below
         require(
-            currentVotingPower.baseVotingPower >= _amount &&
+            currentVotingPower.baseVotingPower >= _vaultTokenAmount &&
                 (undelegating ||
                     currentVotingPower.baseVotingPower -
                         history.delegatedVotingPower(msg.sender) >=
-                    _amount),
+                    _vaultTokenAmount),
             "not enough to undelegate"
         );
         history.updateVotingPower(
             msg.sender,
-            currentVotingPower.baseVotingPower - _amount,
+            currentVotingPower.baseVotingPower - _vaultTokenAmount,
             currentVotingPower.multiplier,
             currentVotingPower.netDelegatedVotes
         );
         if (undelegating) {
-            _undelegateVote(msg.sender, _delegate, _amount);
+            _undelegateVote(msg.sender, _delegate, _vaultTokenAmount);
         }
-        totalSupply -= _amount;
-        _unstake(msg.sender, _amount);
+        totalSupply -= _vaultTokenAmount;
+        _unstake(msg.sender, _vaultTokenAmount);
 
         DataTypes.PendingWithdrawal memory withdrawal = DataTypes
             .PendingWithdrawal({
                 id: nextWithdrawalId,
                 withdrawableAt: block.timestamp + withdrawalWaitDuration,
-                amount: _amount,
+                amount: _vaultTokenAmount,
                 to: msg.sender,
                 delegate: _delegate
             });
@@ -159,7 +173,12 @@ contract LPVault is
             "no valid pending withdrawal"
         );
 
-        lpToken.transfer(pending.to, pending.amount);
+        uint256 underlyingTokenAmount = pending.amount.changeScale(
+            18,
+            _underlyingDecimals
+        );
+
+        lpToken.transfer(pending.to, underlyingTokenAmount);
 
         delete pendingWithdrawals[withdrawalId];
         userPendingWithdrawalIds[pending.to].remove(withdrawalId);

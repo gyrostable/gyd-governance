@@ -11,4 +11,14 @@ library ScaledMath {
     function divDown(uint256 a, uint256 b) internal pure returns (uint256) {
         return (a * ONE) / b;
     }
+
+    function changeScale(
+        uint256 a,
+        uint256 from,
+        uint256 to
+    ) internal pure returns (uint256) {
+        if (from == to) return a;
+        else if (from < to) return a * 10 ** (to - from);
+        else return a / 10 ** (from - to);
+    }
 }
