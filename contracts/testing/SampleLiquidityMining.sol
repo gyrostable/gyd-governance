@@ -8,8 +8,9 @@ contract SampleLiquidityMining is LiquidityMining {
 
     constructor(
         address _depositToken,
-        address _rewardsToken
-    ) LiquidityMining(_rewardsToken) {
+        address _rewardsToken,
+        address _daoTreasury
+    ) LiquidityMining(_rewardsToken, _daoTreasury) {
         depositToken = IERC20(_depositToken);
     }
 
@@ -31,7 +32,7 @@ contract SampleLiquidityMining is LiquidityMining {
         _startMining(rewardsFrom, amount, endTime);
     }
 
-    function stopMining(address reimbursementTo) external override {
-        _stopMining(reimbursementTo);
+    function stopMining() external override {
+        _stopMining();
     }
 }

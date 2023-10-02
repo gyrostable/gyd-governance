@@ -9,8 +9,9 @@ contract LockedVaultWithThreshold is LockedVault, VaultWithThreshold {
         address _owner,
         address _underlying,
         address _rewardsToken,
-        uint256 _threshold
-    ) LockedVault(_owner, _underlying, _rewardsToken) {
+        uint256 _threshold,
+        address _daoTreasury
+    ) LockedVault(_owner, _underlying, _rewardsToken, _daoTreasury) {
         threshold = _threshold;
     }
 }
