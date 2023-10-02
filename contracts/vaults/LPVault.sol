@@ -6,8 +6,11 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "../../interfaces/ILockingVault.sol";
+
 import "../../libraries/DataTypes.sol";
+import "../../libraries/ScaledMath.sol";
 import "../../libraries/VotingPowerHistory.sol";
+
 import "../access/ImmutableOwner.sol";
 import "../LiquidityMining.sol";
 import "./BaseDelegatingVault.sol";
@@ -78,14 +81,16 @@ contract LPVault is
         require(_delegate != address(0), "no delegation to 0");
         require(_tokenAmount > 0, "cannot deposit zero amount");
 
+        lpToken.transferFrom(msg.sender, address(this), _tokenAmount);
+
+        VotingPowerHistory.Record memory current = history.currentRecord(
+            msg.sender
+        );
+
+        // internal accounting is done with 18 decimals
         uint256 scaledAmount = _tokenAmount.changeScale(
             _underlyingDecimals,
             18
-        );
-
-        lpToken.transferFrom(msg.sender, address(this), _tokenAmount);
-        VotingPowerHistory.Record memory current = history.currentRecord(
-            msg.sender
         );
         history.updateVotingPower(
             msg.sender,
