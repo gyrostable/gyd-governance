@@ -28,7 +28,7 @@ contract LockedVault is
 
     string internal constant _VAULT_TYPE = "LockedVault";
 
-    IERC20 public immutable lpToken;
+    IERC20 public immutable underlying;
     uint256 internal withdrawalWaitDuration;
 
     // Mapping of a user's address to their pending withdrawal ids.
@@ -45,11 +45,11 @@ contract LockedVault is
 
     constructor(
         address _owner,
-        address _lpToken,
+        address _underlying,
         address _rewardsToken
     ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
-        lpToken = IERC20(_lpToken);
-        _underlyingDecimals = IERC20Metadata(_lpToken).decimals();
+        underlying = IERC20(_underlying);
+        _underlyingDecimals = IERC20Metadata(_underlying).decimals();
     }
 
     function initialize(uint256 _withdrawalWaitDuration) external initializer {
@@ -81,7 +81,7 @@ contract LockedVault is
         require(_delegate != address(0), "no delegation to 0");
         require(_tokenAmount > 0, "cannot deposit zero amount");
 
-        lpToken.transferFrom(msg.sender, address(this), _tokenAmount);
+        underlying.transferFrom(msg.sender, address(this), _tokenAmount);
 
         VotingPowerHistory.Record memory current = history.currentRecord(
             msg.sender
@@ -118,7 +118,7 @@ contract LockedVault is
 
         bool undelegating = _delegate != address(0) && _delegate != msg.sender;
 
-        // NOTE: voting power in LP vault always has a multiplier of 1e18 (default on initialization) and is never updated
+        // NOTE: voting power in locked vault always has a multiplier of 1e18 (default on initialization) and is never updated
         // therefore, we do not need to worry about it in the calculation of the condition below
         require(
             currentVotingPower.baseVotingPower >= _vaultTokenAmount &&
@@ -178,7 +178,7 @@ contract LockedVault is
             _underlyingDecimals
         );
 
-        lpToken.transfer(pending.to, underlyingTokenAmount);
+        underlying.transfer(pending.to, underlyingTokenAmount);
 
         delete pendingWithdrawals[withdrawalId];
         userPendingWithdrawalIds[pending.to].remove(withdrawalId);

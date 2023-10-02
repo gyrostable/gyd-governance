@@ -4,11 +4,12 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 import "../../interfaces/IVault.sol";
+import "./VaultWithThreshold.sol";
 import "../../libraries/ScaledMath.sol";
 import "../access/ImmutableOwner.sol";
 import "./BaseVault.sol";
 
-contract AggregateLPVault is BaseVault, ImmutableOwner {
+contract AggregateLPVault is BaseVault, VaultWithThreshold, ImmutableOwner {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using ScaledMath for uint256;
 
@@ -20,8 +21,6 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
     }
 
     EnumerableMap.AddressToUintMap internal vaultsToWeights;
-
-    uint256 internal threshold;
 
     constructor(
         address _owner,
@@ -57,10 +56,6 @@ contract AggregateLPVault is BaseVault, ImmutableOwner {
             (address key, ) = vaultsToWeights.at(0);
             vaultsToWeights.remove(key);
         }
-    }
-
-    function setThreshold(uint256 _threshold) external onlyOwner {
-        threshold = _threshold;
     }
 
     function getRawVotingPower(
