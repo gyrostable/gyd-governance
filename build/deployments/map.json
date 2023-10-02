@@ -17,6 +17,12 @@
     "AggregateLPVault": [
       "0xf957eDC629fa6315ce4936bdb670AD01B23b783f"
     ],
+    "CouncillorNFT": [
+      "0x3E0BF3C13E5857A5eeC7D606e9708Cc5cD6c77d0"
+    ],
+    "CouncillorNFTVault": [
+      "0xe6c89BeE3ad08A9646501Cd1bf22a24534CB9f1C"
+    ],
     "ERC20Mintable": [
       "0x0FD3394D7097B79Bf3BE4dabB308b106FE316930"
     ],
@@ -44,8 +50,8 @@
     ],
     "StaticTierStrategy": [
       "0xD9784550a1403F48B3CD2a189eE540539794DCB9",
-      "0x219A465F3fd976b54c6caC62fF61EA55B9A63Ac1",
-      "0x1266423F8952F0021b3400D70027070Ec163106b"
+      "0x1266423F8952F0021b3400D70027070Ec163106b",
+      "0x219A465F3fd976b54c6caC62fF61EA55B9A63Ac1"
     ],
     "TransparentUpgradeableProxy": [
       "0xcb714d5D7b17c4d68823345F3919c40332FfE3B9",
