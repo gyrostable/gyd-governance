@@ -216,7 +216,7 @@ def governance_manager(
         governance_manager_proxy.address, owner=admin
     )
     init_data = governance_manager_impl.initializeUpgradeabilityParams.encode_input(
-        bounded_erc20, (10, 10**16, upgradeability_tier_strategy)
+        bounded_erc20, (10, 10**16, 0, upgradeability_tier_strategy)
     )
     gov_manager.executeCall(gov_manager, init_data, {"from": admin})
     return gov_manager
