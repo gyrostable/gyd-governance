@@ -93,6 +93,7 @@ contract GovernanceManager is Initializable {
         // As a result, we should apply a higher tier if the proposed action has big impacts.
         if (
             address(bGYD) != address(0) &&
+            bGYD.totalSupply() >= limitUpgradeabilityParams.minBGYDSupply &&
             bGYD.boundedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
             tier.actionLevel > limitUpgradeabilityParams.actionLevelThreshold
         ) {

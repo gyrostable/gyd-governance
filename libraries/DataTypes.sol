@@ -108,6 +108,7 @@ library DataTypes {
     struct LimitUpgradeabilityParameters {
         uint8 actionLevelThreshold;
         uint256 emaThreshold;
+        uint256 minBGYDSupply;
         ITierStrategy tierStrategy;
     }
 
