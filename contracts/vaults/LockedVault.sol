@@ -46,8 +46,9 @@ contract LockedVault is
     constructor(
         address _owner,
         address _underlying,
-        address _rewardsToken
-    ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken) {
+        address _rewardsToken,
+        address _daoTreasury
+    ) ImmutableOwner(_owner) LiquidityMining(_rewardsToken, _daoTreasury) {
         underlying = IERC20(_underlying);
         _underlyingDecimals = IERC20Metadata(_underlying).decimals();
     }
@@ -65,8 +66,8 @@ contract LockedVault is
         _startMining(rewardsFrom, amount, endTime);
     }
 
-    function stopMining(address reimbursementTo) external override onlyOwner {
-        _stopMining(reimbursementTo);
+    function stopMining() external override onlyOwner {
+        _stopMining();
     }
 
     function setWithdrawalWaitDuration(uint256 _duration) external onlyOwner {

@@ -8,18 +8,18 @@ DURATION_SECONDS = 60 * 60
 
 
 @pytest.fixture
-def locked_vault(token, admin, ERC20Mintable):
+def locked_vault(token, admin, treasury, ERC20Mintable):
     reward_token = admin.deploy(ERC20Mintable)
-    vault = admin.deploy(LockedVault, admin, token, reward_token)
+    vault = admin.deploy(LockedVault, admin, token, reward_token, treasury)
     vault.initialize(DURATION_SECONDS)
     return vault
 
 
 @pytest.fixture
-def locked_vault_6_decimals(token, admin, ERC20Mintable):
+def locked_vault_6_decimals(token, admin, treasury, ERC20Mintable):
     token.changeDecimals(6)
     reward_token = admin.deploy(ERC20Mintable)
-    vault = admin.deploy(LockedVault, admin, token, reward_token)
+    vault = admin.deploy(LockedVault, admin, token, reward_token, treasury)
     vault.initialize(DURATION_SECONDS)
     return vault
 

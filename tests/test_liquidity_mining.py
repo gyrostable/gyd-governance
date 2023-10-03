@@ -4,9 +4,9 @@ from tests.support.utils import scale
 
 
 @pytest.fixture(scope="module")
-def lm(SampleLiquidityMining, ERC20Mintable, token, admin, chain):
+def lm(SampleLiquidityMining, ERC20Mintable, token, admin, treasury, chain):
     reward_token = admin.deploy(ERC20Mintable)
-    lm = admin.deploy(SampleLiquidityMining, token, reward_token)
+    lm = admin.deploy(SampleLiquidityMining, token, reward_token, treasury)
     reward_token.approve(lm, 2**256 - 1, {"from": admin})
     reward_token.mint(admin, scale(1_000_000), {"from": admin})
     lm.startMining(

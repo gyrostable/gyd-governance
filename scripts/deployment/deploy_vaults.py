@@ -15,7 +15,7 @@ from brownie import (
     chain,
 )
 
-from scripts.constants import COUNCILLOR_NFT_MAX_SUPPLY, GYFI_TOKEN_ADDRESS  # type: ignore
+from scripts.constants import COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS  # type: ignore
 from scripts.utils import get_deployer, make_params
 
 
@@ -32,7 +32,12 @@ def mock():
 def locked_vault(lp_token):
     deployer = get_deployer()
     vault = deployer.deploy(
-        LockedVault, deployer, lp_token, GYFI_TOKEN_ADDRESS[chain.id], **make_params()
+        LockedVault,
+        deployer,
+        lp_token,
+        GYFI_TOKEN_ADDRESS[chain.id],
+        DAO_TREASURY[chain.id],
+        **make_params()
     )
     deployer.deploy(
         TransparentUpgradeableProxy,

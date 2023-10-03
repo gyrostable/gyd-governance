@@ -122,6 +122,11 @@ def charlie(accounts):
 
 
 @pytest.fixture(scope="session")
+def treasury(accounts):
+    return accounts[8]
+
+
+@pytest.fixture(scope="session")
 def dummy_dao_addresses():
     return [
         "0xa7588b0d49cB5B9e7447aaBe6299F2EaB83Cf55A",

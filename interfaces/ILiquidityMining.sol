@@ -43,6 +43,7 @@ interface ILiquidityMining {
         uint256 endTime
     ) external;
 
-    /// @notice Stop liquidity mining early and reimburse leftover rewards to `reimbursementTo`. This may also be needed after the mining period has ended when we had `totalStaked() == 0` for a while, where no rewards accrue.
-    function stopMining(address reimbursementTo) external;
+    /// @notice Stop liquidity mining early and reimburse leftover rewards to the DAO treasury.
+    /// This may also be needed after the mining period has ended when we had `totalStaked() == 0` for a while, where no rewards accrue.
+    function stopMining() external;
 }
