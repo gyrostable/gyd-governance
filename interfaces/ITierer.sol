@@ -7,5 +7,5 @@ interface ITierer {
     function getTier(
         address _contract,
         bytes calldata payload
-    ) external returns (DataTypes.Tier memory);
+    ) external view returns (DataTypes.Tier memory);
 }

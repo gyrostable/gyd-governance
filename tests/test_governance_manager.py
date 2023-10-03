@@ -43,7 +43,7 @@ def test_create_proposal(governance_manager, admin):
     aps = governance_manager.listActiveProposals()
     assert len(aps) == 1
 
-    assert aps[0][7] == 1  # check status, active = 1
+    assert aps[0][8] == 1  # check status, active = 1
 
     createdProposal = aps[0]
     assert tx.events["ProposalCreated"]["id"] == createdProposal[5]
