@@ -1,4 +1,5 @@
-from typing import NamedTuple
+import re
+from typing import List, NamedTuple, Union
 
 import eth_keys
 import pytest
@@ -16,15 +17,59 @@ from brownie import (
 )
 from eip712.messages import EIP712Message
 from eth_abi import encode
-from eth_abi.packed import encode_packed
-from eth_account._utils.signing import sign_message_hash
 from eth_utils import keccak
 from hexbytes import HexBytes
+
+from eth_utils.abi import function_signature_to_4byte_selector
+from eth_abi.abi import encode_abi
+
+
+class ProposalAction(NamedTuple):
+    target: int
+    data: Union[str, bytes]
+
+    @classmethod
+    def function_call(cls, target, function_name, *args):
+        data = "0x" + function_signature_to_4byte_selector(function_name).hex()
+        m = re.match(r"^\w+\((.*)\)$", function_name)
+        if m and args:
+            arg_types = m.group(1).split(",")
+            data += encode_abi(arg_types, args).hex()
+        return cls(target, data)
+
+
+class VoteTotals(NamedTuple):
+    for_: list
+    against: list
+    abstentions: list
+
+
+class ProposalStatus:
+    Undefined = 0
+    Active = 1
+    Rejected = 2
+    Queued = 3
+    Executed = 4
+    Vetoed = 5
+
+
+class Proposal(NamedTuple):
+    createdAt: int
+    executableAt: int
+    votingEndsAt: int
+    voteThreshold: int
+    quorum: int
+    id: int
+    proposer: str
+    status: int
+    actions: List[ProposalAction]
+
 
 UNDEFINED_BALLOT = 0
 FOR_BALLOT = 1
 AGAINST_BALLOT = 2
 ABSTAIN_BALLOT = 3
+
 
 PROPOSAL_LENGTH_DURATION = 20
 TIMELOCKED_DURATION = 20
@@ -127,6 +172,11 @@ def treasury(accounts):
 
 
 @pytest.fixture(scope="session")
+def multisig(accounts):
+    return accounts[9]
+
+
+@pytest.fixture(scope="session")
 def dummy_dao_addresses():
     return [
         "0xa7588b0d49cB5B9e7447aaBe6299F2EaB83Cf55A",
@@ -186,9 +236,12 @@ def governance_manager_impl(
     admin,
     TestingGovernanceManager,
     voting_power_aggregator,
+    multisig,
     mock_tierer,
 ):
-    return admin.deploy(TestingGovernanceManager, voting_power_aggregator, mock_tierer)
+    return admin.deploy(
+        TestingGovernanceManager, multisig, voting_power_aggregator, mock_tierer
+    )
 
 
 @pytest.fixture(scope="module")
@@ -220,7 +273,7 @@ def governance_manager(
     gov_manager = TestingGovernanceManager.at(
         governance_manager_proxy.address, owner=admin
     )
-    init_data = governance_manager_impl.initializeUpgradeabilityParams.encode_input(
+    init_data = governance_manager_impl.initialize.encode_input(
         bounded_erc20, (10, 10**16, 0, upgradeability_tier_strategy)
     )
     gov_manager.executeCall(gov_manager, init_data, {"from": admin})

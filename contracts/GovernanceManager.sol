@@ -24,8 +24,13 @@ contract GovernanceManager is Initializable {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using VaultsSnapshot for DataTypes.VaultSnapshot[];
 
+    uint256 internal constant _MULTISIG_SUNSET_PERIOD = 90 days;
+
+    address public immutable multisig;
     IVotingPowerAggregator public immutable votingPowerAggregator;
     ITierer public immutable tierer;
+
+    uint256 public multisigSunsetAt;
     IBoundedERC20WithEMA public bGYD;
     DataTypes.LimitUpgradeabilityParameters public limitUpgradeabilityParams;
 
@@ -46,20 +51,30 @@ contract GovernanceManager is Initializable {
         _;
     }
 
+    modifier onlyMultisig() {
+        if (msg.sender != multisig)
+            revert Errors.NotAuthorized(msg.sender, multisig);
+        if (block.timestamp >= multisigSunsetAt) revert Errors.MultisigSunset();
+        _;
+    }
+
     constructor(
+        address _multisig,
         IVotingPowerAggregator _votingPowerAggregator,
         ITierer _tierer
     ) {
+        multisig = _multisig;
         votingPowerAggregator = _votingPowerAggregator;
         tierer = _tierer;
     }
 
-    function initializeUpgradeabilityParams(
+    function initialize(
         IBoundedERC20WithEMA _wGYD,
         DataTypes.LimitUpgradeabilityParameters memory _params
     ) external initializer onlySelf {
         bGYD = _wGYD;
         limitUpgradeabilityParams = _params;
+        multisigSunsetAt = block.timestamp + _MULTISIG_SUNSET_PERIOD;
     }
 
     event ProposalCreated(
@@ -250,7 +265,8 @@ contract GovernanceManager is Initializable {
         require(proposal.createdAt != 0, "proposal does not exist");
 
         require(
-            _activeProposals.contains(uint256(proposalId)),
+            proposal.status == DataTypes.Status.Active &&
+                _activeProposals.contains(uint256(proposalId)),
             "proposal is not currently active"
         );
 
@@ -346,7 +362,8 @@ contract GovernanceManager is Initializable {
         }
 
         require(
-            _timelockedProposals.contains(uint256(proposalId)) &&
+            proposal.status == DataTypes.Status.Queued &&
+                _timelockedProposals.contains(uint256(proposalId)) &&
                 uint64(block.timestamp) > proposal.executableAt,
             "proposal must be queued and ready to execute"
         );
@@ -362,11 +379,69 @@ contract GovernanceManager is Initializable {
         emit ProposalExecuted(proposalId);
     }
 
+    function createAndExecuteProposal(
+        DataTypes.ProposalAction[] calldata actions
+    ) external onlyMultisig {
+        uint24 proposalId = proposalsCount++;
+        DataTypes.Proposal storage p = _proposals[proposalId];
+        p.id = proposalId;
+        p.proposer = msg.sender;
+        p.createdAt = uint64(block.timestamp);
+        p.votingEndsAt = uint64(block.timestamp);
+        p.executableAt = uint64(block.timestamp);
+        p.status = DataTypes.Status.Executed;
+        p.quorum = 0;
+        p.voteThreshold = 0;
+
+        for (uint256 i = 0; i < actions.length; i++) {
+            DataTypes.ProposalAction memory action = actions[i];
+            p.actions.push(action);
+            action.target.functionCall(
+                action.data,
+                "proposal execution failed"
+            );
+        }
+        emit ProposalCreated(proposalId, msg.sender, actions);
+        emit ProposalExecuted(proposalId);
+    }
+
+    event ProposalVetoed(uint24 indexed proposalId);
+
+    function vetoProposal(uint24 proposalId) external onlyMultisig {
+        DataTypes.Proposal storage proposal = _proposals[proposalId];
+        require(proposal.createdAt > 0, "proposal does not exist");
+
+        require(
+            proposal.status == DataTypes.Status.Active ||
+                proposal.status == DataTypes.Status.Queued,
+            "proposal must be active or queued"
+        );
+
+        proposal.status = DataTypes.Status.Vetoed;
+        _activeProposals.remove(uint256(proposalId));
+        _timelockedProposals.remove(uint256(proposalId));
+
+        emit ProposalVetoed(proposalId);
+    }
+
+    event MultisigSunset();
+
+    function sunsetMultisig() external onlySelf {
+        multisigSunsetAt = block.timestamp;
+        emit MultisigSunset();
+    }
+
     function getBallot(
         address voter,
         uint24 proposalId
     ) external view returns (DataTypes.Ballot) {
         return _votes[voter][proposalId];
+    }
+
+    function getProposal(
+        uint24 proposalId
+    ) external view returns (DataTypes.Proposal memory) {
+        return _proposals[proposalId];
     }
 
     function updateLimitUpgradeabilityParams(

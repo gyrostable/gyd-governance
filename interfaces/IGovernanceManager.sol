@@ -27,6 +27,10 @@ interface IGovernanceManager {
         uint24 proposalId
     ) external view returns (DataTypes.Ballot);
 
+    function getProposal(
+        uint24 proposalId
+    ) external view returns (DataTypes.Proposal memory);
+
     function listActiveProposals()
         external
         view
