@@ -29,15 +29,15 @@ contract GovernanceManager is Initializable {
     IBoundedERC20WithEMA public bGYD;
     DataTypes.LimitUpgradeabilityParameters public limitUpgradeabilityParams;
 
-    uint24 public proposalsCount;
+    uint16 public proposalsCount;
 
     EnumerableSet.UintSet internal _activeProposals;
     EnumerableSet.UintSet internal _timelockedProposals;
-    mapping(uint24 => DataTypes.Proposal) internal _proposals;
-    mapping(uint24 => DataTypes.VaultSnapshot[]) internal _vaultSnapshots;
+    mapping(uint16 => DataTypes.Proposal) internal _proposals;
+    mapping(uint16 => DataTypes.VaultSnapshot[]) internal _vaultSnapshots;
 
-    mapping(address => mapping(uint24 => DataTypes.Ballot)) internal _votes;
-    mapping(uint24 => mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap))
+    mapping(address => mapping(uint16 => DataTypes.Ballot)) internal _votes;
+    mapping(uint16 => mapping(DataTypes.Ballot => EnumerableMap.AddressToUintMap))
         internal _totals;
 
     modifier onlySelf() {
@@ -63,7 +63,7 @@ contract GovernanceManager is Initializable {
     }
 
     event ProposalCreated(
-        uint24 indexed id,
+        uint16 indexed id,
         address proposer,
         DataTypes.ProposalAction[] actions
     );
@@ -73,31 +73,13 @@ contract GovernanceManager is Initializable {
     ) external {
         require(actions.length > 0, "cannot create a proposal with no actions");
 
-        // Determine the tier associated with this proposal by taking the tier of the most impactful
-        // action, determined by the tier's actionLevel parameter.
-        DataTypes.ProposalAction memory action = actions[0];
-        DataTypes.Tier memory tier = tierer.getTier(action.target, action.data);
-        for (uint256 i = 1; i < actions.length; i++) {
-            DataTypes.Tier memory currentTier = tierer.getTier(
-                actions[i].target,
-                actions[i].data
-            );
-            if (currentTier.actionLevel > tier.actionLevel) {
-                action = actions[i];
-                tier = currentTier;
-            }
-        }
+        DataTypes.Tier memory tier = _getTier(actions);
 
         // If a sufficiently large amount of GYD is bounded, this signifies that holders
         // are happy with the system and are against further high-level upgrades.
         // As a result, we should apply a higher tier if the proposed action has big impacts.
-        if (
-            address(bGYD) != address(0) &&
-            bGYD.totalSupply() >= limitUpgradeabilityParams.minBGYDSupply &&
-            bGYD.boundedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
-            tier.actionLevel > limitUpgradeabilityParams.actionLevelThreshold
-        ) {
-            tier = limitUpgradeabilityParams.tierStrategy.getTier(action.data);
+        if (_isUpgradeabilityLimited(tier.actionLevel)) {
+            tier = _getLimitUpgradeabilityTier();
         }
 
         DataTypes.VaultVotingPower[] memory rawPower = votingPowerAggregator
@@ -117,6 +99,7 @@ contract GovernanceManager is Initializable {
         p.id = proposalsCount;
         p.proposer = msg.sender;
         p.createdAt = createdAt;
+        p.actionLevel = tier.actionLevel;
         p.votingEndsAt = votingEndsAt;
         p.executableAt = executableAt;
         p.status = DataTypes.Status.Active;
@@ -138,12 +121,12 @@ contract GovernanceManager is Initializable {
     }
 
     event VoteCast(
-        uint24 indexed proposalId,
+        uint16 indexed proposalId,
         address voter,
         DataTypes.Ballot vote
     );
 
-    function vote(uint24 proposalId, DataTypes.Ballot ballot) external {
+    function vote(uint16 proposalId, DataTypes.Ballot ballot) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt != 0, "proposal does not exist");
         require(block.timestamp > proposal.createdAt, "voting has not started");
@@ -201,7 +184,7 @@ contract GovernanceManager is Initializable {
     }
 
     function getVoteTotals(
-        uint24 proposalId
+        uint16 proposalId
     ) external view returns (DataTypes.VoteTotals memory) {
         return _toVoteTotals(_totals[proposalId]);
     }
@@ -240,12 +223,12 @@ contract GovernanceManager is Initializable {
     }
 
     event ProposalTallied(
-        uint24 indexed proposalId,
+        uint16 indexed proposalId,
         DataTypes.Status status,
         DataTypes.ProposalOutcome outcome
     );
 
-    function tallyVote(uint24 proposalId) external {
+    function tallyVote(uint16 proposalId) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt != 0, "proposal does not exist");
 
@@ -265,10 +248,18 @@ contract GovernanceManager is Initializable {
             uint256 abstentionsTotalPct
         ) = _getCurrentPercentages(proposal);
 
+        uint256 quorum = proposal.quorum;
+        uint256 voteThreshold = proposal.voteThreshold;
+        if (_isUpgradeabilityLimited(proposal.actionLevel)) {
+            DataTypes.Tier memory tier = _getLimitUpgradeabilityTier();
+            quorum = tier.quorum;
+            voteThreshold = tier.voteThreshold;
+        }
+
         uint256 combinedPct = forTotalPct +
             againstTotalPct +
             abstentionsTotalPct;
-        if (combinedPct < proposal.quorum) {
+        if (combinedPct < quorum) {
             proposal.status = DataTypes.Status.Rejected;
             _activeProposals.remove(uint256(proposalId));
             emit ProposalTallied(
@@ -284,7 +275,7 @@ contract GovernanceManager is Initializable {
             result = forTotalPct.divDown(forTotalPct + againstTotalPct);
         }
         DataTypes.ProposalOutcome outcome = DataTypes.ProposalOutcome.Undefined;
-        if (result >= proposal.voteThreshold) {
+        if (result >= voteThreshold) {
             proposal.status = DataTypes.Status.Queued;
             outcome = DataTypes.ProposalOutcome.Successful;
             _timelockedProposals.add(uint256(proposalId));
@@ -297,7 +288,7 @@ contract GovernanceManager is Initializable {
     }
 
     function getCurrentPercentages(
-        uint24 proposalId
+        uint16 proposalId
     ) external view returns (uint256 for_, uint256 against, uint256 abstain) {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt != 0, "proposal does not exist");
@@ -337,9 +328,9 @@ contract GovernanceManager is Initializable {
         return vvps;
     }
 
-    event ProposalExecuted(uint24 indexed proposalId);
+    event ProposalExecuted(uint16 indexed proposalId);
 
-    function executeProposal(uint24 proposalId) external {
+    function executeProposal(uint16 proposalId) external {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         if (proposal.createdAt == uint64(0)) {
             revert("proposal does not exist");
@@ -364,7 +355,7 @@ contract GovernanceManager is Initializable {
 
     function getBallot(
         address voter,
-        uint24 proposalId
+        uint16 proposalId
     ) external view returns (DataTypes.Ballot) {
         return _votes[voter][proposalId];
     }
@@ -397,7 +388,7 @@ contract GovernanceManager is Initializable {
         uint256 len = ids.length;
         DataTypes.Proposal[] memory proposals = new DataTypes.Proposal[](len);
         for (uint256 i = 0; i < len; i++) {
-            proposals[i] = _proposals[uint24(ids[i])];
+            proposals[i] = _proposals[uint16(ids[i])];
         }
         return proposals;
     }
@@ -411,5 +402,42 @@ contract GovernanceManager is Initializable {
             vaultAddresses[i] = vaultSnapshots[i].vaultAddress;
         }
         return vaultAddresses;
+    }
+
+    function _getTier(
+        DataTypes.ProposalAction[] memory actions
+    ) internal view returns (DataTypes.Tier memory tier) {
+        // Determine the tier associated with this proposal by taking the tier of the most impactful
+        // action, determined by the tier's actionLevel parameter.
+        DataTypes.ProposalAction memory action = actions[0];
+        tier = tierer.getTier(action.target, action.data);
+        for (uint256 i = 1; i < actions.length; i++) {
+            DataTypes.Tier memory currentTier = tierer.getTier(
+                actions[i].target,
+                actions[i].data
+            );
+            if (currentTier.actionLevel > tier.actionLevel) {
+                tier = currentTier;
+            }
+        }
+    }
+
+    function _isUpgradeabilityLimited(
+        uint8 actionLevel
+    ) internal view returns (bool) {
+        return
+            address(bGYD) != address(0) &&
+            bGYD.totalSupply() >= limitUpgradeabilityParams.minBGYDSupply &&
+            bGYD.boundedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
+            actionLevel > limitUpgradeabilityParams.actionLevelThreshold;
+    }
+
+    function _getLimitUpgradeabilityTier()
+        internal
+        view
+        returns (DataTypes.Tier memory)
+    {
+        // NOTE: tierStrategy is always static, so the calldata is unused
+        return limitUpgradeabilityParams.tierStrategy.getTier("");
     }
 }

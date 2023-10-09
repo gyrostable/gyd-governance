@@ -24,7 +24,8 @@ library DataTypes {
         uint64 votingEndsAt;
         uint64 voteThreshold;
         uint64 quorum;
-        uint24 id;
+        uint16 id;
+        uint8 actionLevel;
         address proposer;
         Status status;
         ProposalAction[] actions;
