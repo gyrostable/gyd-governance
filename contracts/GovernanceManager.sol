@@ -12,12 +12,13 @@ import "../libraries/VaultsSnapshot.sol";
 import "../libraries/Errors.sol";
 
 import "../interfaces/IVault.sol";
+import "../interfaces/IGovernanceManager.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 import "../interfaces/ITierer.sol";
 import "../interfaces/ITierStrategy.sol";
 import "../interfaces/IBoundedERC20WithEMA.sol";
 
-contract GovernanceManager is Initializable {
+contract GovernanceManager is IGovernanceManager, Initializable {
     using Address for address;
     using ScaledMath for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -85,7 +86,7 @@ contract GovernanceManager is Initializable {
 
     function createProposal(
         DataTypes.ProposalAction[] calldata actions
-    ) external {
+    ) external override {
         require(actions.length > 0, "cannot create a proposal with no actions");
 
         DataTypes.Tier memory tier = _getTier(actions);
@@ -141,7 +142,10 @@ contract GovernanceManager is Initializable {
         DataTypes.Ballot vote
     );
 
-    function vote(uint16 proposalId, DataTypes.Ballot ballot) external {
+    function vote(
+        uint16 proposalId,
+        DataTypes.Ballot ballot
+    ) external override {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt != 0, "proposal does not exist");
         require(block.timestamp > proposal.createdAt, "voting has not started");
@@ -200,7 +204,7 @@ contract GovernanceManager is Initializable {
 
     function getVoteTotals(
         uint16 proposalId
-    ) external view returns (DataTypes.VoteTotals memory) {
+    ) external view override returns (DataTypes.VoteTotals memory) {
         return _toVoteTotals(_totals[proposalId]);
     }
 
@@ -243,7 +247,7 @@ contract GovernanceManager is Initializable {
         DataTypes.ProposalOutcome outcome
     );
 
-    function tallyVote(uint16 proposalId) external {
+    function tallyVote(uint16 proposalId) external override {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt != 0, "proposal does not exist");
 
@@ -305,7 +309,12 @@ contract GovernanceManager is Initializable {
 
     function getCurrentPercentages(
         uint16 proposalId
-    ) external view returns (uint256 for_, uint256 against, uint256 abstain) {
+    )
+        external
+        view
+        override
+        returns (uint256 for_, uint256 against, uint256 abstain)
+    {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt != 0, "proposal does not exist");
         return _getCurrentPercentages(proposal);
@@ -346,7 +355,7 @@ contract GovernanceManager is Initializable {
 
     event ProposalExecuted(uint16 indexed proposalId);
 
-    function executeProposal(uint16 proposalId) external {
+    function executeProposal(uint16 proposalId) external override {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         if (proposal.createdAt == uint64(0)) {
             revert("proposal does not exist");
@@ -373,7 +382,7 @@ contract GovernanceManager is Initializable {
     function createAndExecuteProposal(
         DataTypes.ProposalAction[] calldata actions
     ) external onlyMultisig {
-        uint24 proposalId = proposalsCount++;
+        uint16 proposalId = proposalsCount++;
         DataTypes.Proposal storage p = _proposals[proposalId];
         p.id = proposalId;
         p.proposer = msg.sender;
@@ -396,9 +405,9 @@ contract GovernanceManager is Initializable {
         emit ProposalExecuted(proposalId);
     }
 
-    event ProposalVetoed(uint24 indexed proposalId);
+    event ProposalVetoed(uint16 indexed proposalId);
 
-    function vetoProposal(uint24 proposalId) external onlyMultisig {
+    function vetoProposal(uint16 proposalId) external onlyMultisig {
         DataTypes.Proposal storage proposal = _proposals[proposalId];
         require(proposal.createdAt > 0, "proposal does not exist");
 
@@ -430,7 +439,7 @@ contract GovernanceManager is Initializable {
     }
 
     function getProposal(
-        uint24 proposalId
+        uint16 proposalId
     ) external view returns (DataTypes.Proposal memory) {
         return _proposals[proposalId];
     }

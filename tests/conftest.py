@@ -60,6 +60,7 @@ class Proposal(NamedTuple):
     voteThreshold: int
     quorum: int
     id: int
+    action_level: int
     proposer: str
     status: int
     actions: List[ProposalAction]
