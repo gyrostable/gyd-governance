@@ -1,5 +1,8 @@
+from contextlib import contextmanager
 from decimal import Decimal, ROUND_FLOOR
 from typing import Iterable, List, NamedTuple, Union, overload
+from brownie.test.managers.runner import RevertContextManager as reverts
+from web3 import Web3
 
 DecimalLike = Union[int, str, Decimal]
 
@@ -48,3 +51,10 @@ def scale(x, decimals=18):
 
 def scale_scalar(x: DecimalLike, decimals: int = 18) -> Decimal:
     return (to_decimal(x) * 10**decimals).quantize(0, rounding=ROUND_FLOOR)
+
+
+@contextmanager
+def typed_reverts(error_type: str):
+    error_selector = Web3.keccak(text=error_type)[0:4].hex()
+    with reverts(revert_pattern=f"typed error: {error_selector}.*"):
+        yield

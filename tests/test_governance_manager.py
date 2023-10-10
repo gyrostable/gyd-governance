@@ -1,9 +1,5 @@
-from typing import NamedTuple, Union
-
-import pytest
 from brownie import chain
 from brownie.test.managers.runner import RevertContextManager as reverts
-from eth_utils.abi import function_signature_to_4byte_selector
 
 from tests.conftest import (
     ABSTAIN_BALLOT,
@@ -15,29 +11,17 @@ from tests.conftest import (
     THRESHOLD_NOT_MET_OUTCOME,
     TIMELOCKED_DURATION,
     UNDEFINED_BALLOT,
+    Proposal,
+    ProposalAction,
+    ProposalStatus,
     Tier,
+    VoteTotals,
 )
-
-
-class ProposalAction(NamedTuple):
-    target: int
-    data: Union[str, bytes]
-
-    @classmethod
-    def nullary_function(cls, target, function_name, *args):
-        return cls(
-            target, "0x" + function_signature_to_4byte_selector(function_name).hex()
-        )
-
-
-class VoteTotals(NamedTuple):
-    for_: list
-    against: list
-    abstentions: list
+from tests.support.utils import typed_reverts
 
 
 def test_create_proposal(governance_manager, admin):
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
 
     aps = governance_manager.listActiveProposals()
@@ -55,7 +39,7 @@ def test_create_proposal_without_sufficient_voting_power(
 ):
     mock_vault.updateVotingPower(admin, 1e18)
     chain.sleep(1)
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     with reverts("proposer doesn't have enough voting power to propose this action"):
         governance_manager.createProposal([proposal])
 
@@ -66,7 +50,7 @@ def test_vote_on_proposal_which_doesnt_exist(governance_manager, admin):
 
 
 def test_vote_on_inactive_proposal(governance_manager, admin):
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
 
     proposal_duration = PROPOSAL_LENGTH_DURATION + 1
@@ -78,14 +62,14 @@ def test_vote_on_inactive_proposal(governance_manager, admin):
 
 
 def test_instant_vote(governance_manager, admin):
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     with reverts("voting has not started"):
         governance_manager.vote(tx.events["ProposalCreated"]["id"], AGAINST_BALLOT)
 
 
 def test_invalid_vote(governance_manager, admin, chain):
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     with reverts("ballot must be cast For, Against, or Abstain"):
@@ -94,7 +78,7 @@ def test_invalid_vote(governance_manager, admin, chain):
 
 def test_vote(mock_vault, governance_manager, admin):
     mv = mock_vault
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -109,7 +93,7 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
     mock_vault, governance_manager, admin
 ):
     mv = mock_vault
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -125,7 +109,7 @@ def test_vote_doesnt_double_count_if_vote_is_changed(
 
 
 def test_tally(governance_manager, raising_token):
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -156,7 +140,7 @@ def test_tally(governance_manager, raising_token):
 
 
 def test_tally_vote_doesnt_succeed(governance_manager, raising_token):
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -177,7 +161,7 @@ def test_tally_vote_doesnt_meet_quorum(
     chain.sleep(1)
     chain.mine()
     print(mock_vault.getRawVotingPower(admin) / mock_vault.getTotalRawVotingPower())
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -192,7 +176,7 @@ def test_tally_vote_doesnt_meet_quorum(
 
 
 def test_tally_vote_abstentions_contribute_to_quorum(governance_manager, raising_token):
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -212,7 +196,7 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
     admin,
     accounts,
 ):
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -232,7 +216,7 @@ def test_tally_result_determined_by_for_and_against_not_abstentions(
 
 
 def test_tally_inactive_proposal(governance_manager, raising_token):
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -250,7 +234,7 @@ def test_tally_inactive_proposal(governance_manager, raising_token):
 
 
 def test_tally_ongoing_proposal(governance_manager, raising_token):
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     chain.sleep(1)
     propId = tx.events["ProposalCreated"]["id"]
@@ -266,7 +250,7 @@ def test_tally_proposal_doesnt_exist(governance_manager):
 
 
 def test_execute_must_be_queued(governance_manager, raising_token):
-    proposal = ProposalAction.nullary_function(raising_token, "totalSupply()")
+    proposal = ProposalAction.function_call(raising_token, "totalSupply()")
     tx = governance_manager.createProposal([proposal])
     propId = tx.events["ProposalCreated"]["id"]
 
@@ -277,7 +261,7 @@ def test_execute_must_be_queued(governance_manager, raising_token):
 def test_uses_override_tier_if_enough_gyd_is_bounded(
     admin, governance_manager, bounded_erc20, token
 ):
-    proposal = ProposalAction.nullary_function(governance_manager, "upgradeTo()")
+    proposal = ProposalAction.function_call(governance_manager, "upgradeTo()")
     tx = governance_manager.createProposal([proposal])
 
     prop = governance_manager.listActiveProposals()[-1]
@@ -312,8 +296,8 @@ def test_uses_highest_tier_if_multiple_proposals_made(
     mock_tierer.setOverride(governance_manager, strict_tier)
 
     proposals = [
-        ProposalAction.nullary_function(governance_manager, "upgradeTo()"),
-        ProposalAction.nullary_function(admin, "upgradeTo()"),
+        ProposalAction.function_call(governance_manager, "upgradeTo()"),
+        ProposalAction.function_call(admin, "upgradeTo()"),
     ]
     tx = governance_manager.createProposal(proposals)
 
@@ -342,7 +326,7 @@ def test_voting_power_snapshot(
     mock_vault.delegateVote(accounts[1], 20e18, {"from": accounts[2]})
 
     # create proposal and vote
-    proposal = ProposalAction.nullary_function(admin.address, "totalSupply()")
+    proposal = ProposalAction.function_call(admin.address, "totalSupply()")
     chain.sleep(1)
     chain.mine()
     tx = governance_manager.createProposal([proposal], {"from": accounts[1]})
@@ -377,3 +361,65 @@ def test_voting_power_snapshot(
     governance_manager.vote(proposal_id, FOR_BALLOT, {"from": accounts[1]})
     assert governance_manager.getVoteTotals(proposal_id)["against"][0][1] == 0
     assert governance_manager.getVoteTotals(proposal_id)["_for"][0][1] == 20e18
+
+
+def test_create_and_execute_proposal(governance_manager, admin, MockProxy, multisig):
+    test_contract = admin.deploy(MockProxy)
+    action = ProposalAction.function_call(
+        test_contract.address, "upgradeTo(address)", governance_manager.address
+    )
+
+    with typed_reverts("NotAuthorized(address,address)"):
+        governance_manager.createAndExecuteProposal([action], {"from": admin})
+
+    tx = governance_manager.createAndExecuteProposal([action], {"from": multisig})
+    proposal_id = tx.events["ProposalCreated"]["id"]
+    assert proposal_id == 0
+    assert tx.events["ProposalExecuted"]["proposalId"] == 0
+
+    proposal = Proposal(*governance_manager.getProposal(proposal_id))
+    assert proposal.status == ProposalStatus.Executed
+
+    assert test_contract._upgradeTo() == governance_manager.address
+
+    chain.sleep(90 * 86400)
+    with typed_reverts("MultisigSunset()"):
+        governance_manager.createAndExecuteProposal([action], {"from": multisig})
+
+
+def test_veto_proposal(governance_manager, admin, multisig):
+    action = ProposalAction.function_call(admin.address, "totalSupply()")
+    tx = governance_manager.createProposal([action])
+    proposal_id = tx.events["ProposalCreated"]["id"]
+    proposal = Proposal(*governance_manager.getProposal(proposal_id))
+    assert proposal.status == ProposalStatus.Active
+
+    with typed_reverts("NotAuthorized(address,address)"):
+        governance_manager.vetoProposal(proposal_id, {"from": admin})
+
+    tx = governance_manager.vetoProposal(proposal_id, {"from": multisig})
+    assert tx.events["ProposalVetoed"]["proposalId"] == proposal_id
+    proposal = Proposal(*governance_manager.getProposal(proposal_id))
+    assert proposal.status == ProposalStatus.Vetoed
+
+
+def test_multisig_sunset(governance_manager, admin, multisig):
+    action = ProposalAction.function_call(
+        governance_manager.address, "sunsetMultisig()"
+    )
+    tx = governance_manager.createProposal([action])
+    proposal_id = tx.events["ProposalCreated"]["id"]
+    proposal = Proposal(*governance_manager.getProposal(proposal_id))
+    chain.sleep(1)
+    governance_manager.vote(proposal_id, FOR_BALLOT)
+    chain.sleep(proposal.votingEndsAt - chain.time() + 1)
+    governance_manager.tallyVote(proposal_id)
+    proposal = Proposal(*governance_manager.getProposal(proposal_id))
+    assert proposal.status == ProposalStatus.Queued
+    chain.sleep(proposal.executableAt - chain.time() + 1)
+    tx = governance_manager.executeProposal(proposal_id)
+    assert governance_manager.multisigSunsetAt() == tx.timestamp
+
+    action = ProposalAction.function_call(admin.address, "totalSupply()")
+    with typed_reverts("MultisigSunset()"):
+        governance_manager.createAndExecuteProposal([action], {"from": multisig})

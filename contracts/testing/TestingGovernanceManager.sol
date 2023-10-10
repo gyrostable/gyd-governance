@@ -8,9 +8,10 @@ contract TestingGovernanceManager is GovernanceManager {
     using Address for address;
 
     constructor(
+        address multisig,
         IVotingPowerAggregator _votingPowerAggregator,
         ITierer _tierer
-    ) GovernanceManager(_votingPowerAggregator, _tierer) {}
+    ) GovernanceManager(multisig, _votingPowerAggregator, _tierer) {}
 
     function executeCall(address target, bytes calldata data) external {
         target.functionCall(data);

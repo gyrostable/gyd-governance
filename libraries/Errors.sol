@@ -9,6 +9,7 @@ library Errors {
         uint256 actualTotalPower,
         uint256 givenTotalPower
     );
+    error MultisigSunset();
 
     error ZeroDivision();
 }

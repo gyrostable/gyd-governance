@@ -10,7 +10,8 @@ library DataTypes {
         Active,
         Rejected,
         Queued,
-        Executed
+        Executed,
+        Vetoed
     }
 
     struct ProposalAction {
