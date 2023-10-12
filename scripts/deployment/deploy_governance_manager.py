@@ -5,21 +5,27 @@ from brownie import (
     GovernanceManager,
     GovernanceManagerProxy,
     ProxyAdmin,
+    MultiownerProxyAdmin,
     StaticTierStrategy,
     VotingPowerAggregator,
 )
 
-from scripts.utils import get_deployer, get_proxy_admin, make_params
+from scripts.utils import (
+    get_deployer,
+    get_governance_proxy_admin,
+    get_multisig_address,
+    make_params,
+)
 
 
 def proxy_admin():
     deployer = get_deployer()
-    deployer.deploy(ProxyAdmin, **make_params())
+    deployer.deploy(MultiownerProxyAdmin, **make_params())
 
 
 def proxy():
     deployer = get_deployer()
-    proxy_admin = get_proxy_admin()
+    proxy_admin = get_governance_proxy_admin()
     empty_contract = deployer.deploy(EmptyContract, **make_params())
     deployer.deploy(
         GovernanceManagerProxy, empty_contract, proxy_admin, b"", **make_params()
@@ -27,10 +33,12 @@ def proxy():
 
 
 def main():
-    proxy_admin = get_proxy_admin()
+    proxy_admin = get_governance_proxy_admin()
     deployer = get_deployer()
+    multisig = get_multisig_address()
     governance_manager = deployer.deploy(
         GovernanceManager,
+        multisig,  # type: ignore
         VotingPowerAggregator[0],
         ActionTierConfig[0],
         **make_params()
