@@ -7,19 +7,22 @@ import "../libraries/ScaledMath.sol";
 import "../libraries/VaultsSnapshot.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 contract EmergencyRecovery is GovernanceOnly {
+    using Address for address;
     using ScaledMath for uint256;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using VaultsSnapshot for DataTypes.VaultSnapshot[];
 
-    address public safeAddress;
+    address public immutable safeAddress;
+    address public immutable proxyAdmin;
     uint64 public sunsetAt;
     uint256 public vetoThreshold;
     uint64 public timelockDuration;
 
-    string private UPGRADE_TO_SIG = "upgradeTo(address)";
+    string private UPGRADE_TO_SIG = "upgrade(address,address)";
 
     mapping(uint32 => DataTypes.EmergencyRecoveryProposal) private proposals;
 
@@ -33,6 +36,7 @@ contract EmergencyRecovery is GovernanceOnly {
 
     constructor(
         address _governance,
+        address _proxyAdmin,
         address _safeAddress,
         address _votingAggregator,
         uint64 _sunsetAt,
@@ -44,6 +48,7 @@ contract EmergencyRecovery is GovernanceOnly {
         sunsetAt = _sunsetAt;
         vetoThreshold = _vetoThreshold;
         timelockDuration = _timelockDuration;
+        proxyAdmin = _proxyAdmin;
     }
 
     modifier onlyFromSafe() {
@@ -67,6 +72,7 @@ contract EmergencyRecovery is GovernanceOnly {
     ) external onlyFromSafe notSunset returns (uint32) {
         bytes memory payload = abi.encodeWithSignature(
             UPGRADE_TO_SIG,
+            governance,
             newUnderlying
         );
 
@@ -86,12 +92,7 @@ contract EmergencyRecovery is GovernanceOnly {
         return propId;
     }
 
-    event UpgradeExecuted(
-        uint32 proposalId,
-        bool success,
-        address governance,
-        bytes payload
-    );
+    event UpgradeExecuted(uint32 proposalId, address governance, bytes payload);
     event UpgradeVetoed(uint32 proposalId);
 
     function completeGovernanceUpgrade(uint32 proposalId) external {
@@ -120,11 +121,10 @@ contract EmergencyRecovery is GovernanceOnly {
             return;
         }
 
-        (bool success, ) = governance.call(prop.payload);
-        require(success, "upgrade reverted");
+        proxyAdmin.functionCall(prop.payload);
         prop.status = DataTypes.Status.Executed;
 
-        emit UpgradeExecuted(proposalId, success, governance, prop.payload);
+        emit UpgradeExecuted(proposalId, governance, prop.payload);
     }
 
     event VetoCast(

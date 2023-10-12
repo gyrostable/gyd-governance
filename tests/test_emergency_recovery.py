@@ -24,29 +24,39 @@ def mock_proxy(admin):
 
 
 @pytest.fixture()
-def emergency_recovery(admin, mock_proxy, mock_voting_aggregator):
-    return admin.deploy(
+def emergency_recovery(
+    admin, mock_proxy, multiowner_proxy_admin, mock_voting_aggregator
+):
+    recovery = admin.deploy(
         EmergencyRecovery,
         mock_proxy,
+        multiowner_proxy_admin,
         admin.address,
         mock_voting_aggregator,
         chain.time() + SUNSET_DURATION,
         VETO_THRESHOLD,
         TIMELOCK_DURATION,
     )
+    multiowner_proxy_admin.addOwner(recovery)
+    return recovery
 
 
 @pytest.fixture()
-def emergency_recovery_with_admin_governance(admin, mock_voting_aggregator):
-    return admin.deploy(
+def emergency_recovery_with_admin_governance(
+    admin, multiowner_proxy_admin, mock_voting_aggregator
+):
+    recovery = admin.deploy(
         EmergencyRecovery,
         admin.address,
+        multiowner_proxy_admin,
         admin.address,
         mock_voting_aggregator,
         chain.time() + SUNSET_DURATION,
         VETO_THRESHOLD,
         TIMELOCK_DURATION,
     )
+    multiowner_proxy_admin.addOwner(recovery)
+    return recovery
 
 
 def test_can_carry_out_emergency_upgrade(emergency_recovery, mock_proxy):

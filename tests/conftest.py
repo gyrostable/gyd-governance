@@ -251,6 +251,11 @@ def proxy_admin(admin, ProxyAdmin):
 
 
 @pytest.fixture(scope="module")
+def multiowner_proxy_admin(admin, MultiownerProxyAdmin):
+    return admin.deploy(MultiownerProxyAdmin)
+
+
+@pytest.fixture(scope="module")
 def governance_manager_proxy(GovernanceManagerProxy, EmptyContract, admin, proxy_admin):
     empty_contract = admin.deploy(EmptyContract)
     return admin.deploy(GovernanceManagerProxy, empty_contract, proxy_admin, b"")
