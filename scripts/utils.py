@@ -19,9 +19,9 @@ def get_deployer():
         return cast(
             LocalAccount, accounts.load("gyro-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
         )
-    if chain.id == 1:  # polygon
+    if chain.id == 1:  # mainnet
         return cast(
-            LocalAccount, accounts.load("gyroscope-foundation-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
+            LocalAccount, accounts.load("ftl-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
         )
 
     return accounts[0]

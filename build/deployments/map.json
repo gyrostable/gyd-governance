@@ -6,6 +6,9 @@
     "GovernanceManagerProxy": [
       "0x78EcF97572c3890eD02221A611014F30219f6219"
     ],
+    "MultiownerProxyAdmin": [
+      "0x71260fce6c16fb7b3481BAFb64377c2aAdc4F961"
+    ],
     "ProxyAdmin": [
       "0xC77fd1c986C8d1F084DAFb0FF43FbD19cf92dbFb"
     ]
