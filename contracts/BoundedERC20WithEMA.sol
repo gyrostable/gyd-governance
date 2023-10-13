@@ -67,7 +67,11 @@ contract BoundedERC20WithEMA is IBoundedERC20WithEMA, ERC20, GovernanceOnly {
     }
 
     function boundedPctOfSupply() public view returns (uint256) {
-        return totalSupply().divDown(underlying.totalSupply());
+        uint256 gydTotalSupply = underlying.totalSupply();
+        if (gydTotalSupply == 0) {
+            return 0;
+        }
+        return totalSupply().divDown(gydTotalSupply);
     }
 
     function _updateEMA() internal {
