@@ -4,49 +4,111 @@ from tests.conftest import Tier
 from tests.support.utils import scale
 
 
+LOW_TIER = Tier(
+    quorum=int(scale("0.01")),
+    proposal_threshold=int(scale("0.025")),
+    vote_threshold=int(scale("0.51")),
+    time_lock_duration=86400,
+    proposal_length=7 * 86400,
+    action_level=10,
+)
+
+
+MEDIUM_TIER = Tier(
+    quorum=int(scale("0.02")),
+    proposal_threshold=int(scale("0.025")),
+    vote_threshold=int(scale("0.51")),
+    time_lock_duration=2 * 86400,
+    proposal_length=7 * 86400,
+    action_level=20,
+)
+
+HIGH_TIER = Tier(
+    quorum=int(scale("0.05")),
+    proposal_threshold=int(scale("0.025")),
+    vote_threshold=int(scale("0.67")),
+    time_lock_duration=7 * 86400,
+    proposal_length=7 * 86400,
+    action_level=30,
+)
+
+CORE_TIER = Tier(
+    quorum=int(scale("0.1")),
+    proposal_threshold=int(scale("0.025")),
+    vote_threshold=int(scale("0.75")),
+    time_lock_duration=7 * 86400,
+    proposal_length=7 * 86400,
+    action_level=40,
+)
+
+HIGH_TREASURY_TIER = Tier(
+    quorum=int(scale("0.05")),
+    proposal_threshold=int(scale("0.025")),
+    vote_threshold=int(scale("0.67")),
+    time_lock_duration=2 * 86400,
+    proposal_length=14 * 86400,
+    action_level=25,
+)
+
+UPGRADEABILITY_TIER = Tier(
+    quorum=int(scale("0.5")),
+    proposal_threshold=int(scale("0.025")),
+    vote_threshold=int(scale("0.75")),
+    time_lock_duration=14 * 86400,
+    proposal_length=14 * 86400,
+    action_level=100,
+)
+
+
 def upgradeability():
     get_deployer().deploy(
         StaticTierStrategy,
         GovernanceManagerProxy[0],
-        Tier(
-            quorum=int(scale("0.4")),
-            proposal_threshold=int(scale("0.1")),
-            vote_threshold=int(scale("0.6")),
-            time_lock_duration=10 * 86400,
-            proposal_length=10 * 86400,
-            action_level=20,
-        ),
+        UPGRADEABILITY_TIER,
         **make_params(),
     )
 
 
-def static_medium_impact():
+def static_low_tier():
     get_deployer().deploy(
         StaticTierStrategy,
         GovernanceManagerProxy[0],
-        Tier(
-            quorum=int(scale("0.2")),
-            proposal_threshold=int(scale("0.02")),
-            vote_threshold=int(scale("0.5")),
-            time_lock_duration=3 * 86400,
-            proposal_length=7 * 86400,
-            action_level=15,
-        ),
+        LOW_TIER,
         **make_params(),
     )
 
 
-def static_very_low_impact():
+def static_medium_tier():
     get_deployer().deploy(
         StaticTierStrategy,
         GovernanceManagerProxy[0],
-        Tier(
-            quorum=int(scale("0.05")),
-            proposal_threshold=int(scale("0.01")),
-            vote_threshold=int(scale("0.3")),
-            time_lock_duration=3600,
-            proposal_length=3600 * 3,
-            action_level=2,
-        ),
+        MEDIUM_TIER,
+        **make_params(),
+    )
+
+
+def static_high_tier():
+    get_deployer().deploy(
+        StaticTierStrategy,
+        GovernanceManagerProxy[0],
+        HIGH_TIER,
+        **make_params(),
+    )
+
+
+def static_core_tier():
+    get_deployer().deploy(
+        StaticTierStrategy,
+        GovernanceManagerProxy[0],
+        CORE_TIER,
+        **make_params(),
+    )
+
+
+def static_high_treasury():
+    get_deployer().deploy(
+        StaticTierStrategy,
+        GovernanceManagerProxy[0],
+        HIGH_TREASURY_TIER,
         **make_params(),
     )
