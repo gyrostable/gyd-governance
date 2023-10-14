@@ -1,13 +1,17 @@
 from brownie import (
     ActionTierConfig,
-    BoundedERC20WithEMA,  # type: ignore
     EmptyContract,
     GovernanceManager,
     GovernanceManagerProxy,
-    ProxyAdmin,
     MultiownerProxyAdmin,
-    StaticTierStrategy,
     VotingPowerAggregator,
+)
+from brownie import chain
+from scripts.constants import (
+    ACTION_LEVEL_THRESHOLD,
+    EMA_THRESHOLD,
+    MIN_BGYD_SUPPLY,
+    STRATEGIES,
 )
 
 from scripts.utils import (
@@ -16,6 +20,7 @@ from scripts.utils import (
     get_multisig_address,
     make_params,
 )
+from support.types import LimitUpgradeabilityParams
 
 
 def proxy_admin():
@@ -42,6 +47,13 @@ def main():
         VotingPowerAggregator[0],
         ActionTierConfig[0],
         **make_params()
+    )
+
+    limit_upgradeability_params = LimitUpgradeabilityParams(
+        action_level_threshold=ACTION_LEVEL_THRESHOLD,
+        ema_threshold=EMA_THRESHOLD,
+        min_bgyd_supply=MIN_BGYD_SUPPLY,
+        tier_strategy=STRATEGIES[chain.id]["limit_upgradeability"],
     )
 
     proxy_admin.upgrade(

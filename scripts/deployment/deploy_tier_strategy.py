@@ -1,7 +1,7 @@
 from brownie import StaticTierStrategy, GovernanceManagerProxy  # type: ignore
 from scripts.utils import get_deployer, make_params
 from tests.conftest import Tier
-from tests.support.utils import scale
+from support.utils import scale
 
 
 LOW_TIER = Tier(

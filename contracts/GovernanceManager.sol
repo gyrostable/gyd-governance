@@ -513,7 +513,7 @@ contract GovernanceManager is IGovernanceManager, Initializable {
             address(bGYD) != address(0) &&
             bGYD.totalSupply() >= limitUpgradeabilityParams.minBGYDSupply &&
             bGYD.boundedPctEMA() > limitUpgradeabilityParams.emaThreshold &&
-            actionLevel > limitUpgradeabilityParams.actionLevelThreshold;
+            actionLevel >= limitUpgradeabilityParams.actionLevelThreshold;
     }
 
     function _getLimitUpgradeabilityTier()

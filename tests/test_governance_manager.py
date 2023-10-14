@@ -17,7 +17,7 @@ from tests.conftest import (
     Tier,
     VoteTotals,
 )
-from tests.support.utils import typed_reverts
+from support.utils import typed_reverts
 
 
 def test_create_proposal(governance_manager, admin):

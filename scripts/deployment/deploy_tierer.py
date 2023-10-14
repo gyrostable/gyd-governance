@@ -4,12 +4,7 @@ from brownie import ZERO_ADDRESS
 from typing import NamedTuple
 
 from scripts.utils import get_deployer, make_params
-
-
-class StrategyConfig(NamedTuple):
-    contract: str
-    sig: str
-    strategy: str
+from support.types import StrategyConfig
 
 
 def main():
