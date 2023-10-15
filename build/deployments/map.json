@@ -6,6 +6,9 @@
     "EmptyContract": [
       "0x712BBEe63dF6fB9328F256d9C1405d8162dc463B"
     ],
+    "FoundingMemberVault": [
+      "0xc156f656AFcc68b0Fd347BF3DC4C16A6cFb0FBef"
+    ],
     "GovernanceManagerProxy": [
       "0x78EcF97572c3890eD02221A611014F30219f6219"
     ],
