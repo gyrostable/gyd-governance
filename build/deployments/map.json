@@ -3,6 +3,9 @@
     "BoundedERC20WithEMA": [
       "0x59C85668DfBcB97a7e082Eb716eaDf1F901e196D"
     ],
+    "CouncillorNFT": [
+      "0x79e65Fc4ec3AA76e99c3E8971cbBD8c431Dd35dc"
+    ],
     "EmptyContract": [
       "0x712BBEe63dF6fB9328F256d9C1405d8162dc463B"
     ],

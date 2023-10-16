@@ -68,8 +68,8 @@ def councillor_nft(proofs_file):
         data = json.load(f)
     deployer.deploy(
         CouncillorNFT,
-        "Gyroscope Councillor NFT",
-        "GCNFT",
+        "Gyroscope Councillor Vault",
+        "GCVT",
         GovernanceManagerProxy[0],
         COUNCILLOR_NFT_MAX_SUPPLY,
         data["root"],

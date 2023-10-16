@@ -89,13 +89,16 @@ async function generateProofs(inFile: string, outFile: string): Promise<void> {
 
   const root = generateRoot(data);
   const proofs: OutputDatum[] = [];
+  let i = 0;
   for (const datum of data) {
     const proof = generateProof(datum, data);
     let result = validateProof(datum, proof, root);
     if (!result) {
+      console.error(i, datum);
       throw "invalid proof";
     }
     proofs.push({ ...datum.toObject(), proof });
+    i++;
   }
 
   const output = JSON.stringify({ root: generateRoot(data), proofs: proofs });

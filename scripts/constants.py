@@ -3,7 +3,7 @@ from support.utils import scale
 
 BOUNDED_ERC20_WITH_EMA_WINDOW_WIDTH = 7200 * 10**18  # 1 day in blocks (not seconds!)
 
-COUNCILLOR_NFT_MAX_SUPPLY = 2_000
+COUNCILLOR_NFT_MAX_SUPPLY = 196
 
 
 DAO_TREASURY = {}
