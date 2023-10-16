@@ -7,6 +7,7 @@
       "0x79e65Fc4ec3AA76e99c3E8971cbBD8c431Dd35dc"
     ],
     "EmptyContract": [
+      "0x1F4141F7ac1f85b178d63baF15832A141d3C22a6",
       "0x712BBEe63dF6fB9328F256d9C1405d8162dc463B"
     ],
     "FoundingMemberVault": [
@@ -14,6 +15,9 @@
     ],
     "GovernanceManagerProxy": [
       "0x78EcF97572c3890eD02221A611014F30219f6219"
+    ],
+    "LockedVault": [
+      "0xb7ae7B8E34FAe3066b5AdCC305E54a78e941bc50"
     ],
     "MultiownerProxyAdmin": [
       "0x71260fce6c16fb7b3481BAFb64377c2aAdc4F961"
@@ -28,6 +32,10 @@
       "0x0B4237b829c34507EEdDB67006Db6061D3D60edF",
       "0xFE41992176Ad0fA41C4A2Ed70F3c36273027c27C",
       "0xD837D6c421ec3d6E6361BffBccd0Ff8f218d1c6d"
+    ],
+    "TransparentUpgradeableProxy": [
+      "0xe548a29631f9E49830bE8edc22d407b2D2915F31",
+      "0x9543b9F3450C17f1e5E558cC135fD8964dbef92a"
     ]
   },
   "137": {

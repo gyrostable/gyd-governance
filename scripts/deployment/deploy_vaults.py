@@ -16,7 +16,7 @@ from brownie import (
 )
 
 from scripts.constants import COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS  # type: ignore
-from scripts.utils import get_deployer, make_params
+from scripts.utils import get_deployer, get_proxy_admin, make_params
 
 
 def associated_dao():
@@ -29,12 +29,12 @@ def mock():
     deployer.deploy(MockVault, **make_params())
 
 
-def locked_vault(lp_token):
+def locked_vault(underlying):
     deployer = get_deployer()
     vault = deployer.deploy(
         LockedVault,
         deployer,
-        lp_token,
+        underlying,
         GYFI_TOKEN_ADDRESS[chain.id],
         DAO_TREASURY[chain.id],
         **make_params()
@@ -42,8 +42,8 @@ def locked_vault(lp_token):
     deployer.deploy(
         TransparentUpgradeableProxy,
         vault,
-        GovernanceManagerProxy[0],
-        vault.initialize.encode_input(86400),  # 1 day withdrawal
+        get_proxy_admin(),
+        vault.initialize.encode_input(2592000),  # 30 days withdrawal
         **make_params()
     )
 
