@@ -194,7 +194,13 @@ contract LockedVault is
         return history.getVotingPower(_user, timestamp);
     }
 
-    function getTotalRawVotingPower() public view override returns (uint256) {
+    function getTotalRawVotingPower()
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return totalSupply;
     }
 
