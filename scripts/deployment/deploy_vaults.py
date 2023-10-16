@@ -22,7 +22,7 @@ from scripts.utils import get_deployer, get_proxy_admin, make_params
 
 def associated_dao():
     deployer = get_deployer()
-    deployer.deploy(AssociatedDAOVault, deployer, **make_params())
+    deployer.deploy(AssociatedDAOVault, GovernanceManagerProxy[0], **make_params())
 
 
 def mock():

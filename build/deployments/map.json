@@ -3,11 +3,17 @@
     "AggregateLPVault": [
       "0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528"
     ],
+    "AssociatedDAOVault": [
+      "0x43455E04e9b58b4Fad59260FceD78F2A11660a69"
+    ],
     "BoundedERC20WithEMA": [
       "0x59C85668DfBcB97a7e082Eb716eaDf1F901e196D"
     ],
     "CouncillorNFT": [
       "0x79e65Fc4ec3AA76e99c3E8971cbBD8c431Dd35dc"
+    ],
+    "CouncillorNFTVault": [
+      "0x7e43D3825Bb4C960395f829932831D6F59981C42"
     ],
     "EmptyContract": [
       "0x1F4141F7ac1f85b178d63baF15832A141d3C22a6",
@@ -39,6 +45,9 @@
     "TransparentUpgradeableProxy": [
       "0xDE0E16C5e234339aC3Becf8C26bE91Be3CB9ec2E",
       "0x9543b9F3450C17f1e5E558cC135fD8964dbef92a"
+    ],
+    "VotingPowerAggregator": [
+      "0xA015A8c96f45758614C4077813dC863a74cb1487"
     ]
   },
   "137": {

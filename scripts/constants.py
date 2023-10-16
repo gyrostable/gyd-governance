@@ -39,6 +39,16 @@ STRATEGIES = {
     }
 }
 
+VAULTS = {
+    1: {
+        "aggregate": "0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528",
+        "dao": "0x43455E04e9b58b4Fad59260FceD78F2A11660a69",
+        "founding_members": "0xc156f656AFcc68b0Fd347BF3DC4C16A6cFb0FBef",
+        "gyfi": "0xDE0E16C5e234339aC3Becf8C26bE91Be3CB9ec2E",
+        "councillor": "0x7e43D3825Bb4C960395f829932831D6F59981C42",
+    }
+}
+
 
 EMA_THRESHOLD = int(scale("0.5"))
 ACTION_LEVEL_THRESHOLD = 30
