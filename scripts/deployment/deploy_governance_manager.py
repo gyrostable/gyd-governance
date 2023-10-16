@@ -9,6 +9,7 @@ from brownie import (
 from brownie import chain
 from scripts.constants import (
     ACTION_LEVEL_THRESHOLD,
+    BGYD,
     EMA_THRESHOLD,
     MIN_BGYD_SUPPLY,
     STRATEGIES,
@@ -56,8 +57,12 @@ def main():
         tier_strategy=STRATEGIES[chain.id]["limit_upgradeability"],
     )
 
-    proxy_admin.upgrade(
+    proxy_admin.upgradeAndCall(
         GovernanceManagerProxy[0],
         governance_manager,
+        governance_manager.initialize.encode_input(
+            BGYD[chain.id],
+            limit_upgradeability_params,
+        ),
         make_params({"from": deployer}),
     )

@@ -10,7 +10,7 @@
       "0x43455E04e9b58b4Fad59260FceD78F2A11660a69"
     ],
     "BoundedERC20WithEMA": [
-      "0x59C85668DfBcB97a7e082Eb716eaDf1F901e196D"
+      "0xE4c243ECC7A0fBa69006855E0a02232e02efb1e4"
     ],
     "CouncillorNFT": [
       "0x79e65Fc4ec3AA76e99c3E8971cbBD8c431Dd35dc"
@@ -24,6 +24,9 @@
     ],
     "FoundingMemberVault": [
       "0xc156f656AFcc68b0Fd347BF3DC4C16A6cFb0FBef"
+    ],
+    "GovernanceManager": [
+      "0x0EE0A55548aE92102aBe195015694F0f3EA8403A"
     ],
     "GovernanceManagerProxy": [
       "0x78EcF97572c3890eD02221A611014F30219f6219"
@@ -46,6 +49,7 @@
       "0xD837D6c421ec3d6E6361BffBccd0Ff8f218d1c6d"
     ],
     "TransparentUpgradeableProxy": [
+      "0xc69129D6C4e3b5Ef81DCeA3A5AFcd7B12ebe714c",
       "0xDE0E16C5e234339aC3Becf8C26bE91Be3CB9ec2E",
       "0x9543b9F3450C17f1e5E558cC135fD8964dbef92a"
     ],

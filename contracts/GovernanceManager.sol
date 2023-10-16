@@ -70,10 +70,10 @@ contract GovernanceManager is IGovernanceManager, Initializable {
     }
 
     function initialize(
-        IBoundedERC20WithEMA _wGYD,
+        IBoundedERC20WithEMA _bGYD,
         DataTypes.LimitUpgradeabilityParameters memory _params
-    ) external initializer onlySelf {
-        bGYD = _wGYD;
+    ) external initializer {
+        bGYD = _bGYD;
         limitUpgradeabilityParams = _params;
         multisigSunsetAt = block.timestamp + _MULTISIG_SUNSET_PERIOD;
     }

@@ -49,6 +49,10 @@ VAULTS = {
     }
 }
 
+BGYD = {
+    1: "0xc69129D6C4e3b5Ef81DCeA3A5AFcd7B12ebe714c",
+}
+
 
 EMA_THRESHOLD = int(scale("0.5"))
 ACTION_LEVEL_THRESHOLD = 30

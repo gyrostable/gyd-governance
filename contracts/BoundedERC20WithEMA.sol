@@ -5,16 +5,20 @@ import "./access/GovernanceOnly.sol";
 import "../interfaces/IBoundedERC20WithEMA.sol";
 import "../libraries/ScaledMath.sol";
 import "../libraries/LogExpMath.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BoundedERC20WithEMA is IBoundedERC20WithEMA, ERC20, GovernanceOnly {
+contract BoundedERC20WithEMA is
+    IBoundedERC20WithEMA,
+    ERC20Upgradeable,
+    GovernanceOnly
+{
     using ScaledMath for uint256;
     using LogExpMath for uint256;
 
     event WindowWidthUpdated(uint256 windowWidth);
 
-    IERC20 public underlying;
+    IERC20 public immutable underlying;
 
     struct UintValue {
         uint256 blockNb;
@@ -28,14 +32,17 @@ contract BoundedERC20WithEMA is IBoundedERC20WithEMA, ERC20, GovernanceOnly {
 
     constructor(
         address governance,
-        address _underlying,
-        uint256 _windowWidth
-    ) ERC20("BoundedGYD", "bGYD") GovernanceOnly(governance) {
+        address _underlying
+    ) GovernanceOnly(governance) {
+        underlying = IERC20(_underlying);
+    }
+
+    function initialize(uint256 _windowWidth) external initializer {
         require(
             _windowWidth >= 0.01e18,
             "window width must be scaled to 18 decimals"
         );
-        underlying = IERC20(_underlying);
+        __ERC20_init("BoundedGYD", "bGYD");
         windowWidth = _windowWidth;
 
         uint256 boundedPct = boundedPctOfSupply();
