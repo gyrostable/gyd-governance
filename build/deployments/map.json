@@ -1,5 +1,8 @@
 {
   "1": {
+    "AggregateLPVault": [
+      "0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528"
+    ],
     "BoundedERC20WithEMA": [
       "0x59C85668DfBcB97a7e082Eb716eaDf1F901e196D"
     ],

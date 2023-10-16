@@ -3,6 +3,7 @@ from support.utils import scale
 
 BOUNDED_ERC20_WITH_EMA_WINDOW_WIDTH = 7200 * 10**18  # 1 day in blocks (not seconds!)
 GYFI_TOTAL_SUPLY = 13_700_000 * 10**18
+AGGREGATE_VAULT_THRESHOLD = 10_000_000 * 10**18  # 10m USD
 
 COUNCILLOR_NFT_MAX_SUPPLY = 196
 

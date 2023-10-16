@@ -16,7 +16,7 @@ from brownie import (
     chain,
 )
 
-from scripts.constants import COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS, GYFI_TOTAL_SUPLY  # type: ignore
+from scripts.constants import AGGREGATE_VAULT_THRESHOLD, COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS, GYFI_TOTAL_SUPLY  # type: ignore
 from scripts.utils import get_deployer, get_proxy_admin, make_params
 
 
@@ -115,5 +115,9 @@ def aggregate_lp_vault(config_file):
         pool_weights = [VaultWeight(**v) for v in json.load(f)]
     deployer = get_deployer()
     deployer.deploy(
-        AggregateLPVault, GovernanceManagerProxy[0], 0, pool_weights, **make_params()
+        AggregateLPVault,
+        GovernanceManagerProxy[0],
+        AGGREGATE_VAULT_THRESHOLD,
+        pool_weights,
+        **make_params()
     )
