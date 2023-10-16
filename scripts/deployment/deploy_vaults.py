@@ -8,6 +8,7 @@ from brownie import (
     CouncillorNFTVault,
     FoundingMemberVault,
     GovernanceManagerProxy,
+    LockedVaultWithThreshold,
     LockedVault,
     MockVault,
     ProxyAdmin,
@@ -15,7 +16,7 @@ from brownie import (
     chain,
 )
 
-from scripts.constants import COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS  # type: ignore
+from scripts.constants import COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS, GYFI_TOTAL_SUPLY  # type: ignore
 from scripts.utils import get_deployer, get_proxy_admin, make_params
 
 
@@ -36,6 +37,26 @@ def locked_vault(underlying):
         deployer,
         underlying,
         GYFI_TOKEN_ADDRESS[chain.id],
+        DAO_TREASURY[chain.id],
+        **make_params()
+    )
+    deployer.deploy(
+        TransparentUpgradeableProxy,
+        vault,
+        get_proxy_admin(),
+        vault.initialize.encode_input(2592000),  # 30 days withdrawal
+        **make_params()
+    )
+
+
+def gyfi_vault():
+    deployer = get_deployer()
+    vault = deployer.deploy(
+        LockedVaultWithThreshold,
+        deployer,
+        GYFI_TOKEN_ADDRESS[chain.id],
+        GYFI_TOKEN_ADDRESS[chain.id],
+        GYFI_TOTAL_SUPLY // 10,
         DAO_TREASURY[chain.id],
         **make_params()
     )
