@@ -78,12 +78,11 @@ contract GovernanceManager is IGovernanceManager, Initializable {
         multisigSunsetAt = block.timestamp + _MULTISIG_SUNSET_PERIOD;
     }
 
-    event MultisigSunsetAtUpdated(
-        uint256 originalSunset,
-        uint256 newSunset
-    );
+    event MultisigSunsetAtUpdated(uint256 originalSunset, uint256 newSunset);
 
-    function extendMultisigSunsetAt(uint256 extensionPeriod) external onlyMultisig {
+    function extendMultisigSunsetAt(
+        uint256 extensionPeriod
+    ) external onlyMultisig {
         uint256 oldMultisigSunsetAt = multisigSunsetAt;
         multisigSunsetAt += extensionPeriod;
         emit MultisigSunsetAtUpdated(oldMultisigSunsetAt, multisigSunsetAt);
