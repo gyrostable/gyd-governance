@@ -1,6 +1,6 @@
 import pytest
 
-from tests.support.utils import scale
+from support.utils import scale
 
 
 @pytest.fixture(scope="module")

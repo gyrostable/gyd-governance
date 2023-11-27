@@ -14,4 +14,17 @@ contract LockedVaultWithThreshold is LockedVault, VaultWithThreshold {
     ) LockedVault(_owner, _underlying, _rewardsToken, _daoTreasury) {
         threshold = _threshold;
     }
+
+    function getTotalRawVotingPower()
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        if (totalSupply < threshold) {
+            return threshold;
+        }
+        return totalSupply;
+    }
 }

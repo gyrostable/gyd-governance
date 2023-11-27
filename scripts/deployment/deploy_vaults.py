@@ -8,6 +8,7 @@ from brownie import (
     CouncillorNFTVault,
     FoundingMemberVault,
     GovernanceManagerProxy,
+    LockedVaultWithThreshold,
     LockedVault,
     MockVault,
     ProxyAdmin,
@@ -15,13 +16,13 @@ from brownie import (
     chain,
 )
 
-from scripts.constants import COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS  # type: ignore
-from scripts.utils import get_deployer, make_params
+from scripts.constants import AGGREGATE_VAULT_THRESHOLD, COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS, GYFI_TOTAL_SUPLY  # type: ignore
+from scripts.utils import get_deployer, get_proxy_admin, make_params
 
 
 def associated_dao():
     deployer = get_deployer()
-    deployer.deploy(AssociatedDAOVault, deployer, **make_params())
+    deployer.deploy(AssociatedDAOVault, GovernanceManagerProxy[0], **make_params())
 
 
 def mock():
@@ -29,12 +30,12 @@ def mock():
     deployer.deploy(MockVault, **make_params())
 
 
-def locked_vault(lp_token):
+def locked_vault(underlying):
     deployer = get_deployer()
     vault = deployer.deploy(
         LockedVault,
         deployer,
-        lp_token,
+        underlying,
         GYFI_TOKEN_ADDRESS[chain.id],
         DAO_TREASURY[chain.id],
         **make_params()
@@ -42,8 +43,28 @@ def locked_vault(lp_token):
     deployer.deploy(
         TransparentUpgradeableProxy,
         vault,
-        GovernanceManagerProxy[0],
-        vault.initialize.encode_input(86400),  # 1 day withdrawal
+        get_proxy_admin(),
+        vault.initialize.encode_input(2592000),  # 30 days withdrawal
+        **make_params()
+    )
+
+
+def gyfi_vault():
+    deployer = get_deployer()
+    vault = deployer.deploy(
+        LockedVaultWithThreshold,
+        deployer,
+        GYFI_TOKEN_ADDRESS[chain.id],
+        GYFI_TOKEN_ADDRESS[chain.id],
+        GYFI_TOTAL_SUPLY // 10,
+        DAO_TREASURY[chain.id],
+        **make_params()
+    )
+    deployer.deploy(
+        TransparentUpgradeableProxy,
+        vault,
+        get_proxy_admin(),
+        vault.initialize.encode_input(2592000),  # 30 days withdrawal
         **make_params()
     )
 
@@ -68,8 +89,8 @@ def councillor_nft(proofs_file):
         data = json.load(f)
     deployer.deploy(
         CouncillorNFT,
-        "Gyroscope Councillor NFT",
-        "GCNFT",
+        "Gyroscope Councillor Vault",
+        "GCVT",
         GovernanceManagerProxy[0],
         COUNCILLOR_NFT_MAX_SUPPLY,
         data["root"],
@@ -94,5 +115,9 @@ def aggregate_lp_vault(config_file):
         pool_weights = [VaultWeight(**v) for v in json.load(f)]
     deployer = get_deployer()
     deployer.deploy(
-        AggregateLPVault, GovernanceManagerProxy[0], 0, pool_weights, **make_params()
+        AggregateLPVault,
+        GovernanceManagerProxy[0],
+        AGGREGATE_VAULT_THRESHOLD,
+        pool_weights,
+        **make_params()
     )

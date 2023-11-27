@@ -1,7 +1,7 @@
 import os
 from typing import cast
 
-from brownie import ERC20Mintable, ProxyAdmin, accounts, chain  # type: ignore
+from brownie import ERC20Mintable, ProxyAdmin, accounts, chain, MultiownerProxyAdmin  # type: ignore
 from brownie.network.account import LocalAccount
 
 from scripts import constants
@@ -11,6 +11,7 @@ DEV = os.environ.get("DEV", "0").lower() in ["1", "true", "yes"]
 
 PROXY_ADMIN_POLYGON = "0x83d34ca335d197bcFe403cb38E82CBD734C4CbBE"
 PROXY_ADMIN_MAINNET = "0xC77fd1c986C8d1F084DAFb0FF43FbD19cf92dbFb"
+MULTISIG_ADDRESS_MAINNET = "0x2d9FaF0b633FF6c4170E171dAe80909f3D03453C"
 
 
 def get_deployer():
@@ -18,9 +19,9 @@ def get_deployer():
         return cast(
             LocalAccount, accounts.load("gyro-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
         )
-    if chain.id == 1:  # polygon
+    if chain.id == 1:  # mainnet
         return cast(
-            LocalAccount, accounts.load("gyroscope-foundation-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
+            LocalAccount, accounts.load("ftl-deployer", BROWNIE_ACCOUNT_PASSWORD)  # type: ignore
         )
 
     return accounts[0]
@@ -40,6 +41,18 @@ def get_proxy_admin():
     if chain.id == 1:
         return ProxyAdmin.at(PROXY_ADMIN_MAINNET)
     raise ValueError("Unknown chain id")
+
+
+def get_multisig_address():
+    if chain.id == 1337 or DEV:
+        return accounts[1]
+    if chain.id == 1:
+        return accounts.at(MULTISIG_ADDRESS_MAINNET, force=True)
+    raise ValueError("Unknown chain id")
+
+
+def get_governance_proxy_admin():
+    return MultiownerProxyAdmin[0]
 
 
 def make_params(extra_params=None):

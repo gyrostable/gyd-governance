@@ -40,4 +40,6 @@ interface IGovernanceManager {
         external
         view
         returns (DataTypes.Proposal[] memory);
+
+    function multisig() external view returns (address);
 }

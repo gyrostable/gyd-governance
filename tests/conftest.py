@@ -229,7 +229,9 @@ def mock_tierer(admin, MockTierer):
 
 @pytest.fixture(scope="module")
 def bounded_erc20(admin, BoundedERC20WithEMA, token):
-    return admin.deploy(BoundedERC20WithEMA, admin, token.address, 2e18)
+    btoken = admin.deploy(BoundedERC20WithEMA, admin, token.address)
+    btoken.initialize(2e18)
+    return btoken
 
 
 @pytest.fixture(scope="module")

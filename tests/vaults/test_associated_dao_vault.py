@@ -1,6 +1,6 @@
 from brownie import reverts
 
-from tests.support.utils import scale
+from support.utils import scale
 
 
 def test_update_dao_and_total_weight(associated_dao_vault, dummy_dao_addresses):
