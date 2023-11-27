@@ -53,6 +53,7 @@ abstract contract BaseDelegatingVault is BaseVault, IDelegatingVault {
     }
 
     function _delegateVote(address from, address to, uint256 amount) internal {
+        require(to != address(0), "cannot delegate to 0 address");
         history.delegateVote(from, to, amount);
         (bool exists, uint256 current) = _currentDelegations[from].tryGet(to);
         uint256 newAmount = exists ? current + amount : amount;
