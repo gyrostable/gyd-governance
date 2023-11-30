@@ -101,7 +101,10 @@ def councillor_nft(proofs_file):
 def councillor_nft_vault():
     deployer = get_deployer()
     deployer.deploy(
-        CouncillorNFTVault, GovernanceManagerProxy[0], CouncillorNFT[0], **make_params()
+        CouncillorNFTVault,
+        GovernanceManagerProxy[0],
+        CouncillorNFT[-1],
+        **make_params()
     )
 
 

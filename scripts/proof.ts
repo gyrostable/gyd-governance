@@ -99,6 +99,7 @@ async function generateProofs(inFile: string, outFile: string): Promise<void> {
     }
     proofs.push({ ...datum.toObject(), proof });
     i++;
+    if (i % 100 === 0) console.log(`${i}/${data.length}`);
   }
 
   const output = JSON.stringify({ root: generateRoot(data), proofs: proofs });
