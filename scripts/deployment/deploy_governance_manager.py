@@ -38,6 +38,18 @@ def proxy():
     )
 
 
+def implementation():
+    deployer = get_deployer()
+    multisig = get_multisig_address()
+    deployer.deploy(
+        GovernanceManager,
+        multisig,  # type: ignore
+        VotingPowerAggregator[0],
+        ActionTierConfig[0],
+        **make_params()
+    )
+
+
 def main():
     proxy_admin = get_governance_proxy_admin()
     deployer = get_deployer()
