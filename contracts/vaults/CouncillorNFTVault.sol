@@ -13,7 +13,7 @@ contract CouncillorNFTVault is NFTVault, IVotingPowersUpdater {
 
     string internal constant _VAULT_TYPE = "CouncillorNFT";
 
-    address internal immutable underlyingAddress;
+    address public immutable underlyingAddress;
 
     constructor(address _owner, address _underlyingAddress) NFTVault(_owner) {
         underlyingAddress = _underlyingAddress;
