@@ -14,9 +14,10 @@ from brownie import (
     ProxyAdmin,
     TransparentUpgradeableProxy,
     chain,
+    interface,
 )
 
-from scripts.constants import AGGREGATE_VAULT_THRESHOLD, COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, GYFI_TOKEN_ADDRESS, GYFI_TOTAL_SUPLY  # type: ignore
+from scripts.constants import AGGREGATE_VAULT_THRESHOLD, COUNCILLOR_NFT_MAX_SUPPLY, DAO_TREASURY, ECLP_PRICE_ORACLE, GYFI_TOKEN_ADDRESS, GYFI_TOTAL_SUPLY  # type: ignore
 from scripts.utils import get_deployer, get_proxy_admin, make_params
 
 
@@ -124,3 +125,19 @@ def aggregate_lp_vault(config_file):
         pool_weights,
         **make_params()
     )
+
+
+def compute_lp_vault_weights():
+    aggregate_lp_vault = AggregateLPVault[-1]
+    vaults = list(LockedVault)
+    underlyings = [v.underlying() for v in vaults]
+    oracle = interface.IPriceOracle(ECLP_PRICE_ORACLE)
+    prices = [oracle.getPriceUSD(u) for u in underlyings]
+    total_weight = sum(prices)
+    normalized_weights = [p * 10**18 // total_weight for p in prices]
+    vault_weights = [
+        VaultWeight(v.address, w) for v, w in zip(vaults, normalized_weights)
+    ]
+
+    set_vault_call = aggregate_lp_vault.setVaultWeights.encode_input(vault_weights)
+    print(json.dumps([(aggregate_lp_vault.address, set_vault_call)]))
