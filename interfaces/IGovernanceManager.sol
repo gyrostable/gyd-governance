@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "../libraries/DataTypes.sol";
+import "./IVotingPowerAggregator.sol";
 
 interface IGovernanceManager {
     function createProposal(
@@ -40,6 +41,11 @@ interface IGovernanceManager {
         external
         view
         returns (DataTypes.Proposal[] memory);
+
+    function votingPowerAggregator()
+        external
+        view
+        returns (IVotingPowerAggregator);
 
     function multisig() external view returns (address);
 }

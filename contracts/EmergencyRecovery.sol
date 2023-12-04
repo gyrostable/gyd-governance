@@ -6,6 +6,7 @@ import "../libraries/DataTypes.sol";
 import "../libraries/ScaledMath.sol";
 import "../libraries/VaultsSnapshot.sol";
 import "../interfaces/IVotingPowerAggregator.sol";
+import "../interfaces/IGovernanceManager.sol";
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
@@ -32,19 +33,15 @@ contract EmergencyRecovery is GovernanceOnly {
 
     uint32 private currentProposalCount;
 
-    IVotingPowerAggregator private votingAggregator;
-
     constructor(
         address _governance,
         address _proxyAdmin,
         address _safeAddress,
-        address _votingAggregator,
         uint64 _sunsetAt,
         uint256 _vetoThreshold,
         uint64 _timelockDuration
     ) GovernanceOnly(_governance) {
         safeAddress = _safeAddress;
-        votingAggregator = IVotingPowerAggregator(_votingAggregator);
         sunsetAt = _sunsetAt;
         vetoThreshold = _vetoThreshold;
         timelockDuration = _timelockDuration;
@@ -83,7 +80,7 @@ contract EmergencyRecovery is GovernanceOnly {
             timelockDuration;
         proposals[propId].status = DataTypes.Status.Queued;
         proposals[propId].payload = payload;
-        votingAggregator.createVaultsSnapshot().persist(
+        _votingPowerAggregator().createVaultsSnapshot().persist(
             _vaultSnapshots[propId]
         );
         currentProposalCount++;
@@ -152,8 +149,11 @@ contract EmergencyRecovery is GovernanceOnly {
             prop.vetos.set(vault, vaultVetoPower - votingPower);
         }
 
-        DataTypes.VaultVotingPower[] memory newVetoPower = votingAggregator
-            .getVotingPower(msg.sender, prop.createdAt);
+        DataTypes.VaultVotingPower[]
+            memory newVetoPower = _votingPowerAggregator().getVotingPower(
+                msg.sender,
+                prop.createdAt
+            );
         for (uint256 i = 0; i < newVetoPower.length; i++) {
             DataTypes.VaultVotingPower memory vault = newVetoPower[i];
             (, uint256 currentVetoTotal) = prop.vetos.tryGet(
@@ -207,5 +207,12 @@ contract EmergencyRecovery is GovernanceOnly {
         ];
         DataTypes.VaultSnapshot[] memory snapshot = _vaultSnapshots[proposalId];
         return snapshot.getBallotPercentage(prop.vetos);
+    }
+
+    function _votingPowerAggregator()
+        internal
+        returns (IVotingPowerAggregator)
+    {
+        return IGovernanceManager(governance).votingPowerAggregator();
     }
 }
