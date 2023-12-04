@@ -34,7 +34,7 @@ def locked_vault(underlying):
     deployer = get_deployer()
     vault = deployer.deploy(
         LockedVault,
-        deployer,
+        GovernanceManagerProxy[0],
         underlying,
         GYFI_TOKEN_ADDRESS[chain.id],
         DAO_TREASURY[chain.id],

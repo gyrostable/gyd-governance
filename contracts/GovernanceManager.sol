@@ -532,6 +532,7 @@ contract GovernanceManager is IGovernanceManager, Initializable {
         returns (DataTypes.Tier memory)
     {
         // NOTE: tierStrategy is always static, so the calldata is unused
-        return limitUpgradeabilityParams.tierStrategy.getTier("");
+        return
+            ITierStrategy(limitUpgradeabilityParams.tierStrategy).getTier("");
     }
 }

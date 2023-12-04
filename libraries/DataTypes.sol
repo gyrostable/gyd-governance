@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.17;
 
-import "../interfaces/ITierStrategy.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 library DataTypes {
@@ -111,7 +110,7 @@ library DataTypes {
         uint8 actionLevelThreshold;
         uint256 emaThreshold;
         uint256 minBGYDSupply;
-        ITierStrategy tierStrategy;
+        address tierStrategy;
     }
 
     struct Delegation {
