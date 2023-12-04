@@ -12,6 +12,16 @@
 
 ## Vaults
 
+* `AggregateLpVault`: [0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528](https://etherscan.io/address/0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528)
+
+### LP Vaults
+
+* `LpVault` (GYD/sDAI): [0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a](https://etherscan.io/address/0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a)
+  * Implementation: [0x4476ffcb74A793092544ab29f45286cB1aBfA007](https://etherscan.io/address/0x4476ffcb74A793092544ab29f45286cB1aBfA007)
+* `LpVault` (GYD/USDC): [0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a](https://etherscan.io/address/0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a)
+  * Implementation: [0x48a64b352989FEb0E98843Bd0415c94Fc8023D2B](https://etherscan.io/address/0x48a64b352989FEb0E98843Bd0415c94Fc8023D2B)
+* `LpVault` (GYD/USDT): [0xB6DC4F06867274539ECd06E244349f0A75410F9E](https://etherscan.io/address/0xB6DC4F06867274539ECd06E244349f0A75410F9E)
+  * Implementation: [0xE1c7Ad5722aa5826a2Dd95a9710A8Fbbe644123B](https://etherscan.io/address/0xE1c7Ad5722aa5826a2Dd95a9710A8Fbbe644123B)
 
 ## Strategies
 
