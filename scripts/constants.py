@@ -42,10 +42,15 @@ STRATEGIES = {
 VAULTS = {
     1: {
         "aggregate": "0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528",
-        "dao": "0x43455E04e9b58b4Fad59260FceD78F2A11660a69",
-        "founding_members": "0xc156f656AFcc68b0Fd347BF3DC4C16A6cFb0FBef",
-        "gyfi": "0xDE0E16C5e234339aC3Becf8C26bE91Be3CB9ec2E",
-        "councillor": "0x7e43D3825Bb4C960395f829932831D6F59981C42",
+        "dao": "0xA2321E23B3060e160195E138b62F8498546B0247",
+        "founding_members": "0xaf55785e3F020D8F335ad0b04872B46FB46274a2",
+        "gyfi": "0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61",
+        "councillor": "0x339b896BafD5d3811241D607D0cd33a1C2f09404",
+        "lp_vaults": [
+            "0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a",
+            "0xA3979E46D1791A4F947641eD0e058025534A3008",
+            "0xB6DC4F06867274539ECd06E244349f0A75410F9E",
+        ],
     }
 }
 

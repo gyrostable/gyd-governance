@@ -13,6 +13,11 @@
 ## Vaults
 
 * `AggregateLpVault`: [0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528](https://etherscan.io/address/0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528)
+* `AssociatedDAOVault`: [0xA2321E23B3060e160195E138b62F8498546B0247](https://etherscan.io/address/0xA2321E23B3060e160195E138b62F8498546B0247)
+* `LockedVaultWithThreshold` (GYFI vault): [0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61](https://etherscan.io/address/0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61)
+  * Implementation: [0x16b13dD24977a13e9857F36eb405DB11D01AC7D1](https://etherscan.io/address/0x16b13dD24977a13e9857F36eb405DB11D01AC7D1)
+* `CouncillorNFTVault`: [0x339b896BafD5d3811241D607D0cd33a1C2f09404](https://etherscan.io/address/0x339b896BafD5d3811241D607D0cd33a1C2f09404)
+  * `CouncillorNFT`: [0x1fb7317359d88076a24cDb97d84CEC796BaBA876](https://etherscan.io/address/0x1fb7317359d88076a24cDb97d84CEC796BaBA876)
 
 ### LP Vaults
 

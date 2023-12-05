@@ -17,47 +17,46 @@ DEPLOYMENT_TIME = 1697457642
 # 	targetWeight	uint256	17.5%
 # AssociatedDAOVault	initialWeight	uint256	30.0%
 # 	targetWeight	uint256	17.5%
-# GYDLPVault	initialWeight	uint256	10.0%
+# AggregateLPVault	initialWeight	uint256	10.0%
 # 	targetWeight	uint256	15.0%
 # GYFIVault	initialWeight	uint256	0.0%
 # 	targetWeight	uint256	35.0%
 
+vaults = [
+    VaultWeightConfiguration(
+        vault_address=VAULTS[chain.id]["founding_members"],
+        initial_weight=int(scale("0.30")),
+        target_weight=int(scale("0.15")),
+    ),
+    VaultWeightConfiguration(
+        vault_address=VAULTS[chain.id]["councillor"],
+        initial_weight=int(scale("0.30")),
+        target_weight=int(scale("0.175")),
+    ),
+    VaultWeightConfiguration(
+        vault_address=VAULTS[chain.id]["dao"],
+        initial_weight=int(scale("0.30")),
+        target_weight=int(scale("0.175")),
+    ),
+    VaultWeightConfiguration(
+        vault_address=VAULTS[chain.id]["aggregate"],
+        initial_weight=int(scale("0.10")),
+        target_weight=int(scale("0.15")),
+    ),
+    VaultWeightConfiguration(
+        vault_address=VAULTS[chain.id]["gyfi"],
+        initial_weight=int(scale("0")),
+        target_weight=int(scale("0.35")),
+    ),
+]
+
 
 def main():
-    vaults = [
-        VaultWeightConfiguration(
-            vault_address=VAULTS[chain.id]["founding_members"],
-            initial_weight=int(scale("0.30")),
-            target_weight=int(scale("0.15")),
-        ),
-        VaultWeightConfiguration(
-            vault_address=VAULTS[chain.id]["councillor"],
-            initial_weight=int(scale("0.30")),
-            target_weight=int(scale("0.175")),
-        ),
-        VaultWeightConfiguration(
-            vault_address=VAULTS[chain.id]["dao"],
-            initial_weight=int(scale("0.30")),
-            target_weight=int(scale("0.175")),
-        ),
-        VaultWeightConfiguration(
-            vault_address=VAULTS[chain.id]["aggregate"],
-            initial_weight=int(scale("0.10")),
-            target_weight=int(scale("0.15")),
-        ),
-        VaultWeightConfiguration(
-            vault_address=VAULTS[chain.id]["gyfi"],
-            initial_weight=int(scale("0")),
-            target_weight=int(scale("0.35")),
-        ),
-    ]
-
     schedule = VaultWeightSchedule(
         starts_at=DEPLOYMENT_TIME,
         ends_at=DEPLOYMENT_TIME + 4 * 365 * 86400,  # 4 years later
         vaults=vaults,
     )
-
     deployer = get_deployer()
 
     deployer.deploy(
