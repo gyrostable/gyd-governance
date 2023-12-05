@@ -44,8 +44,8 @@ def implementation():
     deployer.deploy(
         GovernanceManager,
         multisig,  # type: ignore
-        VotingPowerAggregator[0],
-        ActionTierConfig[0],
+        VotingPowerAggregator[-1],
+        ActionTierConfig[-1],
         **make_params()
     )
 

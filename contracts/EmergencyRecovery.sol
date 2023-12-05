@@ -211,6 +211,7 @@ contract EmergencyRecovery is GovernanceOnly {
 
     function _votingPowerAggregator()
         internal
+        view
         returns (IVotingPowerAggregator)
     {
         return IGovernanceManager(governance).votingPowerAggregator();

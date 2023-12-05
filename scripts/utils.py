@@ -67,4 +67,6 @@ def make_params(extra_params=None):
     else:
         gas_price = os.environ.get("BROWNIE_GWEI", "50")
         params["gas_price"] = gas_price + " gwei"
+    if "VERIFY" in os.environ:
+        params["publish_source"] = True
     return params

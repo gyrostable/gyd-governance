@@ -27,30 +27,12 @@ def mock_proxy(admin):
 def emergency_recovery(
     admin, mock_proxy, multiowner_proxy_admin, mock_voting_aggregator
 ):
+    mock_proxy.setVotingPowerAggregator(mock_voting_aggregator)
     recovery = admin.deploy(
         EmergencyRecovery,
         mock_proxy,
         multiowner_proxy_admin,
         admin.address,
-        mock_voting_aggregator,
-        chain.time() + SUNSET_DURATION,
-        VETO_THRESHOLD,
-        TIMELOCK_DURATION,
-    )
-    multiowner_proxy_admin.addOwner(recovery)
-    return recovery
-
-
-@pytest.fixture()
-def emergency_recovery_with_admin_governance(
-    admin, multiowner_proxy_admin, mock_voting_aggregator
-):
-    recovery = admin.deploy(
-        EmergencyRecovery,
-        admin.address,
-        multiowner_proxy_admin,
-        admin.address,
-        mock_voting_aggregator,
         chain.time() + SUNSET_DURATION,
         VETO_THRESHOLD,
         TIMELOCK_DURATION,
@@ -170,8 +152,8 @@ def test_reverts_if_upgrade_not_started_from_safe(admin, emergency_recovery):
         ("timelockDuration", "setTimelockDuration", 2 * 60 * 60),
     ],
 )
-def test_setters(
-    admin, emergency_recovery_with_admin_governance, getter, setter, _input
-):
-    getattr(emergency_recovery_with_admin_governance, setter)(_input, {"from": admin})
-    assert getattr(emergency_recovery_with_admin_governance, getter)() == _input
+def test_setters(admin, emergency_recovery, getter, setter, _input, mock_proxy):
+    data = getattr(emergency_recovery, setter).encode_input(_input)
+    mock_proxy.executeCall(emergency_recovery, data, {"from": admin})
+
+    assert getattr(emergency_recovery, getter)() == _input

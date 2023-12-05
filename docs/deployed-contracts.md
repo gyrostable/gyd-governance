@@ -12,6 +12,21 @@
 
 ## Vaults
 
+* `AggregateLpVault`: [0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528](https://etherscan.io/address/0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528)
+* `AssociatedDAOVault`: [0xA2321E23B3060e160195E138b62F8498546B0247](https://etherscan.io/address/0xA2321E23B3060e160195E138b62F8498546B0247)
+* `LockedVaultWithThreshold` (GYFI vault): [0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61](https://etherscan.io/address/0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61)
+  * Implementation: [0x16b13dD24977a13e9857F36eb405DB11D01AC7D1](https://etherscan.io/address/0x16b13dD24977a13e9857F36eb405DB11D01AC7D1)
+* `CouncillorNFTVault`: [0x339b896BafD5d3811241D607D0cd33a1C2f09404](https://etherscan.io/address/0x339b896BafD5d3811241D607D0cd33a1C2f09404)
+  * `CouncillorNFT`: [0x1fb7317359d88076a24cDb97d84CEC796BaBA876](https://etherscan.io/address/0x1fb7317359d88076a24cDb97d84CEC796BaBA876)
+
+### LP Vaults
+
+* `LpVault` (GYD/sDAI): [0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a](https://etherscan.io/address/0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a)
+  * Implementation: [0x4476ffcb74A793092544ab29f45286cB1aBfA007](https://etherscan.io/address/0x4476ffcb74A793092544ab29f45286cB1aBfA007)
+* `LpVault` (GYD/USDC): [0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a](https://etherscan.io/address/0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a)
+  * Implementation: [0x48a64b352989FEb0E98843Bd0415c94Fc8023D2B](https://etherscan.io/address/0x48a64b352989FEb0E98843Bd0415c94Fc8023D2B)
+* `LpVault` (GYD/USDT): [0xB6DC4F06867274539ECd06E244349f0A75410F9E](https://etherscan.io/address/0xB6DC4F06867274539ECd06E244349f0A75410F9E)
+  * Implementation: [0xE1c7Ad5722aa5826a2Dd95a9710A8Fbbe644123B](https://etherscan.io/address/0xE1c7Ad5722aa5826a2Dd95a9710A8Fbbe644123B)
 
 ## Strategies
 
