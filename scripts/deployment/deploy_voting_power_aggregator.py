@@ -1,3 +1,4 @@
+import json
 import time
 
 from brownie import GovernanceManagerProxy, MockVault, VotingPowerAggregator, chain
@@ -61,4 +62,24 @@ def main():
 
     deployer.deploy(
         VotingPowerAggregator, GovernanceManagerProxy[0], schedule, **make_params()
+    )
+
+
+def set_schedule():
+    current_time = int(time.time())
+    schedule = VaultWeightSchedule(
+        starts_at=current_time,
+        ends_at=current_time + 4 * 365 * 86400,  # 4 years later
+        vaults=vaults,
+    )
+
+    print(
+        json.dumps(
+            [
+                (
+                    VotingPowerAggregator[0].address,
+                    VotingPowerAggregator[0].setSchedule.encode_input(schedule),
+                )
+            ]
+        )
     )
