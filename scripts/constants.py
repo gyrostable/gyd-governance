@@ -43,9 +43,9 @@ VAULTS = {
     1: {
         "aggregate": "0xE8b18f8A2E4A1CD23E7f5fc6d9324F47f10dB528",
         "dao": "0xA2321E23B3060e160195E138b62F8498546B0247",
-        "founding_members": "0xaf55785e3F020D8F335ad0b04872B46FB46274a2",
+        "founding_members": "0x5241b3644b5C616Dd94DcbD61d89C3aBa64460BB",
         "gyfi": "0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61",
-        "councillor": "0x339b896BafD5d3811241D607D0cd33a1C2f09404",
+        "councillor": "0x360CE1B138EAEf64Ce56A31076C29ce4d14719eE",
         "lp_vaults": [
             "0xDb5494f1Ec62A50595c0101ab124e9C706EFF57a",
             "0xA3979E46D1791A4F947641eD0e058025534A3008",
