@@ -31,9 +31,9 @@ def mock():
     deployer.deploy(MockVault, **make_params())
 
 
-def locked_vault(underlying):
+def locked_vault_impl(underlying):
     deployer = get_deployer()
-    vault = deployer.deploy(
+    return deployer.deploy(
         LockedVault,
         GovernanceManagerProxy[0],
         underlying,
@@ -41,6 +41,11 @@ def locked_vault(underlying):
         DAO_TREASURY[chain.id],
         **make_params()
     )
+
+
+def full_locked_vault(underlying):
+    deployer = get_deployer()
+    vault = locked_vault_impl(underlying)
     deployer.deploy(
         TransparentUpgradeableProxy,
         vault,
@@ -54,20 +59,19 @@ def gyfi_vault():
     deployer = get_deployer()
     vault = deployer.deploy(
         LockedVaultWithThreshold,
-        deployer,
+        GovernanceManagerProxy[0],
         GYFI_TOKEN_ADDRESS[chain.id],
         GYFI_TOKEN_ADDRESS[chain.id],
-        GYFI_TOTAL_SUPLY // 10,
         DAO_TREASURY[chain.id],
         **make_params()
     )
-    deployer.deploy(
-        TransparentUpgradeableProxy,
-        vault,
-        get_proxy_admin(),
-        vault.initialize.encode_input(2592000),  # 30 days withdrawal
-        **make_params()
-    )
+    # deployer.deploy(
+    #     TransparentUpgradeableProxy,
+    #     vault,
+    #     get_proxy_admin(),
+    #     vault.initialize.encode_input(2592000),  # 30 days withdrawal
+    #     **make_params()
+    # )
 
 
 def founding_member_vault(proofs_file):

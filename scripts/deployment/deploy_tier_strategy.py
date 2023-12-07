@@ -6,7 +6,7 @@ from support.utils import scale
 
 LOW_TIER = Tier(
     quorum=int(scale("0.01")),
-    proposal_threshold=int(scale("0.025")),
+    proposal_threshold=int(scale("0.0025")),
     vote_threshold=int(scale("0.51")),
     time_lock_duration=86400,
     proposal_length=7 * 86400,
@@ -16,7 +16,7 @@ LOW_TIER = Tier(
 
 MEDIUM_TIER = Tier(
     quorum=int(scale("0.02")),
-    proposal_threshold=int(scale("0.025")),
+    proposal_threshold=int(scale("0.0025")),
     vote_threshold=int(scale("0.51")),
     time_lock_duration=2 * 86400,
     proposal_length=7 * 86400,
@@ -25,7 +25,7 @@ MEDIUM_TIER = Tier(
 
 HIGH_TIER = Tier(
     quorum=int(scale("0.05")),
-    proposal_threshold=int(scale("0.025")),
+    proposal_threshold=int(scale("0.0025")),
     vote_threshold=int(scale("0.67")),
     time_lock_duration=7 * 86400,
     proposal_length=7 * 86400,
@@ -34,7 +34,7 @@ HIGH_TIER = Tier(
 
 CORE_TIER = Tier(
     quorum=int(scale("0.1")),
-    proposal_threshold=int(scale("0.025")),
+    proposal_threshold=int(scale("0.0025")),
     vote_threshold=int(scale("0.75")),
     time_lock_duration=7 * 86400,
     proposal_length=7 * 86400,
@@ -43,7 +43,7 @@ CORE_TIER = Tier(
 
 HIGH_TREASURY_TIER = Tier(
     quorum=int(scale("0.05")),
-    proposal_threshold=int(scale("0.025")),
+    proposal_threshold=int(scale("0.0025")),
     vote_threshold=int(scale("0.67")),
     time_lock_duration=2 * 86400,
     proposal_length=14 * 86400,
@@ -52,7 +52,7 @@ HIGH_TREASURY_TIER = Tier(
 
 UPGRADEABILITY_TIER = Tier(
     quorum=int(scale("0.5")),
-    proposal_threshold=int(scale("0.025")),
+    proposal_threshold=int(scale("0.0025")),
     vote_threshold=int(scale("0.75")),
     time_lock_duration=14 * 86400,
     proposal_length=14 * 86400,
