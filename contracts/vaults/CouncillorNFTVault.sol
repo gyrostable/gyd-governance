@@ -17,7 +17,6 @@ contract CouncillorNFTVault is NFTVault, IVotingPowersUpdater {
 
     constructor(address _owner, address _underlyingAddress) NFTVault(_owner) {
         underlyingAddress = _underlyingAddress;
-        sumVotingPowers = IERC721Enumerable(_underlyingAddress).totalSupply();
     }
 
     modifier onlyUnderlying() {

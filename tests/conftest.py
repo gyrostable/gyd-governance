@@ -1,3 +1,4 @@
+from os import path
 import re
 from typing import List, NamedTuple, Union
 
@@ -22,6 +23,8 @@ from hexbytes import HexBytes
 
 from eth_utils.abi import function_signature_to_4byte_selector
 from eth_abi.abi import encode_abi
+
+FIXTURES_PATH = path.join(path.dirname(__file__), "fixtures")
 
 
 class ProposalAction(NamedTuple):
@@ -89,13 +92,6 @@ PROOF = [
     "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
     "0xcc20bdebe234641ec9c9c1c278579ef608f23fb46f1be71cd61a8cb3d6a53735",
 ]
-
-PROOF_TYPE_HASH = keccak(
-    text="Proof(address account,uint128 multiplier,bytes32[] proof)"
-)
-DOMAIN_TYPE_HASH = keccak(
-    text="EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-)
 
 
 class Tier(NamedTuple):
@@ -313,7 +309,7 @@ def nft_vault(councillor_nft, admin):
     councillor_nft.initializeGovernanceVault(nft_vault)
 
     for i in range(5):
-        councillor_nft.mint(accounts[i], accounts[i], PROOF, i)
+        councillor_nft.mint(accounts[i], 10**18, accounts[i], PROOF, i)
 
     return nft_vault
 

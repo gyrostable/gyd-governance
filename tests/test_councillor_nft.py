@@ -1,8 +1,26 @@
+import json
+from os import path
+import pytest
 import random
 from brownie import chain, reverts
 from eip712.messages import EIP712Message
 from eth_abi.packed import encode_packed
 from eth_utils import keccak
+
+from tests.conftest import FIXTURES_PATH
+
+
+ONE = 10**18
+
+
+@pytest.fixture(scope="module")
+def proof_data():
+    with open(path.join(FIXTURES_PATH, "mock-councillors-proofs.json")) as f:
+        return json.load(f)
+
+
+def proof_for(address, proof_data):
+    return [p["proof"] for p in proof_data["proofs"] if p["owner"] == address][0]
 
 
 def test_councillor_nft_is_not_transferable(admin, accounts, councillor_nft, nft_vault):
@@ -15,26 +33,26 @@ def test_councillor_nft_is_mintable_by_owner(
 ):
     acc = accounts[1]
     with reverts("ECDSA: invalid signature length"):
-        councillor_nft.mint(acc, acc, [], b"", {"from": acc})
+        councillor_nft.mint(acc, ONE, acc, [], b"", {"from": acc})
 
     a = accounts.add()
-    councillor_nft.mint(a, a, [], b"", {"from": admin})
+    councillor_nft.mint(a, ONE, a, [], b"", {"from": admin})
 
 
 def test_councillor_nft_supply_cap(admin, accounts, councillor_nft, nft_vault):
     # this brings the total of NFTs minted to the max supply
     for _ in range(councillor_nft.maxSupply() - councillor_nft.totalSupply()):
         a = accounts.add()
-        councillor_nft.mint(a, a, [], b"", {"from": admin})
+        councillor_nft.mint(a, ONE, a, [], b"", {"from": admin})
 
     assert councillor_nft.totalSupply() == councillor_nft.maxSupply()
 
     a = accounts.add()
     with reverts("mint error: supply cap would be exceeded"):
-        councillor_nft.mint(a, a, [], b"", {"from": admin})
+        councillor_nft.mint(a, ONE, a, [], b"", {"from": admin})
 
 
-def signature(to, delegate, proof, verifying_contract):
+def signature(to, multiplier, delegate, proof, verifying_contract):
     class Proof(EIP712Message):
         _name_: "string"
         _version_: "string"
@@ -42,6 +60,7 @@ def signature(to, delegate, proof, verifying_contract):
         _verifyingContract_: "address"
 
         to: "address"
+        multiplier: "uint128"
         delegate: "address"
         proof: "bytes32[]"
 
@@ -52,6 +71,7 @@ def signature(to, delegate, proof, verifying_contract):
         _chainId_=chain.id,
         _verifyingContract_=verifying_contract,
         to=to.address,
+        multiplier=multiplier,
         delegate=delegate.address,
         proof=proofB,
     )
@@ -68,36 +88,40 @@ PROOF = [
 
 
 def test_councillor_nft_is_mintable_by_allowlisted_address(
-    admin, local_account, CouncillorNFT, CouncillorNFTVault
+    admin, local_account, CouncillorNFT, CouncillorNFTVault, proof_data
 ):
+    print("local_account", local_account)
     councillor_nft = admin.deploy(
-        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT
+        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, proof_data["root"]
     )
     nft_vault = admin.deploy(CouncillorNFTVault, admin, councillor_nft)
     councillor_nft.initializeGovernanceVault(nft_vault.address)
 
-    sig = signature(local_account, local_account, PROOF, councillor_nft.address)
+    proof = proof_for(local_account, proof_data)
+    sig = signature(local_account, ONE, local_account, proof, councillor_nft.address)
     councillor_nft.mint(
-        local_account, local_account, PROOF, sig, {"from": local_account}
+        local_account, ONE, local_account, proof, sig, {"from": local_account}
     )
 
     assert councillor_nft.balanceOf(local_account) == 1
 
 
 def test_councillor_nft_voting_power_can_be_delegated(
-    admin, local_account, CouncillorNFT, CouncillorNFTVault, accounts
+    admin, local_account, CouncillorNFT, CouncillorNFTVault, accounts, proof_data
 ):
     councillor_nft = admin.deploy(
-        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT
+        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, proof_data["root"]
     )
     nft_vault = admin.deploy(CouncillorNFTVault, admin, councillor_nft)
     councillor_nft.initializeGovernanceVault(nft_vault.address)
 
     other_account = accounts[4]
 
-    sig = signature(local_account, other_account, PROOF, councillor_nft.address)
+    proof = proof_for(local_account, proof_data)
+
+    sig = signature(local_account, ONE, other_account, proof, councillor_nft.address)
     councillor_nft.mint(
-        local_account, other_account, PROOF, sig, {"from": local_account}
+        local_account, ONE, other_account, proof, sig, {"from": local_account}
     )
 
     assert councillor_nft.balanceOf(local_account) == 1
@@ -106,29 +130,29 @@ def test_councillor_nft_voting_power_can_be_delegated(
 
 
 def test_councillor_nft_is_mintable_only_once(
-    admin,
-    alice,
-    bob,
-    local_account,
-    CouncillorNFT,
-    CouncillorNFTVault,
+    admin, alice, bob, local_account, CouncillorNFT, CouncillorNFTVault, proof_data
 ):
     councillor_nft = admin.deploy(
-        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, ROOT
+        CouncillorNFT, "CouncillorNFT", "RNFT", admin, 10, proof_data["root"]
     )
     nft_vault = admin.deploy(CouncillorNFTVault, admin, councillor_nft)
     councillor_nft.initializeGovernanceVault(nft_vault.address)
 
-    sig = signature(local_account, local_account, PROOF, councillor_nft.address)
+    proof = proof_for(local_account, proof_data)
+    sig = signature(local_account, ONE, local_account, proof, councillor_nft.address)
     councillor_nft.mint(
-        local_account, local_account, PROOF, sig, {"from": local_account}
+        local_account, ONE, local_account, proof, sig, {"from": local_account}
     )
 
     with reverts("user has already claimed NFT"):
-        councillor_nft.mint(local_account, local_account, PROOF, sig, {"from": alice})
+        councillor_nft.mint(
+            local_account, ONE, local_account, proof, sig, {"from": alice}
+        )
 
     with reverts("user has already claimed NFT"):
-        councillor_nft.mint(local_account, local_account, PROOF, sig, {"from": bob})
+        councillor_nft.mint(
+            local_account, ONE, local_account, proof, sig, {"from": bob}
+        )
         # councillor_nft.mint(local_account, PROOF, sig, {"from": bob})
 
 
