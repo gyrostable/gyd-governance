@@ -53,9 +53,10 @@ contract LockedVault is
         _underlyingDecimals = IERC20Metadata(_underlying).decimals();
     }
 
-    function initialize(uint256 _withdrawalWaitDuration) external initializer {
-        withdrawalWaitDuration = _withdrawalWaitDuration;
-        globalCheckpoint();
+    function initialize(
+        uint256 _withdrawalWaitDuration
+    ) external virtual initializer {
+        __LockedVault_initialize(_withdrawalWaitDuration);
     }
 
     function startMining(
@@ -218,5 +219,12 @@ contract LockedVault is
 
     function getVaultType() external pure returns (string memory) {
         return _VAULT_TYPE;
+    }
+
+    function __LockedVault_initialize(
+        uint256 _withdrawalWaitDuration
+    ) internal {
+        withdrawalWaitDuration = _withdrawalWaitDuration;
+        globalCheckpoint();
     }
 }

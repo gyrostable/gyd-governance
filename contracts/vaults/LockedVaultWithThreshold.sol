@@ -9,9 +9,14 @@ contract LockedVaultWithThreshold is LockedVault, VaultWithThreshold {
         address _owner,
         address _underlying,
         address _rewardsToken,
-        uint256 _threshold,
         address _daoTreasury
-    ) LockedVault(_owner, _underlying, _rewardsToken, _daoTreasury) {
+    ) LockedVault(_owner, _underlying, _rewardsToken, _daoTreasury) {}
+
+    function initialize(
+        uint256 _threshold,
+        uint256 _withdrawalWaitDuration
+    ) external initializer {
+        __LockedVault_initialize(_withdrawalWaitDuration);
         threshold = _threshold;
     }
 
