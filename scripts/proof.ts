@@ -5,25 +5,29 @@ import path from "path";
 const defaultInFile = path.join(path.dirname(__dirname), "data", "discord_contributors.csv");
 const defaultOutFile = path.join(path.dirname(__dirname), "data", "proofs-discord.json");
 
+function scale(value: number | bigint, decimals: number = 18): bigint {
+  if (typeof value === "bigint") return value * BigInt(10 ** decimals);
+  return BigInt(Math.floor(value * 10 ** decimals));
+}
+
 class Element {
   owner: string;
-  multiplier?: BigInt;
+  multiplier: bigint;
 
-  constructor(owner: string, multiplier?: BigInt) {
+  constructor(owner: string, multiplier: bigint) {
     this.owner = owner;
+    if (multiplier < 10 ** 10) {
+      multiplier = scale(multiplier);
+    }
     this.multiplier = multiplier;
   }
 
   toLeaf() {
-    if (this.multiplier) {
-      return utils.solidityKeccak256(["address", "uint128"], [this.owner, this.multiplier]);
-    } else {
-      return utils.solidityKeccak256(["address"], [this.owner]);
-    }
+    return utils.solidityKeccak256(["address", "uint128"], [this.owner, this.multiplier]);
   }
 
-  toObject(): { owner: string; multiplier?: string } {
-    return { owner: this.owner, ...(this.multiplier && { multiplier: this.multiplier.toString() }) };
+  toObject(): { owner: string; multiplier: string } {
+    return { owner: this.owner, multiplier: this.multiplier.toString() };
   }
 
   static fromLine(line: string): Element {
@@ -34,7 +38,7 @@ class Element {
 
 type OutputDatum = {
   owner: string;
-  multiplier?: string;
+  multiplier: string;
   proof: string[];
 };
 

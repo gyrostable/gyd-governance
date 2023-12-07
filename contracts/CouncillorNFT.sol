@@ -37,7 +37,9 @@ contract CouncillorNFT is
 
     Merkle.Root internal _merkleRoot;
     bytes32 private immutable _TYPE_HASH =
-        keccak256("Proof(address to,address delegate,bytes32[] proof)");
+        keccak256(
+            "Proof(address to,uint128 multiplier,address delegate,bytes32[] proof)"
+        );
 
     mapping(address => bool) private _claimed;
 
@@ -64,11 +66,12 @@ contract CouncillorNFT is
 
     function mint(
         address to,
+        uint128 multiplier,
         address delegate,
         bytes32[] calldata proof,
         bytes calldata signature
     ) public {
-        _requireValidProof(to, delegate, proof, signature);
+        _requireValidProof(to, multiplier, delegate, proof, signature);
 
         require(!_claimed[to], "user has already claimed NFT");
         require(
@@ -81,11 +84,12 @@ contract CouncillorNFT is
 
         _claimed[to] = true;
 
-        vault.updateBaseVotingPower(to, delegate, 1e18);
+        vault.updateBaseVotingPower(to, delegate, multiplier);
     }
 
     function _requireValidProof(
         address to,
+        uint128 multiplier,
         address delegate,
         bytes32[] calldata proof,
         bytes calldata signature
@@ -95,13 +99,21 @@ contract CouncillorNFT is
         }
 
         bytes32 hash = _hashTypedDataV4(
-            keccak256(abi.encode(_TYPE_HASH, to, delegate, _encodeProof(proof)))
+            keccak256(
+                abi.encode(
+                    _TYPE_HASH,
+                    to,
+                    multiplier,
+                    delegate,
+                    _encodeProof(proof)
+                )
+            )
         );
         address claimant = ECDSA.recover(hash, signature);
 
         require(claimant == to, "invalid signature");
 
-        bytes32 node = keccak256(abi.encodePacked(to));
+        bytes32 node = keccak256(abi.encodePacked(to, multiplier));
         require(_merkleRoot.isProofValid(node, proof), "invalid proof");
     }
 
