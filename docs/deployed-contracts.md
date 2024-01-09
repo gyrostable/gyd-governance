@@ -16,7 +16,7 @@
 * `AssociatedDAOVault`: [0xA2321E23B3060e160195E138b62F8498546B0247](https://etherscan.io/address/0xA2321E23B3060e160195E138b62F8498546B0247)
 * `LockedVaultWithThreshold` (GYFI vault): [0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61](https://etherscan.io/address/0x695225a1e074ffbe8Ffe42364E77857Df9B6bc61)
   * Implementation: [0xb94c4ff4d5d18fa5a33bf1445c3790326d8bc1f6](https://etherscan.io/address/0xb94c4ff4d5d18fa5a33bf1445c3790326d8bc1f6)
-* `FoundingMemberVault`: [0x5241b3644b5C616Dd94DcbD61d89C3aBa64460BB](https://etherscan.io/address/0x5241b3644b5C616Dd94DcbD61d89C3aBa64460BB)
+* `FoundingMemberVault`: [0x7783B7eb719aA2d27F01e10C0B0Ee747ab9D2754](https://etherscan.io/address/0x7783B7eb719aA2d27F01e10C0B0Ee747ab9D2754)
 * `CouncillorNFTVault`: [0x360CE1B138EAEf64Ce56A31076C29ce4d14719eE](https://etherscan.io/address/0x360CE1B138EAEf64Ce56A31076C29ce4d14719eE)
   * `CouncillorNFT`: [0x917156ABfBa776B1Ec30F20D5fEBb39cE37d1e18](https://etherscan.io/address/0x917156ABfBa776B1Ec30F20D5fEBb39cE37d1e18)
 
