@@ -149,4 +149,5 @@ The tests can then be run using:
 ```
 brownie test
 ```
+![image](https://github.com/user-attachments/assets/99f5425e-c34e-4b11-8487-9509a3628a51)
 
