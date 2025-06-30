@@ -2,7 +2,7 @@
 
 This is the repository for the governance system of Gyroscope.
 
-The Gyroscope governance system is designed to bring many different stakeholder groups into governance.
+Gyro's governance system is designed to bring many different stakeholder groups into governance.
 Voting power is split between a number of different voting vaults, which allocate voting power to different stakeholder groups.
 Furthermore, the quorum, time delay, and other parameters are set depending on the impact of the proposed changes.
 
