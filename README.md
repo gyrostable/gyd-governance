@@ -6,6 +6,10 @@ Gyro's governance system is designed to bring many different stakeholder groups 
 Voting power is split between a number of different voting vaults, which allocate voting power to different stakeholder groups.
 Furthermore, the quorum, time delay, and other parameters are set depending on the impact of the proposed changes.
 
+# GYFI governance token
+
+Holders of GYFI, Gyroscope’s governance token, form a major component of Gyroscope’s governance system. The design of the governance system focuses on aligning long-term evolution of the protocol and growth of use cases through the GYFI token
+
 # Voting power computation
 
 The voting power of a user is computed by the `VotingPowerAggregator` contract.
