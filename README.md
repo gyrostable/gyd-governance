@@ -1,4 +1,4 @@
-# Gyroscope governance repo
+# Gyroscope governance repo and GYFI governance
 
 This is the repository for the governance system of Gyroscope.
 
